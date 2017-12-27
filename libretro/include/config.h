@@ -33,11 +33,6 @@
 
 #endif
 
-#if defined(VITA)
-   #error "This platform is not currently supported."
-
-#endif
-
 #if defined(PSP)
    #error "This platform is not currently supported."
 

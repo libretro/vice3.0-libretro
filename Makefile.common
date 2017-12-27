@@ -5,6 +5,7 @@ DEPS_DIR   := $(CORE_DIR)/deps
 INCFLAGS += \
 				-I$(CORE_DIR)/include \
 				-I$(CORE_DIR)/libretro/include \
+				-I$(CORE_DIR)/libretro-common/include \
 				-I$(CORE_DIR)/libretro \
 				-I$(GUI) \
 				-I$(GUI)/nuklear \

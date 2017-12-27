@@ -166,7 +166,8 @@ else ifeq ($(platform), vita)
 	CC = arm-vita-eabi-gcc$(EXE_EXT)
 	CXX = arm-vita-eabi-g++$(EXE_EXT)
 	AR = arm-vita-eabi-ar$(EXE_EXT)
-   COMMONFLAGS += -DVITA
+  COMMONFLAGS += -U__INT32_TYPE__ -U __UINT32_TYPE__ -D__INT32_TYPE__=int
+  COMMONFLAGS += -DHAVE_STRTOUL -DVITA
 	STATIC_LINKING = 1
 
 else ifeq ($(platform), wii)

@@ -37,6 +37,10 @@
 
 #include "libretro-core.h"
 
+#if defined(VITA)
+#include <psp2/kernel/threadmgr.h>
+#endif
+
 extern void retro_poll_event(int joyon);
 extern void app_vkb_handle();
 
@@ -80,7 +84,11 @@ void vsyncarch_display_speed(double speed, double frame_rate, int warp_enabled)
 void vsyncarch_sleep(signed long delay)
 {
 #ifndef WIIU
-	usleep(delay);
+#if defined(VITA)
+   sceKernelDelayThread(delay);
+#else
+   usleep(delay);
+#endif
 #else 
 /* FIXME: There must be somethings wrong with wiiu retroarch usleep implementation ?
    https://github.com/libretro/RetroArch/blob/2492f3d6b38a74bf77774429fff4d7ff65aee40b/wiiu/system/missing_libc_functions.c
