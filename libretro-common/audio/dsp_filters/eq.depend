@@ -1,0 +1,31 @@
+libretro-common/audio/dsp_filters/eq.o: \
+ libretro-common/audio/dsp_filters/eq.c \
+ libretro-common/include/retro_inline.h \
+ libretro-common/include/retro_miscellaneous.h \
+ libretro-common/include/boolean.h libretro-common/include/filters.h \
+ libretro-common/include/retro_math.h \
+ libretro-common/include/libretro_dspfilter.h \
+ libretro-common/include/retro_common_api.h \
+ libretro-common/audio/dsp_filters/fft/fft.c \
+ libretro-common/audio/dsp_filters/fft/fft.h \
+ libretro-common/include/math/complex.h
+
+libretro-common/include/retro_inline.h:
+
+libretro-common/include/retro_miscellaneous.h:
+
+libretro-common/include/boolean.h:
+
+libretro-common/include/filters.h:
+
+libretro-common/include/retro_math.h:
+
+libretro-common/include/libretro_dspfilter.h:
+
+libretro-common/include/retro_common_api.h:
+
+libretro-common/audio/dsp_filters/fft/fft.c:
+
+libretro-common/audio/dsp_filters/fft/fft.h:
+
+libretro-common/include/math/complex.h:

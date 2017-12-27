@@ -1,0 +1,16 @@
+libretro-common/audio/dsp_filters/chorus.o: \
+ libretro-common/audio/dsp_filters/chorus.c \
+ libretro-common/include/retro_miscellaneous.h \
+ libretro-common/include/boolean.h libretro-common/include/retro_inline.h \
+ libretro-common/include/libretro_dspfilter.h \
+ libretro-common/include/retro_common_api.h
+
+libretro-common/include/retro_miscellaneous.h:
+
+libretro-common/include/boolean.h:
+
+libretro-common/include/retro_inline.h:
+
+libretro-common/include/libretro_dspfilter.h:
+
+libretro-common/include/retro_common_api.h:

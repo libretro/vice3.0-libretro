@@ -52,6 +52,11 @@
 #include <strings.h>
 #endif
 
+#if defined(VITA)
+#include <sys/time.h>
+#include <psp2/io/stat.h>
+#endif
+
 #include "archdep.h"
 #include "findpath.h"
 #include "ioutil.h"
@@ -79,6 +84,27 @@ static char *boot_path = NULL;
 /* alternate storage of preferences */
 const char *archdep_pref_path = NULL; /* NULL -> use home_path + ".vice" */
 
+#if defined(VITA)
+#include <stddef.h>
+
+char* getcwd( char* buf, size_t size )
+{
+  if ( buf != NULL && size >= 2 )
+  {
+    buf[ 0 ] = '.';
+    buf[ 1 ] = 0;
+    return buf;
+  }
+
+  return NULL;
+}
+
+int chdir( const char* path)
+{
+  return 0;
+}
+#endif
+
 static FILE *log_file = NULL;
 int joystick_arch_cmdline_options_init(void)
 {
@@ -102,8 +128,15 @@ int archdep_rtc_get_centisecond(void)
 {
     struct timespec dtm;
     int status;
-
-    if ((status = clock_gettime(CLOCK_REALTIME, &dtm)) == 0) {
+#if defined(VITA)
+    struct timeval tm;
+    status = gettimeofday(&tm, NULL);
+    if(status==0)
+        dtm.tv_nsec = tm.tv_usec * 1000;
+#elif
+    status = clock_gettime(CLOCK_REALTIME, &dtm)
+#endif
+    if (status == 0) {
         return dtm.tv_nsec / 10000L;
     }
     return 0;
@@ -116,6 +149,8 @@ int archdep_init(int *argc, char **argv)
 #ifdef RETRO_DEBUG
 #if defined(__ANDROID__) || defined(ANDROID)
     log_file = fopen("/mnt/sdcard/vicelog.txt", "w");
+#elif defined(VITA)
+    log_file = fopen("ux0:/data/vicelog.txt", "w");
 #else
     log_file = fopen("./vicelog.txt", "w");
 #endif
@@ -164,6 +199,8 @@ const char *archdep_boot_path(void)
 //FIXME
 #if defined(__ANDROID__) || defined(ANDROID)
  return "/mnt/sdcard";
+#elif defined(VITA)
+ return "ux0:/data";
 #else
 printf("bootp:(%s)\n",retro_system_data_directory);
  return retro_system_data_directory;
@@ -185,6 +222,8 @@ const char *archdep_home_path(void)
 {
 #if defined(__ANDROID__) || defined(ANDROID)
     return "/mnt/sdcard";
+#elif defined(VITA)
+    return "ux0:/data";
 #elif defined(__WIN32__) || defined(GEKKO)
 return retro_system_data_directory;
 #else
@@ -334,6 +373,8 @@ char *archdep_default_save_resource_file_name(void)
     if (access(viceuserdir, F_OK)) {
 #if defined(__WIN32__)
         mkdir(viceuserdir);
+#elif defined(VITA)
+        sceIoMkdir(viceuserdir,0777);
 #else
         mkdir(viceuserdir, 0700);
 #endif
@@ -582,6 +623,8 @@ int archdep_mkdir(const char *pathname, int mode)
 {
 #if defined(__WIN32__)
        return mkdir(pathname);
+#elif defined(VITA)
+       return sceIoMkdir(pathname,0777);
 #else
      return mkdir(pathname, (mode_t)mode);
 #endif

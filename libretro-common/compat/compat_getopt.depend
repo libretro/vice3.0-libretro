@@ -1,0 +1,28 @@
+libretro-common/compat/compat_getopt.o: \
+ libretro-common/compat/compat_getopt.c libretro-common/include/boolean.h \
+ libretro-common/include/retro_miscellaneous.h \
+ libretro-common/include/retro_inline.h \
+ libretro-common/include/compat/getopt.h \
+ libretro-common/include/retro_common_api.h \
+ libretro-common/include/compat/strl.h \
+ libretro-common/include/compat/strcasestr.h \
+ libretro-common/include/compat/posix_string.h \
+ libretro-common/include/retro_assert.h
+
+libretro-common/include/boolean.h:
+
+libretro-common/include/retro_miscellaneous.h:
+
+libretro-common/include/retro_inline.h:
+
+libretro-common/include/compat/getopt.h:
+
+libretro-common/include/retro_common_api.h:
+
+libretro-common/include/compat/strl.h:
+
+libretro-common/include/compat/strcasestr.h:
+
+libretro-common/include/compat/posix_string.h:
+
+libretro-common/include/retro_assert.h:

@@ -1,0 +1,2 @@
+libretro-common/audio/resampler/drivers/sinc_resampler_neon.o: \
+ libretro-common/audio/resampler/drivers/sinc_resampler_neon.S

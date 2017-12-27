@@ -1,0 +1,11 @@
+libretro-common/audio/dsp_filters/reverb.o: \
+ libretro-common/audio/dsp_filters/reverb.c \
+ libretro-common/include/retro_inline.h \
+ libretro-common/include/libretro_dspfilter.h \
+ libretro-common/include/retro_common_api.h
+
+libretro-common/include/retro_inline.h:
+
+libretro-common/include/libretro_dspfilter.h:
+
+libretro-common/include/retro_common_api.h:

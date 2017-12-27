@@ -1,0 +1,2 @@
+libretro-common/audio/conversion/s16_to_float_neon.o: \
+ libretro-common/audio/conversion/s16_to_float_neon.c

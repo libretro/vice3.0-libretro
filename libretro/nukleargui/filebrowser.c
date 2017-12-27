@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <dirent.h>
+#include <retro_dirent.h>
 
 /* ===============================================================
  *
@@ -88,10 +88,10 @@ dir_list(const char *dir, int return_subdirs, size_t *count)
     size_t n = 0;
     char buffer[MAX_PATH_LEN];
     char **results = NULL;
-    const DIR *none = NULL;
+    const RDIR *none = NULL;
     size_t capacity = 32;
     size_t size;
-    DIR *z;
+    RDIR *z;
 
     assert(dir);
     assert(count);
@@ -103,24 +103,28 @@ dir_list(const char *dir, int return_subdirs, size_t *count)
 
     size = 0;
 
-    z = opendir(dir);
+    z = retro_opendir(dir);
     if (z != none) {
         int nonempty = 1;
-        struct dirent *data = readdir(z);
-        nonempty = (data != NULL);
+        RDIR *data;
+        nonempty = retro_readdir(z);
+        
         if (!nonempty) return NULL;
 
         do {
-            DIR *y;
+            
+            data = z;
+
+            RDIR *y;
             char *p;
             int is_subdir;
-            if (data->d_name[0] == '.')
+            if (retro_dirent_get_name(data)[0] == '.')
                 continue;
 
-            strncpy(buffer + n, data->d_name, MAX_PATH_LEN-n);
-            y = opendir(buffer);
+            strncpy(buffer + n, retro_dirent_get_name(data), MAX_PATH_LEN-n);
+            y = retro_opendir(buffer);
             is_subdir = (y != NULL);
-            if (y != NULL) closedir(y);
+            if (y != NULL) retro_closedir(y);
 
             if ((return_subdirs && is_subdir) || (!is_subdir && !return_subdirs)){
                 if (!size) {
@@ -132,13 +136,13 @@ dir_list(const char *dir, int return_subdirs, size_t *count)
                     assert(results);
                     if (!results) free(old);
                 }
-                p = str_duplicate(data->d_name);
+                p = str_duplicate(retro_dirent_get_name(data));
                 results[size++] = p;
             }
-        } while ((data = readdir(z)) != NULL);
+        } while ((nonempty = retro_readdir(z)));
     }
 
-    if (z) closedir(z);
+    if (z) retro_closedir(z);
     *count = size;
     return results;
 }
@@ -161,8 +165,10 @@ file_browser_init(struct file_browser *browser)
     {
         /* load files and sub-directory list */
         const char *home = getenv("HOME");
-#ifdef _WIN32
+#if defined(_WIN32)
         if (!home) home = getenv("USERPROFILE");
+#elif defined(VITA)
+        if (!home) home = "ux0:/";
 #else
         if (!home) home = getpwuid(getuid())->pw_dir;
         {

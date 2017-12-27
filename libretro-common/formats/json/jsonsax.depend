@@ -1,0 +1,11 @@
+libretro-common/formats/json/jsonsax.o: \
+ libretro-common/formats/json/jsonsax.c \
+ libretro-common/include/retro_inline.h \
+ libretro-common/include/formats/jsonsax.h \
+ libretro-common/include/retro_common_api.h
+
+libretro-common/include/retro_inline.h:
+
+libretro-common/include/formats/jsonsax.h:
+
+libretro-common/include/retro_common_api.h:

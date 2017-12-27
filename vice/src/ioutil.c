@@ -32,9 +32,7 @@
 #ifdef HAVE_DIRECT_H
 #include <direct.h>
 #endif
-#if defined(HAVE_DIRENT_H) || defined(AMIGA_AROS)
-#include <dirent.h>
-#endif
+#include <retro_dirent.h>
 #ifdef HAVE_ERRNO_H
 #include <errno.h>
 #endif
@@ -228,8 +226,8 @@ static int ioutil_compare_names(const void* a, const void* b)
  */
 static int ioutil_count_dir_items(const char *path)
 {
-    DIR *dirp;
-    struct dirent *dp;
+    RDIR *dirp;
+    int dp;
 /* #ifndef _DIRENT_HAVE_D_TYPE */
     unsigned int len, isdir;
     char *filename;
@@ -239,42 +237,16 @@ static int ioutil_count_dir_items(const char *path)
     dirs_amount = 0;
     files_amount = 0;
 
-    dirp = opendir(path);
+    dirp = retro_opendir(path);
 
     if (dirp == NULL) {
         return -1;
     }
 
-    dp = readdir(dirp);
+    dp = retro_readdir(dirp);
 
-    while (dp != NULL) {
-#ifdef _DIRENT_HAVE_D_TYPE
-        if (dp->d_type != DT_UNKNOWN) {
-            if (dp->d_type == DT_DIR) {
-                dirs_amount++;
-#ifdef DT_LNK
-            } else if (dp->d_type == DT_LNK) {
-                filename = util_concat(path, FSDEV_DIR_SEP_STR, dp->d_name, NULL);
-                retval = ioutil_stat(filename, &len, &isdir);
-                if (retval == 0) {
-                    if (isdir) {
-                        dirs_amount++;
-                    } else {
-                        files_amount++;
-                    }
-                }
-                if (filename) {
-                    lib_free(filename);
-                    filename = NULL;
-                }
-#endif /* DT_LNK */
-            } else {
-                files_amount++;
-            }
-            dp = readdir(dirp);
-        } else {
-#endif
-            filename = util_concat(path, FSDEV_DIR_SEP_STR, dp->d_name, NULL);
+    while (dp) {
+            filename = util_concat(path, FSDEV_DIR_SEP_STR, retro_dirent_get_name(dirp), NULL);
             retval = ioutil_stat(filename, &len, &isdir);
             if (retval == 0) {
                 if (isdir) {
@@ -283,20 +255,17 @@ static int ioutil_count_dir_items(const char *path)
                     files_amount++;
                 }
             }
-            dp = readdir(dirp);
+            dp = retro_readdir(dirp);
             lib_free(filename);
-#ifdef _DIRENT_HAVE_D_TYPE
-        }
-#endif
     }
-    closedir(dirp);
+    retro_closedir(dirp);
     return 0;
 }
 
 static void ioutil_filldir(const char *path, ioutil_name_table_t *dirs, ioutil_name_table_t *files)
 {
-    DIR *dirp = NULL;
-    struct dirent *dp = NULL;
+    RDIR *dirp = NULL;
+    int dp;
     int dir_count = 0;
     int file_count = 0;
 /* #ifndef _DIRENT_HAVE_D_TYPE */
@@ -305,59 +274,26 @@ static void ioutil_filldir(const char *path, ioutil_name_table_t *dirs, ioutil_n
     int retval;
 /* #endif */
 
-    dirp = opendir(path);
+    dirp = retro_opendir(path);
 
-    dp = readdir(dirp);
+    dp = retro_readdir(dirp);
 
-    while (dp != NULL) {
-#ifdef _DIRENT_HAVE_D_TYPE
-        if (dp->d_type != DT_UNKNOWN) {
-            if (dp->d_type == DT_DIR) {
-                dirs[dir_count].name = lib_stralloc(dp->d_name);
-                dir_count++;
-#ifdef DT_LNK
-            } else if (dp->d_type == DT_LNK) {
-                filename = util_concat(path, FSDEV_DIR_SEP_STR, dp->d_name, NULL);
-                retval = ioutil_stat(filename, &len, &isdir);
-                if (retval == 0) {
-                    if (isdir) {
-                        dirs[dir_count].name = lib_stralloc(dp->d_name);
-                        dir_count++;
-                    } else {
-                        files[file_count].name = lib_stralloc(dp->d_name);
-                        file_count++;
-                    }
-                }
-                if (filename) {
-                    lib_free(filename);
-                    filename = NULL;
-                }
-#endif /* DT_LNK */
-            } else {
-                files[file_count].name = lib_stralloc(dp->d_name);
-                file_count++;
-            }
-            dp = readdir(dirp);
-        } else {
-#endif
-            filename = util_concat(path, FSDEV_DIR_SEP_STR, dp->d_name, NULL);
+    while (dp) {
+            filename = util_concat(path, FSDEV_DIR_SEP_STR, retro_dirent_get_name(dirp), NULL);
             retval = ioutil_stat(filename, &len, &isdir);
             if (retval == 0) {
                 if (isdir) {
-                    dirs[dir_count].name = lib_stralloc(dp->d_name);
+                    dirs[dir_count].name = lib_stralloc(retro_dirent_get_name(dirp));
                     dir_count++;
                 } else {
-                    files[file_count].name = lib_stralloc(dp->d_name);
+                    files[file_count].name = lib_stralloc(retro_dirent_get_name(dirp));
                     file_count++;
                 }
             }
-            dp = readdir(dirp);
+            dp = retro_readdir(dirp);
             lib_free(filename);
-#ifdef _DIRENT_HAVE_D_TYPE
-        }
-#endif
     }
-    closedir(dirp);
+    retro_closedir(dirp);
 }
 
 ioutil_dir_t *ioutil_opendir(const char *path)

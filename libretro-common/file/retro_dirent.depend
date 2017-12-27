@@ -1,0 +1,27 @@
+libretro-common/file/retro_dirent.o: libretro-common/file/retro_dirent.c \
+ libretro-common/include/retro_common.h \
+ libretro-common/include/compat/msvc.h libretro-common/include/boolean.h \
+ libretro-common/include/retro_dirent.h \
+ libretro-common/include/retro_common_api.h \
+ libretro-common/include/retro_miscellaneous.h \
+ libretro-common/include/retro_inline.h \
+ libretro-common/include/encodings/utf.h \
+ libretro-common/include/compat/strl.h
+
+libretro-common/include/retro_common.h:
+
+libretro-common/include/compat/msvc.h:
+
+libretro-common/include/boolean.h:
+
+libretro-common/include/retro_dirent.h:
+
+libretro-common/include/retro_common_api.h:
+
+libretro-common/include/retro_miscellaneous.h:
+
+libretro-common/include/retro_inline.h:
+
+libretro-common/include/encodings/utf.h:
+
+libretro-common/include/compat/strl.h:

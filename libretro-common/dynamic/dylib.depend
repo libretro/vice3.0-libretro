@@ -1,0 +1,10 @@
+libretro-common/dynamic/dylib.o: libretro-common/dynamic/dylib.c \
+ libretro-common/include/dynamic/dylib.h \
+ libretro-common/include/boolean.h \
+ libretro-common/include/retro_common_api.h
+
+libretro-common/include/dynamic/dylib.h:
+
+libretro-common/include/boolean.h:
+
+libretro-common/include/retro_common_api.h:

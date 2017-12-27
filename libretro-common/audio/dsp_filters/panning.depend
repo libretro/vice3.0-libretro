@@ -1,0 +1,8 @@
+libretro-common/audio/dsp_filters/panning.o: \
+ libretro-common/audio/dsp_filters/panning.c \
+ libretro-common/include/libretro_dspfilter.h \
+ libretro-common/include/retro_common_api.h
+
+libretro-common/include/libretro_dspfilter.h:
+
+libretro-common/include/retro_common_api.h:

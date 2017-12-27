@@ -1,0 +1,8 @@
+libretro-common/compat/compat_strcasestr.o: \
+ libretro-common/compat/compat_strcasestr.c \
+ libretro-common/include/compat/strcasestr.h \
+ libretro-common/include/retro_common_api.h
+
+libretro-common/include/compat/strcasestr.h:
+
+libretro-common/include/retro_common_api.h:
