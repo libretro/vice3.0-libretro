@@ -1,5 +1,0 @@
-libretro-common/formats/json/jsonsax_full.o: \
- libretro-common/formats/json/jsonsax_full.c \
- libretro-common/include/formats/jsonsax_full.h
-
-libretro-common/include/formats/jsonsax_full.h:
