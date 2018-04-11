@@ -10,6 +10,8 @@ char slash = '/';
 
 bool retro_load_ok = false;
 
+retro_log_printf_t log_cb;
+
 char RETRO_DIR[512];
 
 char DISKA_NAME[512]="\0";
@@ -821,7 +823,7 @@ static bool ejected = false;
 #include <attach.h>
 
 static bool retro_set_eject_state(bool ejected) {
-    printf("EJECT %d", (int)ejected);
+    log_cb(RETRO_LOG_INFO, "EJECT %d", (int)ejected);
     if(ejected)
         file_system_detach_disk(8);
     else
@@ -899,8 +901,20 @@ static struct retro_disk_control_callback diskControl = {
     retro_add_image_index,
 };
 
+static void fallback_log(enum retro_log_level level, const char *fmt, ...)
+{
+   /* stub */
+}
+
 void retro_init(void)
 {    	
+   struct retro_log_callback log;
+
+   if (environ_cb(RETRO_ENVIRONMENT_GET_LOG_INTERFACE, &log))
+      log_cb = log.log;
+   else
+      log_cb = fallback_log;
+
    const char *system_dir = NULL;
 
    if (environ_cb(RETRO_ENVIRONMENT_GET_SYSTEM_DIRECTORY, &system_dir) && system_dir)
@@ -947,7 +961,7 @@ void retro_init(void)
 
    if (!environ_cb(RETRO_ENVIRONMENT_SET_PIXEL_FORMAT, &fmt))
    {
-      fprintf(stderr, "PIXEL FORMAT is not supported.\n");
+      log_cb(RETRO_LOG_ERROR, "PIXEL FORMAT is not supported.\n");
       exit(0);
    }
 
@@ -1056,7 +1070,7 @@ void retro_set_controller_port_device( unsigned port, unsigned device )
    {
       vice_devices[ port ] = device;
 
-      printf(" (%d)=%d \n",port,device);
+      log_cb(RETRO_LOG_INFO, "[retro_set_controller_port_device] (%d)=%d \n",port,device);
    }
 }
 
@@ -1131,7 +1145,7 @@ void retro_run(void)
 
    if(lastW!=retroW || lastH!=retroH){
       update_geometry();
-      printf("Update Geometry Old(%d,%d) New(%d,%d)\n",lastW,lastH,retroW,retroH);
+      log_cb(RETRO_LOG_INFO, "Update Geometry Old(%d,%d) New(%d,%d)\n",lastW,lastH,retroW,retroH);
       lastW=retroW;
       lastH=retroH;
       reset_mouse_pos();
@@ -1143,7 +1157,7 @@ void retro_run(void)
    if(mfirst==1)
    {
       mfirst++;
-      printf("First time we return from retro_run()!\n");
+      log_cb(RETRO_LOG_INFO, "First time we return from retro_run()!\n");
       retro_load_ok=true;
       app_init();
       memset(SNDBUF,0,1024*2*2);
@@ -1176,7 +1190,7 @@ void retro_run(void)
    uint32_t character, uint16_t mod)
    {
 
-   printf( "Down: %s, Code: %d, Char: %u, Mod: %u.\n",
+   log_cb(RETRO_LOG_INFO, "Down: %s, Code: %d, Char: %u, Mod: %u.\n",
    down ? "yes" : "no", keycode, character, mod);
 
 
