@@ -470,6 +470,9 @@ void retro_set_environment(retro_environment_t cb)
    };
 
    cb(RETRO_ENVIRONMENT_SET_VARIABLES, variables);
+
+   bool noGame = true;
+   environ_cb(RETRO_ENVIRONMENT_SET_SUPPORT_NO_GAME, &noGame);
 }
 
 static void update_variables(void)
@@ -1031,8 +1034,6 @@ void retro_init(void)
       { 4, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_L3, "L3" }
    };
    environ_cb(RETRO_ENVIRONMENT_SET_INPUT_DESCRIPTORS, &inputDescriptors);
-   bool noGame = true;
-   environ_cb(RETRO_ENVIRONMENT_SET_SUPPORT_NO_GAME, &noGame);
    environ_cb(RETRO_ENVIRONMENT_SET_DISK_CONTROL_INTERFACE, &diskControl);
    microSecCounter = 0;
 }
