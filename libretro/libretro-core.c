@@ -472,6 +472,9 @@ void retro_set_environment(retro_environment_t cb)
    };
 
    cb(RETRO_ENVIRONMENT_SET_VARIABLES, variables);
+
+   bool noGame = true;
+   environ_cb(RETRO_ENVIRONMENT_SET_SUPPORT_NO_GAME, &noGame);
 }
 
 static void update_variables(void)
@@ -994,8 +997,6 @@ void retro_init(void)
 #undef RETRO_DESCRIPTOR_BLOCK
 
    environ_cb(RETRO_ENVIRONMENT_SET_INPUT_DESCRIPTORS, &inputDescriptors);
-   bool noGame = true;
-   environ_cb(RETRO_ENVIRONMENT_SET_SUPPORT_NO_GAME, &noGame);
    environ_cb(RETRO_ENVIRONMENT_SET_DISK_CONTROL_INTERFACE, &diskControl);
    microSecCounter = 0;
 }
