@@ -94,6 +94,11 @@
 	    for(tmpval=0;tmpval< NUMB(c64modint);tmpval++)
 		if(c64modint[tmpval]==current_model)break;
 	    list_model = tmpval;
+#elif defined(__PET__)
+	    current_model = petmodel_get();
+	    for(tmpval=0;tmpval< NUMB(c64modint);tmpval++)
+		if(c64modint[tmpval]==current_model)break;
+	    list_model = tmpval;
 #else
 	    current_model = c64model_get();
 	    for(tmpval=0;tmpval< NUMB(c64modint);tmpval++)
@@ -187,6 +192,13 @@
 	    selected_model=c64modint[tmpval];
             if (selected_model != current_model)
 	        c128model_set(selected_model);
+#elif defined(__PET__)
+	    nk_layout_row_static(ctx, DEFHSZ, 100, 2);
+            nk_label(ctx, "PET model:", NK_TEXT_LEFT);
+	    tmpval = nk_combo(ctx, c64mod, LEN(c64mod), list_model, DEFHSZ, nk_vec2(200,200));
+	    selected_model=c64modint[tmpval];
+            if (selected_model != current_model)
+	        petmodel_set(selected_model);
 #else
 	    nk_layout_row_static(ctx, DEFHSZ, 100, 2);
             nk_label(ctx, "C64 model:", NK_TEXT_LEFT);

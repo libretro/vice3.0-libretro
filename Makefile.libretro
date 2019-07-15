@@ -20,7 +20,7 @@ endif
 endif
 
 ifeq ($(EMUTYPE),)
-	EMUTYPE = x64
+	EMUTYPE = xpet
 endif
 
 CORE_DIR    := .

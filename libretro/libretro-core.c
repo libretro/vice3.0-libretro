@@ -87,7 +87,6 @@ extern int g_mem_ram_size ;
 //VICE DEF BEGIN
 #include "resources.h"
 #include "sid.h"
-#include "c64model.h"
 #include "userport_joystick.h"
 #if  defined(__VIC20__)
 #include "vic20model.h"
@@ -95,6 +94,10 @@ extern int g_mem_ram_size ;
 #include "plus4model.h"
 #elif defined(__X128__)
 #include "c128model.h"
+#elif defined(__PET__)
+#include "petmodel.h"
+#else
+#include "c64model.h"
 #endif
 //VICE DEF END
 
@@ -417,6 +420,11 @@ void retro_set_environment(retro_environment_t cb)
          "vice_C128Model",
          "C128Model; C128MODEL_C128_PAL|C128MODEL_C128DCR_PAL|C128MODEL_C128_NTSC|C128MODEL_C128DCR_NTSC|C128MODEL_UNKNOWN",
       },
+#elif  defined(__PET__)
+      {
+         "vice_PETModel",
+         "PETModel; PETMODEL_2001|PETMODEL_3008|PETMODEL_3016|PETMODEL_3032|PETMODEL_3032B|PETMODEL_4016|PETMODEL_4032|PETMODEL_4032B|PETMODEL_8032|PETMODEL_8096|PETMODEL_8296|PETMODEL_SUPERPET|PETMODEL_UNKNOWN",
+      },
 #else
       {
          "vice_C64Model",
@@ -624,6 +632,31 @@ static void update_variables(void)
       else if (strcmp(var.value, "C128MODEL_UNKNOWN") == 0)modl=C128MODEL_UNKNOWN;
       if(retro_ui_finalized)
         c128model_set(modl);
+      else RETROC64MODL=modl;
+   }
+#elif  defined(__PET__)
+   var.key = "vice_PETModel";
+   var.value = NULL;
+
+   if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+   {
+      int modl=0;
+
+      if (strcmp(var.value, "PETMODEL_2001") == 0)modl=PETMODEL_2001;
+      else if (strcmp(var.value, "PETMODEL_3008") == 0)modl=PETMODEL_3008;
+      else if (strcmp(var.value, "PETMODEL_3016") == 0)modl=PETMODEL_3016;
+      else if (strcmp(var.value, "PETMODEL_3032") == 0)modl=PETMODEL_3032;
+      else if (strcmp(var.value, "PETMODEL_3032B") == 0)modl=PETMODEL_3032B;
+      else if (strcmp(var.value, "PETMODEL_4016") == 0)modl=PETMODEL_4016;
+      else if (strcmp(var.value, "PETMODEL_4032") == 0)modl=PETMODEL_4032;
+      else if (strcmp(var.value, "PETMODEL_4032B") == 0)modl=PETMODEL_4032B;
+      else if (strcmp(var.value, "PETMODEL_8032") == 0)modl=PETMODEL_8032;
+      else if (strcmp(var.value, "PETMODEL_8096") == 0)modl=PETMODEL_8096;
+      else if (strcmp(var.value, "PETMODEL_8296") == 0)modl=PETMODEL_8296;
+      else if (strcmp(var.value, "PETMODEL_SUPERPET") == 0)modl=PETMODEL_SUPERPET;
+      else if (strcmp(var.value, "C128MODEL_UNKNOWN") == 0)modl=PETMODEL_UNKNOWN;
+      if(retro_ui_finalized)
+        petmodel_set(modl);
       else RETROC64MODL=modl;
    }
 #else
