@@ -44,10 +44,10 @@
 #include <string.h>
 #include <stdarg.h>
 
-int RETROJOY=0,RETROTDE=0,RETROSTATUS=0,RETRODRVTYPE=1542,RETROSIDMODL=0,RETROC64MODL=0,RETROUSERPORTJOY=-1,RETROEXTPAL=-1;
+int RETROJOY=0,RETROTDE=0,RETRODSE=0,RETRODSEVOL=800,RETROSTATUS=0,RETRORESET=0,RETRODRVTYPE=1542,RETROSIDMODL=0,RETROC64MODL=0,RETROUSERPORTJOY=-1,RETROEXTPAL=-1;
 char RETROEXTPALNAME[512]="pepto-pal";
 int retro_ui_finalized = 0;
-extern int vice_statusbar;
+//extern int vice_statusbar;
 
 static const cmdline_option_t cmdline_options[] = {
      { NULL }
@@ -123,18 +123,22 @@ int ui_init_finalize(void)
 {
    //FIXME
 
-   resources_set_int( "Mouse", 0);
-   resources_set_int( "Mousetype", 0);
-   resources_set_int( "Mouseport", 1);
+   resources_set_int("Mouse", 0);
+   resources_set_int("Mousetype", 0);
+   resources_set_int("Mouseport", 1);
 
-   resources_set_int( "CrtcFilter",0);
-   resources_set_int( "CrtcStretchVertical",0);
+   resources_set_int("CrtcFilter", 0);
+   resources_set_int("CrtcStretchVertical", 0);
 
    //RETRO CORE OPT
-   resources_set_int( "SDLStatusbar", 1);
-   if(RETROSTATUS==1)vice_statusbar=1;
-   else if(RETROSTATUS==0)vice_statusbar=0;
-
+   if(RETROSTATUS==1) {
+      //vice_statusbar=1;
+      resources_set_int("SDLStatusbar", 1);
+   } else if(RETROSTATUS==0) {
+      //vice_statusbar=0;
+      resources_set_int("SDLStatusbar", 0);
+   }
+   
    if(RETROEXTPAL==-1)resources_set_int("VICIIExternalPalette", 0);
    else {
       resources_set_int("VICIIExternalPalette", 1);
@@ -147,8 +151,8 @@ int ui_init_finalize(void)
       resources_set_int("UserportJoyType", RETROUSERPORTJOY);
    }
 
-   if(RETROJOY==1)resources_set_int( "RetroJoy", 1);
-   else if(RETROJOY==0)resources_set_int( "RetroJoy", 0);
+   if(RETROJOY==1)resources_set_int("RetroJoy", 1);
+   else if(RETROJOY==0)resources_set_int("RetroJoy", 0);
 
    if(RETROTDE==1){
 	resources_set_int("DriveTrueEmulation", 1);
@@ -159,7 +163,10 @@ int ui_init_finalize(void)
 	resources_set_int("VirtualDevices", 1);
    }
 
-   resources_set_int_sprintf("Drive%iType",RETRODRVTYPE , 8);
+   resources_set_int("DriveSoundEmulation", RETRODSE);
+   resources_set_int("DriveSoundEmulationVolume", RETRODSEVOL);
+
+   resources_set_int_sprintf("Drive%iType", RETRODRVTYPE, 8);
 
    sid_set_engine_model((RETROSIDMODL >> 8),  (RETROSIDMODL & 0xff));
 

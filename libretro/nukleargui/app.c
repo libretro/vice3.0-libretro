@@ -88,7 +88,7 @@ int app_init()
 
     /* style.c */
     /* THEME_BLACK, THEME_WHITE, THEME_RED, THEME_BLUE, THEME_DARK */
-    set_style(ctx, THEME_DARK);
+    set_style(ctx, THEME_C64);
 
     /* icons */
 

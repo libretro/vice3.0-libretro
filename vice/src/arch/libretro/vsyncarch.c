@@ -93,7 +93,7 @@ void vsyncarch_presync(void)
 	int v;
 	resources_get_int("RetroJoy",&v);
 
-        kbdbuf_flush();
+    kbdbuf_flush();
 	
 	retro_poll_event(v);
 
@@ -105,9 +105,9 @@ void vsyncarch_presync(void)
                         retroXS,retroYS,
                         0,0,//xi, yi,
                         retrow*PITCH,8*PITCH);
-
-    if (uistatusbar_state & UISTATUSBAR_ACTIVE && vice_statusbar==1) {
-		
+                        
+    //if (uistatusbar_state & UISTATUSBAR_ACTIVE && vice_statusbar==1) {
+    if (uistatusbar_state & UISTATUSBAR_ACTIVE) {
         uistatusbar_draw();
     }
 

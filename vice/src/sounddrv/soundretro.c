@@ -15,7 +15,7 @@ static int retro_sound_init(const char *param, int *speed,
             int *fragsize, int *fragnr, int *channels)
 {
   *speed = 44100;
-  *fragsize = (*speed)/50;
+  *fragsize = (*speed)/50/10;
   *channels = 1;
 
   //int buffer_size = (*fragnr) * (*channels) * (*fragsize) + 1;

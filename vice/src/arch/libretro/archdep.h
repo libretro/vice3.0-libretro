@@ -84,7 +84,9 @@
 #define archdep_signals_init(x)
 #define archdep_signals_pipe_set()
 #define archdep_signals_pipe_unset()
-#define ARCHDEP_SOUND_FRAGMENT_SIZE SOUND_FRAGMENT_MEDIUM
+
+/* Default sound fragment size */
+#define ARCHDEP_SOUND_FRAGMENT_SIZE SOUND_FRAGMENT_VERY_SMALL
 
 #else
 /* Filesystem dependant operators.  */
@@ -135,7 +137,7 @@
 #define ARCHDEP_ETHERNET_DEFAULT_DEVICE "eth0"
 
 /* Default sound fragment size */
-#define ARCHDEP_SOUND_FRAGMENT_SIZE 1
+#define ARCHDEP_SOUND_FRAGMENT_SIZE 0
 #endif
 /* Video chip scaling.  */
 #define ARCHDEP_VICII_DSIZE   1

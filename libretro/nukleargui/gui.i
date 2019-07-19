@@ -58,7 +58,7 @@ static const char *drivename[] =  {"1540","1541","1542","1551","1570","1571","15
 
 #define GET_DRIVE(code) ((code)&0x0F)
 #define NUMB(a) (sizeof(a) / sizeof(*a))
-#define GUIRECT nk_rect(5,25, 364+10, 222) //nk_rect(10,30, 364, 212)
+#define GUIRECT nk_rect(32, 35, 319, 199) 
 
 typedef enum
 {
@@ -71,10 +71,10 @@ typedef enum
 
 int GUISTATE=GUI_NONE;
 
-extern int pauseg;
+//extern int pauseg;
 extern int NPAGE,SHIFTON;
 extern int vkey_pressed;
-extern int vice_statusbar;
+//extern int vice_statusbar;
 extern unsigned int cur_port;
 extern int retrojoy_init;
 
@@ -96,30 +96,32 @@ gui(struct file_browser *browser,struct nk_context *ctx)
     struct nk_rect total_space;
 
     /* window flags */
-    static int border = nk_true;
-    static int resize = nk_true;
-    static int movable = nk_true;
+    static int border = nk_false;
+    static int resize = nk_false;
+    static int movable = nk_false;
     static int no_scrollbar = nk_false;
-    static nk_flags window_flags = 0;
-    static int minimizable = nk_true;
-    static int title = nk_true;
+    static int minimizable = nk_false;
+    static int title = nk_false;
 
     /* window flags */
+    static nk_flags window_flags = 0;
     window_flags = 0;
 
     if (border) window_flags |= NK_WINDOW_BORDER;
     if (resize) window_flags |= NK_WINDOW_SCALABLE;
     if (movable) window_flags |= NK_WINDOW_MOVABLE;
-    if (no_scrollbar || (pauseg==1 && LOADCONTENT==1) ) window_flags |= NK_WINDOW_NO_SCROLLBAR;
+    //if (no_scrollbar || (pauseg==1 && LOADCONTENT==1) || GUISTATE==GUI_VKBD) window_flags |= NK_WINDOW_NO_SCROLLBAR;
+    if (no_scrollbar || GUISTATE==GUI_VKBD) window_flags |= NK_WINDOW_NO_SCROLLBAR;
     if (minimizable) window_flags |= NK_WINDOW_MINIMIZABLE;
     if (title) window_flags |= NK_WINDOW_TITLE;
 
     int tmpval;
 
-    if(pauseg==1 && SHOWKEY==1)SHOWKEY=-1;
-    if(pauseg==0 && SHOWKEY==1)GUISTATE=GUI_VKBD;
-    if(pauseg==1 && SHOWKEY==-1 && LOADCONTENT==1)GUISTATE=GUI_BROWSE;
-    if(pauseg==1 && SHOWKEY==-1 && LOADCONTENT!=1)GUISTATE=GUI_MAIN;
+    if(SHOWKEY==1)GUISTATE=GUI_VKBD;
+    //if(pauseg==1 && SHOWKEY==1)SHOWKEY=-1;
+    //if(pauseg==0 && SHOWKEY==1)GUISTATE=GUI_VKBD;
+    //if(pauseg==1 && SHOWKEY==-1 && LOADCONTENT==1)GUISTATE=GUI_BROWSE;
+    //if(pauseg==1 && SHOWKEY==-1 && LOADCONTENT!=1)GUISTATE=GUI_MAIN;
 
     switch(GUISTATE){
 
@@ -131,9 +133,10 @@ gui(struct file_browser *browser,struct nk_context *ctx)
 		}
 		break;
 	
+	/*
 	case GUI_BROWSE:
 
-		if (nk_begin(ctx,"File Select", GUIRECT,NK_WINDOW_TITLE| NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR|NK_WINDOW_MOVABLE)){
+		if (nk_begin(ctx,"File Select", GUIRECT,NK_WINDOW_TITLE|NK_WINDOW_BORDER|NK_WINDOW_NO_SCROLLBAR|NK_WINDOW_MOVABLE)){
 		#include "filebrowser.i"
 		nk_end(ctx);
 		}	
@@ -146,17 +149,20 @@ gui(struct file_browser *browser,struct nk_context *ctx)
 		nk_end(ctx);
 		}
 		break;
+    */
 
 	default:				
 		break;
 
     }
 
-    if(pauseg==1 && SHOWKEY==1)SHOWKEY=-1;
-    if(pauseg==0 && SHOWKEY==1)GUISTATE=GUI_VKBD;
-    if(pauseg==1 && SHOWKEY==-1 && LOADCONTENT==1)GUISTATE=GUI_BROWSE;
-    if(pauseg==1 && SHOWKEY==-1 && LOADCONTENT!=1)GUISTATE=GUI_MAIN;
+    //if(SHOWKEY==1)GUISTATE=GUI_VKBD;
+    
+    //if(pauseg==1 && SHOWKEY==1)SHOWKEY=-1;
+    //if(pauseg==0 && SHOWKEY==1)GUISTATE=GUI_VKBD;    
+    //if(pauseg==1 && SHOWKEY==-1 && LOADCONTENT==1)GUISTATE=GUI_BROWSE;
+    //if(pauseg==1 && SHOWKEY==-1 && LOADCONTENT!=1)GUISTATE=GUI_MAIN;
 
-return GUISTATE;
+    return GUISTATE;
 }
 
