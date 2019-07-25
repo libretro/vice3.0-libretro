@@ -540,40 +540,40 @@ void retro_poll_event(int joyon)
 			BYTE j = joystick_value[vice_port];
 			
 			if (input_state_cb(retro_port, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_UP) || 
-			    (vice_port == 1 && input_state_cb(retro_port, RETRO_DEVICE_KEYBOARD, 0, RETROK_KP9)) ||
-			    (vice_port == 2 && input_state_cb(retro_port, RETRO_DEVICE_KEYBOARD, 0, RETROK_KP8)) 			
+			    (vice_port != cur_port && input_state_cb(retro_port, RETRO_DEVICE_KEYBOARD, 0, RETROK_KP9)) ||
+			    (vice_port == cur_port && input_state_cb(retro_port, RETRO_DEVICE_KEYBOARD, 0, RETROK_KP8)) 			
 			){
 				j |= 0x01;
 			} else {
 				j &= ~0x01;
 			}
 			if (input_state_cb(retro_port, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_DOWN) || 
-			    (vice_port == 1 && input_state_cb(retro_port, RETRO_DEVICE_KEYBOARD, 0, RETROK_KP3)) ||
-			    (vice_port == 2 && input_state_cb(retro_port, RETRO_DEVICE_KEYBOARD, 0, RETROK_KP2)) 			
+			    (vice_port != cur_port && input_state_cb(retro_port, RETRO_DEVICE_KEYBOARD, 0, RETROK_KP3)) ||
+			    (vice_port == cur_port && input_state_cb(retro_port, RETRO_DEVICE_KEYBOARD, 0, RETROK_KP2)) 			
 			){
 				j |= 0x02;
 			} else {
 				j &= ~0x02;
 			}
 			if (input_state_cb(retro_port, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_LEFT) || 
-			    (vice_port == 1 && input_state_cb(retro_port, RETRO_DEVICE_KEYBOARD, 0, RETROK_KP7)) ||
-			    (vice_port == 2 && input_state_cb(retro_port, RETRO_DEVICE_KEYBOARD, 0, RETROK_KP4)) 
+			    (vice_port != cur_port && input_state_cb(retro_port, RETRO_DEVICE_KEYBOARD, 0, RETROK_KP7)) ||
+			    (vice_port == cur_port && input_state_cb(retro_port, RETRO_DEVICE_KEYBOARD, 0, RETROK_KP4)) 
 			){
 				j |= 0x04;
 			} else {
 				j &=~ 0x04;
 			}
 			if (input_state_cb(retro_port, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_RIGHT) || 
-			    (vice_port == 1 && input_state_cb(retro_port, RETRO_DEVICE_KEYBOARD, 0, RETROK_KP1)) ||
-			    (vice_port == 2 && input_state_cb(retro_port, RETRO_DEVICE_KEYBOARD, 0, RETROK_KP6)) 			    
+			    (vice_port != cur_port && input_state_cb(retro_port, RETRO_DEVICE_KEYBOARD, 0, RETROK_KP1)) ||
+			    (vice_port == cur_port && input_state_cb(retro_port, RETRO_DEVICE_KEYBOARD, 0, RETROK_KP6)) 			    
             ){
 				j |= 0x08;
 			} else {
 				j &= ~0x08;
 			}
 			if (input_state_cb(retro_port, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_A) || 
-			    (vice_port == 1 && input_state_cb(retro_port, RETRO_DEVICE_KEYBOARD, 0, RETROK_KP0)) ||
-			    (vice_port == 2 && input_state_cb(retro_port, RETRO_DEVICE_KEYBOARD, 0, RETROK_KP5)) 
+			    (vice_port != cur_port && input_state_cb(retro_port, RETRO_DEVICE_KEYBOARD, 0, RETROK_KP0)) ||
+			    (vice_port == cur_port && input_state_cb(retro_port, RETRO_DEVICE_KEYBOARD, 0, RETROK_KP5)) 
 			){
 				j |= 0x10;
 			} else {
