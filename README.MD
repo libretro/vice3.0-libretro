@@ -1,9 +1,12 @@
 # This fork
 Done:
 - Virtual keyboard revamped
+- Other GUI removed
 - Autostart PRG mode to inject
-- System-subdir renamed to vice
-- Keyrah joystick maps
+- System-subdir renamed to vice and created automatically
+- Keyrah joystick maps 
+- Retrojoy disabled while using virtual keyboard
+- Cursor keys disabled while using Retrojoy
 - New settings:
   - Drive Sound Emulation + Volume
   - Reset type (autostart, soft, hard)
