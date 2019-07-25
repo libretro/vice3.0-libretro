@@ -106,7 +106,6 @@ void vsyncarch_presync(void)
                         0,0,//xi, yi,
                         retrow*PITCH,8*PITCH);
                         
-    //if (uistatusbar_state & UISTATUSBAR_ACTIVE && vice_statusbar==1) {
     if (uistatusbar_state & UISTATUSBAR_ACTIVE) {
         uistatusbar_draw();
     }

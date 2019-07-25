@@ -2,7 +2,6 @@
 #include "joystick.h"
 #include "keyboard.h"
 #include "machine.h"
-//#include "fliplist.h"
 #include "mouse.h"
 #include "resources.h"
 #include "autostart.h"
@@ -17,12 +16,6 @@ extern retro_input_state_t input_state_cb;
 extern void save_bkg();
 extern void Screen_SetFullUpdate(int scr);
 
-//#include "retro_strings.h"
-//#include "retro_files.h"
-//#include "retro_disk_control.h"
-//static dc_storage* dc;
-//retro_log_printf_t log_cb;
-
 //EMU FLAGS
 int SHOWKEY=-1;
 int SHIFTON=-1;
@@ -36,17 +29,15 @@ int vkey_pressed;
 unsigned char MXjoy[2]; // joy
 char Core_Key_Sate[512];
 char Core_old_Key_Sate[512];
-//int MOUSE_EMULATED=1;
 int PAS=4;
 int slowdown=0;
 int pushi=0; //mouse button
 int c64mouse_enable=0;
-unsigned int cur_port = 2;
+unsigned int cur_port=2;
 bool num_locked = false;
 
 extern bool retro_load_ok;
 extern int mapper_keys[28];
-//int vice_statusbar=0;
 unsigned int statusbar;
 
 #define EMU_VKBD 1
@@ -54,14 +45,7 @@ unsigned int statusbar;
 #define EMU_JOYPORT 3
 #define EMU_RESET 4
 
-//extern void emu_init(void);
-//extern void emu_uninit(void);
 extern void emu_reset(void);
-
-//void emu_reset()
-//{
-	//machine_trigger_reset(MACHINE_RESET_MODE_SOFT);
-//}
 
 void emu_function(int function) {
     switch (function){
@@ -94,38 +78,17 @@ void Keymap_KeyUp(int symkey)
 	else 
 		kbd_handle_keyup(symkey);
 		
-    printf("KEY U: %d\n", symkey);
+    //printf("KEY U: %d\n", symkey);
 }
 
 void Keymap_KeyDown(int symkey)
 {
-    /*
-    //FIXME detect retroarch hotkey
-    switch (symkey)
-    {
-        case RETROK_NUMLOCK:
-            num_locked = true;
-            break;
-        
-        //case RETROK_KP_PLUS:	// '+' on keypad: Flip List NEXT
-            //fliplist_attach_head(8, 1);
-            //break;
-        //case RETROK_KP_MINUS:	// '-' on keypad: Flip List PREV
-            //fliplist_attach_head(8, 0);
-            //break;
-
-        default:
-            kbd_handle_keydown(symkey);
-            break;
-    }
-    */
-    
     if (symkey == RETROK_NUMLOCK)
         num_locked = true;
     else
         kbd_handle_keydown(symkey);
 
-    printf("KEY D: %d\n", symkey);
+    //printf("KEY D: %d\n", symkey);
 }
 
 void app_vkb_handle(void)
@@ -268,239 +231,173 @@ int Core_PollEvent(void)
     int LX, LY, RX, RY;
     int threshold=20000;
 
-    //if(SHOWKEY==-1 && pauseg==0)Core_Processkey();
     if(SHOWKEY==-1) Core_Processkey();
 
-    //if(pauseg==0){ // if emulation running
 
-        // Virtual Keyboard
-        i=0;
-        if (input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, mapper_keys[24]) && kbt[i]==0){ 
-            kbt[i]=1;
-            emu_function(EMU_VKBD);
-        }   
-        else if ( kbt[i]==1 && ! input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, mapper_keys[24]) ){
-            kbt[i]=0;
-        }
+    // Virtual Keyboard
+    i=0;
+    if (input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, mapper_keys[24]) && kbt[i]==0){ 
+        kbt[i]=1;
+        emu_function(EMU_VKBD);
+    }   
+    else if ( kbt[i]==1 && ! input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, mapper_keys[24]) ){
+        kbt[i]=0;
+    }
 
-        // Statusbar
-        i=1;
-        if (input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, mapper_keys[25]) && kbt[i]==0){ 
-            kbt[i]=1;
-            emu_function(EMU_STATUSBAR);
-        }
-        else if ( kbt[i]==1 && ! input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, mapper_keys[25]) ){
-            kbt[i]=0;
-        }
+    // Statusbar
+    i=1;
+    if (input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, mapper_keys[25]) && kbt[i]==0){ 
+        kbt[i]=1;
+        emu_function(EMU_STATUSBAR);
+    }
+    else if ( kbt[i]==1 && ! input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, mapper_keys[25]) ){
+        kbt[i]=0;
+    }
 
-        // Switch Joyport
-        i=2;
-        if (input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, mapper_keys[26]) && kbt[i]==0){ 
-            kbt[i]=1;
-            emu_function(EMU_JOYPORT);
-        }   
-        else if ( kbt[i]==1 && ! input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, mapper_keys[26]) ){
-            kbt[i]=0;
-        }
+    // Switch Joyport
+    i=2;
+    if (input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, mapper_keys[26]) && kbt[i]==0){ 
+        kbt[i]=1;
+        emu_function(EMU_JOYPORT);
+    }   
+    else if ( kbt[i]==1 && ! input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, mapper_keys[26]) ){
+        kbt[i]=0;
+    }
 
-        // Reset
-        i=3;
-        if (input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, mapper_keys[27]) && kbt[i]==0){ 
-            kbt[i]=1;
-            emu_function(EMU_RESET);
-        }   
-        else if ( kbt[i]==1 && ! input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, mapper_keys[27]) ){
-            kbt[i]=0;
-        }
-
+    // Reset
+    i=3;
+    if (input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, mapper_keys[27]) && kbt[i]==0){ 
+        kbt[i]=1;
+        emu_function(EMU_RESET);
+    }   
+    else if ( kbt[i]==1 && ! input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0, mapper_keys[27]) ){
+        kbt[i]=0;
+    }
 
 
 
-        if(vice_devices[0]==RETRO_DEVICE_VICE_JOYSTICK){
-        //shortcut for joy mode only
 
-            for(i=0;i<16;i++){
-            //if( (i<4 || i>8) && i!=2){
-                if(i<4 || i>8){ 
+    if(vice_devices[0]==RETRO_DEVICE_VICE_JOYSTICK){
+    //shortcut for joy mode only
 
-                    if ( input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, i) && jbt[i]==0 )
-                    {
-                        jbt[i]=1;
-                        if(mapper_keys[i]==mapper_keys[24]) { // Virtual Keyborad
-                            emu_function(EMU_VKBD);
-                        } else if(mapper_keys[i]==mapper_keys[25]) { // Statusbar
-                            emu_function(EMU_STATUSBAR);
-                        } else if(mapper_keys[i]==mapper_keys[26]) { // Switch Joyport
-                            emu_function(EMU_JOYPORT);
-                        } else if(mapper_keys[i]==mapper_keys[27]) { // Reset
-                            emu_function(EMU_RESET);
-                        } else {
-                            Keymap_KeyDown(mapper_keys[i]);
-                        }
+        for(i=0;i<16;i++){
+            if(i<4 || i>8){ 
 
-                        //printf("kdown: %d %d\n",mapper_keys[i],i);
+                if ( input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, i) && jbt[i]==0 )
+                {
+                    jbt[i]=1;
+                    if(mapper_keys[i]==mapper_keys[24]) { // Virtual Keyborad
+                        emu_function(EMU_VKBD);
+                    } else if(mapper_keys[i]==mapper_keys[25]) { // Statusbar
+                        emu_function(EMU_STATUSBAR);
+                    } else if(mapper_keys[i]==mapper_keys[26]) { // Switch Joyport
+                        emu_function(EMU_JOYPORT);
+                    } else if(mapper_keys[i]==mapper_keys[27]) { // Reset
+                        emu_function(EMU_RESET);
+                    } else {
+                        Keymap_KeyDown(mapper_keys[i]);
                     }
-                    else if ( jbt[i]==1 && ! input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, i) )
-                    {
-                        jbt[i]=0;
-                        if(mapper_keys[i]==mapper_keys[24]) {
-                        } else if(mapper_keys[i]==mapper_keys[25]) {
-                        } else if(mapper_keys[i]==mapper_keys[26]) {
-                        } else if(mapper_keys[i]==mapper_keys[27]) {
-                        } else {
-                            Keymap_KeyUp(mapper_keys[i]);
-                        }
 
-                        //printf("kup: %d %d\n",mapper_keys[i],i);
+                    //printf("kdown: %d %d\n",mapper_keys[i],i);
+                }
+                else if ( jbt[i]==1 && ! input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, i) )
+                {
+                    jbt[i]=0;
+                    if(mapper_keys[i]==mapper_keys[24]) {
+                    } else if(mapper_keys[i]==mapper_keys[25]) {
+                    } else if(mapper_keys[i]==mapper_keys[26]) {
+                    } else if(mapper_keys[i]==mapper_keys[27]) {
+                    } else {
+                        Keymap_KeyUp(mapper_keys[i]);
                     }
+
+                    //printf("kup: %d %d\n",mapper_keys[i],i);
                 }
             }
+        }
 
-            LX = input_state_cb(0, RETRO_DEVICE_ANALOG, 0, 0);
-            LY = input_state_cb(0, RETRO_DEVICE_ANALOG, 0, 1);
-            RX = input_state_cb(0, RETRO_DEVICE_ANALOG, 1, 0);
-            RY = input_state_cb(0, RETRO_DEVICE_ANALOG, 1, 1);
-            
-            i=19; // LU
-            if(LY < -threshold && jbt[i]==0) {
-                jbt[i]=1;
-                Keymap_KeyDown(mapper_keys[i]);
-            } else if(LY > -threshold && jbt[i]==1) {
-                jbt[i]=0;
-                Keymap_KeyUp(mapper_keys[i]);
-            }
+        LX = input_state_cb(0, RETRO_DEVICE_ANALOG, 0, 0);
+        LY = input_state_cb(0, RETRO_DEVICE_ANALOG, 0, 1);
+        RX = input_state_cb(0, RETRO_DEVICE_ANALOG, 1, 0);
+        RY = input_state_cb(0, RETRO_DEVICE_ANALOG, 1, 1);
         
-            i=18; // LD
-            if(LY > threshold && jbt[i]==0) {
-                jbt[i]=1;
-                Keymap_KeyDown(mapper_keys[i]);
-            } else if(LY < threshold && jbt[i]==1) {
-                jbt[i]=0;
-                Keymap_KeyUp(mapper_keys[i]);
-            }
-
-            i=17; // LL
-            if(LX < -threshold && jbt[i]==0) {
-                jbt[i]=1;
-                Keymap_KeyDown(mapper_keys[i]);
-            } else if(LX > -threshold && jbt[i]==1) {
-                jbt[i]=0;
-                Keymap_KeyUp(mapper_keys[i]);
-            }
-
-            i=16; // LR
-            if(LX > threshold && jbt[i]==0) {
-                jbt[i]=1;
-                Keymap_KeyDown(mapper_keys[i]);
-            } else if(LX < threshold && jbt[i]==1) {
-                jbt[i]=0;
-                Keymap_KeyUp(mapper_keys[i]);
-            }
-
-            i=23; // RU
-            if(RY < -threshold && jbt[i]==0) {
-                jbt[i]=1;
-                Keymap_KeyDown(mapper_keys[i]);
-            } else if(RY > -threshold && jbt[i]==1) {
-                jbt[i]=0;
-                Keymap_KeyUp(mapper_keys[i]);
-            }
-        
-            i=22; // RD
-            if(RY > threshold && jbt[i]==0) {
-                jbt[i]=1;
-                Keymap_KeyDown(mapper_keys[i]);
-            } else if(RY < threshold && jbt[i]==1) {
-                jbt[i]=0;
-                Keymap_KeyUp(mapper_keys[i]);
-            }
-
-            i=21; // RL
-            if(RX < -threshold && jbt[i]==0) {
-                jbt[i]=1;
-                Keymap_KeyDown(mapper_keys[i]);
-            } else if(RX > -threshold && jbt[i]==1) {
-                jbt[i]=0;
-                Keymap_KeyUp(mapper_keys[i]);
-            }
-
-            i=20; // RR
-            if(RX > threshold && jbt[i]==0) {
-                jbt[i]=1;
-                Keymap_KeyDown(mapper_keys[i]);
-            } else if(RX < threshold && jbt[i]==1) {
-                jbt[i]=0;
-                Keymap_KeyUp(mapper_keys[i]);
-            }
-        
-            //printf("analogs: lx:%d ly:%d,\t rx:%d ry:%d\n", LX, LY, RX, RY);
-
-        }//if vice_devices=joy
-
-    //}//if pauseg=0
+        i=19; // LU
+        if(LY < -threshold && jbt[i]==0) {
+            jbt[i]=1;
+            Keymap_KeyDown(mapper_keys[i]);
+        } else if(LY > -threshold && jbt[i]==1) {
+            jbt[i]=0;
+            Keymap_KeyUp(mapper_keys[i]);
+        }
     
+        i=18; // LD
+        if(LY > threshold && jbt[i]==0) {
+            jbt[i]=1;
+            Keymap_KeyDown(mapper_keys[i]);
+        } else if(LY < threshold && jbt[i]==1) {
+            jbt[i]=0;
+            Keymap_KeyUp(mapper_keys[i]);
+        }
+
+        i=17; // LL
+        if(LX < -threshold && jbt[i]==0) {
+            jbt[i]=1;
+            Keymap_KeyDown(mapper_keys[i]);
+        } else if(LX > -threshold && jbt[i]==1) {
+            jbt[i]=0;
+            Keymap_KeyUp(mapper_keys[i]);
+        }
+
+        i=16; // LR
+        if(LX > threshold && jbt[i]==0) {
+            jbt[i]=1;
+            Keymap_KeyDown(mapper_keys[i]);
+        } else if(LX < threshold && jbt[i]==1) {
+            jbt[i]=0;
+            Keymap_KeyUp(mapper_keys[i]);
+        }
+
+        i=23; // RU
+        if(RY < -threshold && jbt[i]==0) {
+            jbt[i]=1;
+            Keymap_KeyDown(mapper_keys[i]);
+        } else if(RY > -threshold && jbt[i]==1) {
+            jbt[i]=0;
+            Keymap_KeyUp(mapper_keys[i]);
+        }
+    
+        i=22; // RD
+        if(RY > threshold && jbt[i]==0) {
+            jbt[i]=1;
+            Keymap_KeyDown(mapper_keys[i]);
+        } else if(RY < threshold && jbt[i]==1) {
+            jbt[i]=0;
+            Keymap_KeyUp(mapper_keys[i]);
+        }
+
+        i=21; // RL
+        if(RX < -threshold && jbt[i]==0) {
+            jbt[i]=1;
+            Keymap_KeyDown(mapper_keys[i]);
+        } else if(RX > -threshold && jbt[i]==1) {
+            jbt[i]=0;
+            Keymap_KeyUp(mapper_keys[i]);
+        }
+
+        i=20; // RR
+        if(RX > threshold && jbt[i]==0) {
+            jbt[i]=1;
+            Keymap_KeyDown(mapper_keys[i]);
+        } else if(RX < threshold && jbt[i]==1) {
+            jbt[i]=0;
+            Keymap_KeyUp(mapper_keys[i]);
+        }
+    
+        //printf("analogs: lx:%d ly:%d,\t rx:%d ry:%d\n", LX, LY, RX, RY);
+
+    }//if vice_devices=joy
+
     return 1;
-
-   /*
-   i=2;//mouse/joy toggle
-   if ( input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, i) && jbt[i]==0 )
-      jbt[i]=1;
-   else if ( jbt[i]==1 && ! input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, i) )
-   {
-      jbt[i]=0;
-      MOUSE_EMULATED=-MOUSE_EMULATED;	  
-   }
-   */
-
-   if(slowdown>0)return 0;
-
-   //if(MOUSE_EMULATED==1){
-
-      if (input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_RIGHT))mouse_x += PAS;
-      if (input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_LEFT))mouse_x -= PAS;
-      if (input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_DOWN))mouse_y += PAS;
-      if (input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_UP))mouse_y -= PAS;
-      mouse_l = input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_A);
-      mouse_r = input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_B);
-   //}
-   //else {
-
-      mouse_x = input_state_cb(0, RETRO_DEVICE_MOUSE, 0, RETRO_DEVICE_ID_MOUSE_X);
-      mouse_y = input_state_cb(0, RETRO_DEVICE_MOUSE, 0, RETRO_DEVICE_ID_MOUSE_Y);
-      mouse_l = input_state_cb(0, RETRO_DEVICE_MOUSE, 0, RETRO_DEVICE_ID_MOUSE_LEFT);
-      mouse_r = input_state_cb(0, RETRO_DEVICE_MOUSE, 0, RETRO_DEVICE_ID_MOUSE_RIGHT);
-   //}
-
-   slowdown=1;
-
-   static int mmbL=0,mmbR=0;
-
-   if(mmbL==0 && mouse_l){
-
-      mmbL=1;		
-      pushi=1;
-   }
-   else if(mmbL==1 && !mouse_l) {
-
-      mmbL=0;
-      pushi=0;
-   }
-
-   if(mmbR==0 && mouse_r){
-      mmbR=1;		
-   }
-   else if(mmbR==1 && !mouse_r) {
-      mmbR=0;
-   }
-
-   if(pauseg==0 && c64mouse_enable){
-
-      mouse_move((int)mouse_x, (int)mouse_y);
-      mouse_button(0,mmbL);
-      mouse_button(1,mmbR);
-  }
-
-  return 1;
 }
 
 void retro_poll_event(int joyon)
@@ -583,6 +480,5 @@ void retro_poll_event(int joyon)
 			joystick_value[vice_port] = j;
 		}
 	}
-
 }
 

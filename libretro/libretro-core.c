@@ -45,8 +45,6 @@ int cpuloop=1;
 	unsigned int save_Screen[WINDOW_SIZE];
 #endif
 
-//int vice_statusbar=0;
-
 //SOUND
 short signed int SNDBUF[1024*2];
 //FIXME: handle 50/60
@@ -55,10 +53,6 @@ int snd_sampler = 44100 / 50;
 //PATH
 char RPATH[512];
 
-//int pauseg=0; //emu status run/pause/end
-//int want_quit=0;
-
-//extern int MOUSE_EMULATED;
 extern int SHOWKEY;
 
 extern int app_init(void);
@@ -558,10 +552,8 @@ static void update_variables(void)
    {
       if(retro_ui_finalized){
          if (strcmp(var.value, "enabled") == 0)
-            //vice_statusbar=1;
             resources_set_int("SDLStatusbar", 1);
          if (strcmp(var.value, "disabled") == 0)
-            //vice_statusbar=0;
             resources_set_int("SDLStatusbar", 0);
       }
       else {
@@ -1254,7 +1246,7 @@ void retro_init(void)
 #else
    sprintf(retro_system_data_directory, "%s/vice",RETRO_DIR);
 #endif
-
+   // let there be directory
    archdep_mkdir(retro_system_data_directory, 0);
 
 
@@ -1262,7 +1254,7 @@ void retro_init(void)
 #ifdef FRONTEND_SUPPORTS_RGB565
    enum retro_pixel_format fmt = RETRO_PIXEL_FORMAT_RGB565;
 #else
-   enum retro_pixel_format fmt =RETRO_PIXEL_FORMAT_XRGB8888;
+   enum retro_pixel_format fmt = RETRO_PIXEL_FORMAT_XRGB8888;
 #endif
 
    if (!environ_cb(RETRO_ENVIRONMENT_SET_PIXEL_FORMAT, &fmt))
@@ -1292,14 +1284,6 @@ void retro_init(void)
    { _user, RETRO_DEVICE_ANALOG, RETRO_DEVICE_INDEX_ANALOG_LEFT, RETRO_DEVICE_ID_ANALOG_Y, "Left Stick Y" },			   \
    { _user, RETRO_DEVICE_ANALOG, RETRO_DEVICE_INDEX_ANALOG_RIGHT, RETRO_DEVICE_ID_ANALOG_X, "Right Stick X" },			   \
    { _user, RETRO_DEVICE_ANALOG, RETRO_DEVICE_INDEX_ANALOG_RIGHT, RETRO_DEVICE_ID_ANALOG_Y, "Right Stick Y" }
-   //{ _user, RETRO_DEVICE_JOYPAD, 0, 16, "LR" },			   \
-   //{ _user, RETRO_DEVICE_JOYPAD, 0, 17, "LL" },			   \
-   //{ _user, RETRO_DEVICE_JOYPAD, 0, 18, "LD" },			   \
-   //{ _user, RETRO_DEVICE_JOYPAD, 0, 19, "LU" },			   \
-   //{ _user, RETRO_DEVICE_JOYPAD, 0, 20, "RR" },			   \
-   //{ _user, RETRO_DEVICE_JOYPAD, 0, 21, "RL" },			   \
-   //{ _user, RETRO_DEVICE_JOYPAD, 0, 22, "RD" },			   \
-   //{ _user, RETRO_DEVICE_JOYPAD, 0, 23, "RU" }
    
    struct retro_input_descriptor inputDescriptors[] =
    {
@@ -1375,7 +1359,7 @@ void update_geometry()
 void retro_get_system_av_info(struct retro_system_av_info *info)
 {
    /* FIXME handle PAL/NTSC */
-   struct retro_game_geometry geom = { 320, 240, retrow, retroh,4.0 / 3.0 };
+   struct retro_game_geometry geom = { 320, 240, retrow, retroh, 4.0 / 3.0 };
    struct retro_system_timing timing = { 50.0, 44100.0 };
 
    info->geometry = geom;
@@ -1404,7 +1388,6 @@ void retro_audio_cb( short l, short r)
 
 void retro_audiocb(signed short int *sound_buffer,int sndbufsize){
    int x;
-   //if(pauseg==0)for(x=0;x<sndbufsize;x++)audio_cb(sound_buffer[x],sound_buffer[x]);
    for(x=0;x<sndbufsize;x++)audio_cb(sound_buffer[x],sound_buffer[x]);
 }
 
@@ -1441,21 +1424,15 @@ void retro_run(void)
       return;
    }
 
-   //if(pauseg==0)
-   //{
-      while(cpuloop==1)
-         maincpu_mainloop_retro();
-      cpuloop=1;
+   while(cpuloop==1)
+      maincpu_mainloop_retro();
+   cpuloop=1;
 
-      retro_blit();
-      if(SHOWKEY==1)app_render(0);
-   //}
-   //else if (pauseg==1)app_render(1);
-   //app_render(pauseg);
+   retro_blit();
+   if(SHOWKEY==1)app_render(0);
 
    video_cb(Retro_Screen,retroW,retroH,retrow<<PIXEL_BYTES);
 
-   //if(want_quit)retro_shutdown_core();
    microSecCounter += (1000000/50);
 }
 
@@ -1530,7 +1507,6 @@ bool retro_load_game(const struct retro_game_info *info)
 }
 
 void retro_unload_game(void){
-   //pauseg=-1;
 }
 
 unsigned retro_get_region(void)

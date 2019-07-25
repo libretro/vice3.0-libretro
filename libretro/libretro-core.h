@@ -87,14 +87,12 @@ typedef struct{
 } retro_pal;
 
 //VARIABLES
-extern int pauseg; 
 extern int CROP_WIDTH;
 extern int CROP_HEIGHT;
 extern int VIRTUAL_WIDTH;
 extern int retrow; 
 extern int retroh;
 extern int cpuloop;
-//extern int vice_statusbar;
 extern int retroXS;
 extern int retroYS;
 extern int retroH;

@@ -71,10 +71,8 @@ typedef enum
 
 int GUISTATE=GUI_NONE;
 
-//extern int pauseg;
 extern int NPAGE,SHIFTON;
 extern int vkey_pressed;
-//extern int vice_statusbar;
 extern unsigned int cur_port;
 extern int retrojoy_init;
 
@@ -110,7 +108,6 @@ gui(struct file_browser *browser,struct nk_context *ctx)
     if (border) window_flags |= NK_WINDOW_BORDER;
     if (resize) window_flags |= NK_WINDOW_SCALABLE;
     if (movable) window_flags |= NK_WINDOW_MOVABLE;
-    //if (no_scrollbar || (pauseg==1 && LOADCONTENT==1) || GUISTATE==GUI_VKBD) window_flags |= NK_WINDOW_NO_SCROLLBAR;
     if (no_scrollbar || GUISTATE==GUI_VKBD) window_flags |= NK_WINDOW_NO_SCROLLBAR;
     if (minimizable) window_flags |= NK_WINDOW_MINIMIZABLE;
     if (title) window_flags |= NK_WINDOW_TITLE;
@@ -118,10 +115,6 @@ gui(struct file_browser *browser,struct nk_context *ctx)
     int tmpval;
 
     if(SHOWKEY==1)GUISTATE=GUI_VKBD;
-    //if(pauseg==1 && SHOWKEY==1)SHOWKEY=-1;
-    //if(pauseg==0 && SHOWKEY==1)GUISTATE=GUI_VKBD;
-    //if(pauseg==1 && SHOWKEY==-1 && LOADCONTENT==1)GUISTATE=GUI_BROWSE;
-    //if(pauseg==1 && SHOWKEY==-1 && LOADCONTENT!=1)GUISTATE=GUI_MAIN;
 
     switch(GUISTATE){
 
@@ -155,13 +148,6 @@ gui(struct file_browser *browser,struct nk_context *ctx)
 		break;
 
     }
-
-    //if(SHOWKEY==1)GUISTATE=GUI_VKBD;
-    
-    //if(pauseg==1 && SHOWKEY==1)SHOWKEY=-1;
-    //if(pauseg==0 && SHOWKEY==1)GUISTATE=GUI_VKBD;    
-    //if(pauseg==1 && SHOWKEY==-1 && LOADCONTENT==1)GUISTATE=GUI_BROWSE;
-    //if(pauseg==1 && SHOWKEY==-1 && LOADCONTENT!=1)GUISTATE=GUI_MAIN;
 
     return GUISTATE;
 }

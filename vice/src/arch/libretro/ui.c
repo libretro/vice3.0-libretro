@@ -47,7 +47,6 @@
 int RETROJOY=0,RETROTDE=0,RETRODSE=0,RETRODSEVOL=800,RETROSTATUS=0,RETRORESET=0,RETRODRVTYPE=1542,RETROSIDMODL=0,RETROC64MODL=0,RETROUSERPORTJOY=-1,RETROEXTPAL=-1;
 char RETROEXTPALNAME[512]="pepto-pal";
 int retro_ui_finalized = 0;
-//extern int vice_statusbar;
 
 static const cmdline_option_t cmdline_options[] = {
      { NULL }
@@ -132,10 +131,8 @@ int ui_init_finalize(void)
 
    //RETRO CORE OPT
    if(RETROSTATUS==1) {
-      //vice_statusbar=1;
       resources_set_int("SDLStatusbar", 1);
    } else if(RETROSTATUS==0) {
-      //vice_statusbar=0;
       resources_set_int("SDLStatusbar", 0);
    }
    
