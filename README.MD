@@ -1,3 +1,28 @@
+# This fork
+Done:
+- Virtual keyboard revamped
+- Other GUI removed
+- Autostart PRG mode to inject
+- System-subdir renamed to vice and created automatically
+- Keyrah joystick maps 
+- Retrojoy disabled while using virtual keyboard
+- Cursor keys disabled while using Retrojoy
+- New settings:
+  - Drive Sound Emulation + Volume
+  - Reset type (autostart, soft, hard)
+  - Customizable keymaps for essential functions (virtual keyboard, statusbar, joyport switch, reset)
+  - Analog sticks mappable
+
+
+
+Todo:
+- Vice 3.3
+- x64sc
+- savestates
+
+
+
+
 # Vice 3.0 LIBRETRO WIP
 
 Very WIP port of VICE 3.0 for libretro .
@@ -38,8 +63,7 @@ Note : zip support is provided by RetroArch and is done before passing the game 
 
 ## Build instructions
 
-LIBDIR set to /mnt/srdcard/data for Android
-and (retro_system_dir)/data for linux/Win
+LIBDIR set to retro_system_dir
 
 Add WANT_RGB565=1 to make for RGB565 16 bits depth (32 bits depth default)
 

@@ -542,6 +542,7 @@ EMBEDDED_H_FILES = \
 	vicii_c64hq_vpl.h \
 	vicii_c64s_vpl.h \
 	vicii_ccs64_vpl.h \
+	vicii_colodore_vpl.h \
 	vicii_community_colors_vpl.h \
 	vicii_deekay_vpl.h \
 	vicii_frodo_vpl.h \
@@ -891,6 +892,9 @@ vicii_c64s_vpl.h: $(EMBEDDED_DEPENDS) palette2c
 
 vicii_ccs64_vpl.h: $(EMBEDDED_DEPENDS) palette2c
 	./palette2c $(top_srcdir)/data/C64/ccs64.vpl vicii_ccs64_vpl.h "unsigned char vicii_ccs64_vpl[]"
+
+vicii_colodore_vpl.h: $(EMBEDDED_DEPENDS) palette2c
+	./palette2c $(top_srcdir)/data/C64/colodore.vpl vicii_colodore_vpl.h "unsigned char vicii_colodore_vpl[]"
 
 vicii_community_colors_vpl.h: $(EMBEDDED_DEPENDS) palette2c
 	./palette2c $(top_srcdir)/data/C64/community-colors.vpl vicii_community_colors_vpl.h "unsigned char vicii_community_colors_vpl[]"

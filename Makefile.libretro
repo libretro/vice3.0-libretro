@@ -301,13 +301,11 @@ include $(THEOS_MAKE_PATH)/library.mk
 else
 all: $(TARGET)
 $(TARGET): $(OBJECTS)
-	@echo "** BUILDING $(TARGET) FOR PLATFORM $(platform) **"
 ifeq ($(STATIC_LINKING), 1)
 	$(AR) rcs $@ $(OBJECTS)
 else
 	$(CXX) -o $@ $(OBJECTS) $(LDFLAGS)
 endif
-	@echo "** BUILD SUCCESSFUL! GG NO RE **"
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c $^ -o $@

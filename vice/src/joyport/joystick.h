@@ -40,9 +40,11 @@ extern int joy_arch_resources_init(void);
 extern int joy_arch_cmdline_options_init(void);
 extern int joy_arch_set_device(int port_idx, int new_dev);
 
+#ifdef COMMON_JOYKEYS
 extern int joystick_check_set(signed long key, int keysetnum, unsigned int joyport);
 extern int joystick_check_clr(signed long key, int keysetnum, unsigned int joyport);
 extern void joystick_joypad_clear(void);
+#endif
 
 extern void joystick_set_value_absolute(unsigned int joyport, BYTE value);
 extern void joystick_set_value_or(unsigned int joyport, BYTE value);
@@ -71,7 +73,7 @@ extern BYTE joystick_value[JOYSTICK_NUM + 1];
 /* the mapping of real devices to emulated joystick ports */
 extern int joystick_port_map[JOYSTICK_NUM];
 
-#if !defined(__OS2__) || defined(USE_SDLUI) || defined(USE_SDLUI2)
+#if (!defined(__OS2__) || defined(USE_SDLUI) || defined(USE_SDLUI2)) && !defined(__LIBRETRO__)
 #define COMMON_JOYKEYS
 
 #define JOYSTICK_KEYSET_NUM 3

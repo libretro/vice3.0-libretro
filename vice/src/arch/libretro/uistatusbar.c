@@ -53,12 +53,13 @@
 #define MAX_STATUSBAR_LEN           128
 #define STATUSBAR_SPEED_POS         0
 #define STATUSBAR_PAUSE_POS         4
-#define STATUSBAR_DRIVE_POS         12
-#define STATUSBAR_DRIVE8_TRACK_POS  14
-#define STATUSBAR_DRIVE9_TRACK_POS  19
-#define STATUSBAR_DRIVE10_TRACK_POS 24
-#define STATUSBAR_DRIVE11_TRACK_POS 29
-#define STATUSBAR_TAPE_POS          33
+#define STATUSBAR_DRIVE_POS         24
+#define STATUSBAR_DRIVE8_TRACK_POS  26
+#define STATUSBAR_DRIVE9_TRACK_POS  31
+#define STATUSBAR_DRIVE10_TRACK_POS 36
+#define STATUSBAR_DRIVE11_TRACK_POS 41
+#define STATUSBAR_TAPE_POS          46
+#define STATUSBAR_JOY_POS			0
 
 static char statusbar_text[MAX_STATUSBAR_LEN] = "                                       ";
 
@@ -89,6 +90,28 @@ static void display_tape(void)
     }
 }
 
+
+static void display_joyport(void)
+{
+    int len;
+    char tmpstr[25];
+    
+    sprintf(tmpstr, "j%d:%2d ", 1, joystick_value[1]);
+    sprintf(tmpstr + strlen(tmpstr), "j%d:%2d ", 2, joystick_value[2]);
+    sprintf(tmpstr + strlen(tmpstr), "j%d:%2d ", 3, joystick_value[3]);
+    sprintf(tmpstr + strlen(tmpstr), "j%d:%2d", 4, joystick_value[4]);
+    //Retro_Draw_string(&fake, x+200, y, tmpstr,16,1,1, color_f, color_b);
+
+    len = sprintf(&(statusbar_text[STATUSBAR_JOY_POS]), tmpstr);
+    statusbar_text[STATUSBAR_JOY_POS + len] = ' ';
+
+    if (uistatusbar_state & UISTATUSBAR_ACTIVE) {
+        uistatusbar_state |= UISTATUSBAR_REPAINT;
+    }
+}
+
+
+
 static int per = 0;
 static int fps = 0;
 static int warp = 0;
@@ -96,6 +119,8 @@ static int paused = 0;
 
 static void display_speed(void)
 {
+    return;
+    
     int len;
     char sep = paused ? ('P' | 0x80) : warp ? ('W' | 0x80) : '/';
 
@@ -393,9 +418,15 @@ unsigned int color_f, color_b;
     fake.clip_rect.w=retrow;
     fake.clip_rect.x=0;
     fake.clip_rect.y=0;
+    
+    int x, y;
+    x=32;
+    y=236;
 
-    sprintf(tmpstr,"joy%d:%d",cur_port,joystick_value[cur_port]);
-    Retro_Draw_string(&fake, 200, 0, tmpstr,8,1,1, color_f, color_b);
+    //sprintf(tmpstr,"joy%d:%2d ",1,joystick_value[1]);
+    //sprintf(tmpstr + strlen(tmpstr),"joy%d:%2d",2,joystick_value[2]);
+    //Retro_Draw_string(&fake, x+200, y, tmpstr,16,1,1, color_f, color_b);
+    display_joyport();
 
     for (i = 0; i < MAX_STATUSBAR_LEN; ++i) {
         c = statusbar_text[i];
@@ -406,12 +437,12 @@ unsigned int color_f, color_b;
 
         if (c & 0x80) {
 		sprintf(tmpstr,"%c",c&0x7f);
-		Retro_Draw_string(&fake, i*8, 0, tmpstr,2,1,1, color_b, color_f);
+		Retro_Draw_string(&fake, x+i*8, y, tmpstr,2,1,1, color_b, color_f);
 	        //  uistatusbar_putchar((BYTE)(c & 0x7f), i, 0, color_b, color_f);
         } else {
          	//  uistatusbar_putchar(c, i, 0, color_f, color_b);
 		sprintf(tmpstr,"%c",c);
-		Retro_Draw_string(&fake, i*8, 0, tmpstr,2,1,1, color_f, color_b);
+		Retro_Draw_string(&fake, x+i*8, y, tmpstr,2,1,1, color_f, color_b);
 
         }
     }

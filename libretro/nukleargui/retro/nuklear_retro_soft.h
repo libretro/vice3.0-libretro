@@ -58,12 +58,13 @@ extern retro_input_state_t input_state_cb;
 
 struct nk_retro_event {
 
-	char Key_Sate[512];
-	char old_Key_Sate[512];
+	char key_state[512];
+	char old_key_state[512];
 	int LSHIFTON;
-	int MOUSE_EMULATED; // 1 = joypad act as mouse in GUI
+	//int MOUSE_EMULATED; // 1 = joypad act as mouse in GUI
 	int MOUSE_PAS; // 4 = default
 	int MOUSE_RELATIVE; //0 = absolute
+	int JOYPAD_PRESSED;
 	int gmx;
 	int gmy; // mouse
 	int mouse_wu;
@@ -437,24 +438,25 @@ nk_retro_get_text_width(nk_handle handle, float height, const char *text, int le
 }
 
 void reset_mouse_pos(){
-	revent.gmx=(retroW/*.width*//2)-1;
-	revent.gmy=(retroH/*.height*//2)-1;
+	revent.gmx=178;
+	revent.gmy=164;
 }
 
 static void retro_init_event()
 {
-	revent.MOUSE_EMULATED=-1;
-	revent.MOUSE_PAS=4;
-	revent.MOUSE_RELATIVE=10;
-	revent.gmx=(retro.width/2)-1;
-	revent.gmy=(retro.height/2)-1;
+	//revent.MOUSE_EMULATED=1;
+	revent.MOUSE_PAS=28;
+	revent.MOUSE_RELATIVE=1;
+	revent.JOYPAD_PRESSED=0;
+	revent.gmx=178;
+	revent.gmy=164;
 	revent.mouse_wu=0;
 	revent.mouse_wd=0;
 	revent.slowdown=0;
-	memset(revent.Key_Sate,0,512);
-	memset(revent.old_Key_Sate ,0, sizeof(revent.old_Key_Sate));
+	memset(revent.key_state,0,512);
+	memset(revent.old_key_state ,0, sizeof(revent.old_key_state));
 	revent.LSHIFTON=-1;
-	revent.showpointer=1;
+	revent.showpointer=0;
 }
 
 
@@ -545,14 +547,14 @@ static void Process_key()
 	int i;
 
 	for(i=0;i<320;i++)
-        	revent.Key_Sate[i]=input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0,i) ? 0x80: 0;
+        	revent.key_state[i]=input_state_cb(0, RETRO_DEVICE_KEYBOARD, 0,i) ? 0x80: 0;
    
-	if(memcmp( revent.Key_Sate,revent.old_Key_Sate , sizeof(revent.Key_Sate) ) )
+	if(memcmp( revent.key_state,revent.old_key_state , sizeof(revent.key_state) ) )
 	 	for(i=0;i<320;i++)
-			if(revent.Key_Sate[i] && revent.Key_Sate[i]!=revent.old_Key_Sate[i]  )
+			if(revent.key_state[i] && revent.key_state[i]!=revent.old_key_state[i]  )
         	{
 	
-				if(i==RETROK_RSHIFT){
+				if(i==RETROK_LSHIFT){
 					revent.LSHIFTON=-revent.LSHIFTON;
 					printf("Modifier shift pressed %d \n",revent.LSHIFTON); 
 					continue;
@@ -584,7 +586,7 @@ static void Process_key()
 				retro_key(i,1);
 	
         	}	
-        	else if ( !revent.Key_Sate[i] && revent.Key_Sate[i]!=revent.old_Key_Sate[i]  )
+        	else if ( !revent.key_state[i] && revent.key_state[i]!=revent.old_key_state[i]  )
         	{
 				if(i==RETROK_LSHIFT){
 					revent.LSHIFTON=-revent.LSHIFTON;
@@ -619,7 +621,7 @@ static void Process_key()
 	
         	}	
 
-	memcpy(revent.old_Key_Sate,revent.Key_Sate , sizeof(revent.Key_Sate) );
+	memcpy(revent.old_key_state,revent.key_state , sizeof(revent.key_state) );
 
 }
 
@@ -640,6 +642,7 @@ nk_retro_handle_event(int *evt,int poll)
 
    Process_key();
 
+   /* pointless
    int i=2;//TOGGLE: real mouse/ joypad emulate mouse 
    if ( input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, i) && mbt[i]==0 )
       mbt[i]=1;
@@ -647,51 +650,85 @@ nk_retro_handle_event(int *evt,int poll)
       mbt[i]=0;
       revent.MOUSE_EMULATED=-revent.MOUSE_EMULATED;
    }
+   */
 
    revent.mouse_wu = input_state_cb(0, RETRO_DEVICE_MOUSE, 0, RETRO_DEVICE_ID_MOUSE_WHEELUP);
    revent.mouse_wd = input_state_cb(0, RETRO_DEVICE_MOUSE, 0, RETRO_DEVICE_ID_MOUSE_WHEELDOWN);
    if(revent.mouse_wu || revent.mouse_wd)mousebut(4,revent.mouse_wd?-1:1,0,0);
 
-   if(revent.MOUSE_EMULATED==1){
-
-      if(revent.slowdown>0)return;
-
-      mouse_l=input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_A);
-      mouse_r=input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_B);
-      mouse_m=input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_Y);
-
-
-   }
-   else {
-   		mouse_l    = input_state_cb(0, RETRO_DEVICE_MOUSE, 0, RETRO_DEVICE_ID_MOUSE_LEFT);
-   		mouse_r    = input_state_cb(0, RETRO_DEVICE_MOUSE, 0, RETRO_DEVICE_ID_MOUSE_RIGHT);
-   		mouse_m    = input_state_cb(0, RETRO_DEVICE_MOUSE, 0, RETRO_DEVICE_ID_MOUSE_MIDDLE); 
+    // Joypad buttons
+    mouse_l = input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_A);
+    mouse_r = input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_B);
+    mouse_m = input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_Y);
+       
+    if(!mouse_l && !mouse_r && !mouse_m) {
+       // Mouse buttons
+       mouse_l = input_state_cb(0, RETRO_DEVICE_MOUSE, 0, RETRO_DEVICE_ID_MOUSE_LEFT);
+       mouse_r = input_state_cb(0, RETRO_DEVICE_MOUSE, 0, RETRO_DEVICE_ID_MOUSE_RIGHT);
+       mouse_m = input_state_cb(0, RETRO_DEVICE_MOUSE, 0, RETRO_DEVICE_ID_MOUSE_MIDDLE); 
    }
 
 	//relative
 	if(revent.MOUSE_RELATIVE){
 
-   		if(revent.MOUSE_EMULATED==1){
+      		// Joypad
+      		if (input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_RIGHT)) {
+      		    mouse_x += revent.MOUSE_PAS;
+      		    revent.JOYPAD_PRESSED = 1;
+            }
+      		else if (input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_LEFT)) {
+      		    mouse_x -= revent.MOUSE_PAS;
+      		    revent.JOYPAD_PRESSED = 1;
+            } 
+      		else if (input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_DOWN)) {
+      		    mouse_y += revent.MOUSE_PAS;
+      		    revent.JOYPAD_PRESSED = 1;
+            }
+      		else if (input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_UP)) {
+      		    mouse_y -= revent.MOUSE_PAS;
+      		    revent.JOYPAD_PRESSED = 1;
+            } else {
+                revent.JOYPAD_PRESSED = 0;
 
-      		if (input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_RIGHT))mouse_x += revent.MOUSE_PAS;
-      		if (input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_LEFT))mouse_x -= revent.MOUSE_PAS;
-      		if (input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_DOWN))mouse_y += revent.MOUSE_PAS;
-      		if (input_state_cb(0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_UP))mouse_y -= revent.MOUSE_PAS;
-
+                // Mouse
+                mouse_x = input_state_cb(0, RETRO_DEVICE_MOUSE, 0, RETRO_DEVICE_ID_MOUSE_X);
+                mouse_y = input_state_cb(0, RETRO_DEVICE_MOUSE, 0, RETRO_DEVICE_ID_MOUSE_Y);
+                
+                if(mouse_x || mouse_y) {
+                    revent.showpointer = 1;
+                }
+            }
+            
+   		if(revent.JOYPAD_PRESSED == 0) {
+   		    revent.slowdown = 0;
    		}
-   		else {
 
-   			mouse_x = input_state_cb(0, RETRO_DEVICE_MOUSE, 0, RETRO_DEVICE_ID_MOUSE_X);
-   			mouse_y = input_state_cb(0, RETRO_DEVICE_MOUSE, 0, RETRO_DEVICE_ID_MOUSE_Y);
+   		if(revent.slowdown>0) return;
 
+   		if(revent.JOYPAD_PRESSED > 0) {
+   		    revent.showpointer = 0;
+   		    revent.slowdown = 1;
    		}
 
    		revent.gmx+=mouse_x;
    		revent.gmy+=mouse_y;
-   		if(revent.gmx<0)revent.gmx=0;
-   		if(revent.gmx>retro.width-1)revent.gmx=retro.width-1;
-   		if(revent.gmy<0)revent.gmy=0;
-   		if(revent.gmy>retro.height-1)revent.gmy=retro.height-1;
+   		
+   		if(revent.JOYPAD_PRESSED > 0) {
+   	    	// Joypad wraparound
+            // Offset changes depending on whether borders are on or off
+            struct nk_vec2 offset;
+            offset = nk_window_get_position(ctx);
+            if(revent.gmx<offset.x+12) 	revent.gmx=offset.x+319-20-12;
+            if(revent.gmx>offset.x+319-12) revent.gmx=offset.x+18+12;
+            if(revent.gmy<offset.y+4) 	revent.gmy=offset.y+199-12;
+            if(revent.gmy>offset.y+199-4) revent.gmy=offset.y+20;
+   		} else {
+       		// Mouse corners
+       		if(revent.gmx<0)		revent.gmx=0;
+       		if(revent.gmx>retroW-1)	revent.gmx=retroW-1;
+       		if(revent.gmy<0)		revent.gmy=0;
+       		if(revent.gmy>retroH-1)	revent.gmy=retroH-1;
+       	}	
 
 	}
    else{
@@ -701,7 +738,8 @@ nk_retro_handle_event(int *evt,int poll)
       int p_x = input_state_cb(0, RETRO_DEVICE_POINTER, 0, RETRO_DEVICE_ID_POINTER_X);
       int p_y = input_state_cb(0, RETRO_DEVICE_POINTER, 0, RETRO_DEVICE_ID_POINTER_Y);
 
-      if(p_x!=0 && p_y!=0){
+      if(p_x!=0 && p_y!=0)
+      {
          int px=(int)((p_x+0x7fff)*retro.width/0xffff);
          int py=(int)((p_y+0x7fff)*retro.height/0xffff);
          //printf("px:%d py:%d (%d,%d)\n",p_x,p_y,px,py);
@@ -733,7 +771,6 @@ nk_retro_handle_event(int *evt,int poll)
          //FIXME: mouse left button in scale widget.
 #endif
 #endif
-
       }
 
    }

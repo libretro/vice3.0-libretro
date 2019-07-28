@@ -305,13 +305,13 @@ int main_program(int argc, char **argv)
     log_message(LOG_DEFAULT, "Main CPU: starting at ($FFFC).");
 
 #ifdef __LIBRETRO__
-     resources_save("./vicerc0");
-     maincpu_mainloop_retro();
+    //resources_save("./vicerc0");
+    maincpu_mainloop_retro();
 #else
     maincpu_mainloop();
 #endif
 
-    log_error(LOG_DEFAULT, "perkele!");
+    //log_error(LOG_DEFAULT, "perkele!");
 
     return 0;
 }

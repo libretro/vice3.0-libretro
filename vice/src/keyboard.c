@@ -850,7 +850,9 @@ static void keyboard_parse_keyword(char *buffer)
         keyboard_keyword_undef();
     }
 
+#ifdef COMMON_JOYKEYS
     joystick_joypad_clear();
+#endif
 }
 
 static void keyboard_parse_set_pos_row(signed long sym, int row, int col,
@@ -889,9 +891,13 @@ static void keyboard_parse_set_pos_row(signed long sym, int row, int col,
 static int keyboard_parse_set_neg_row(signed long sym, int row, int col)
 {
     if (row == -1 && (col >= 0) && (col <= 8)) {
+#ifdef COMMON_JOYKEYS
         joykeys[JOYSTICK_KEYSET_IDX_A][col] = sym;
+#endif
     } else if (row == -2 && (col >= 0) && (col <= 8)) {
+#ifdef COMMON_JOYKEYS
         joykeys[JOYSTICK_KEYSET_IDX_B][col] = sym;
+#endif
     } else if (row == -3 && col == 0) {
         key_ctrl_restore1 = sym;
     } else if (row == -3 && col == 1) {
@@ -1189,7 +1195,7 @@ int keyboard_keymap_dump(const char *filename)
             }
         }
     }
-
+#ifdef COMMON_JOYKEYS
     for (i = 0; i < JOYSTICK_KEYSET_NUM_KEYS; i++) {
         if (joykeys[JOYSTICK_KEYSET_IDX_A][i] != ARCHDEP_KEYBOARD_SYM_NONE) {
             fprintf(fp, "#\n"
@@ -1219,6 +1225,7 @@ int keyboard_keymap_dump(const char *filename)
             break;
         }
     }
+#endif
 
     fclose(fp);
 

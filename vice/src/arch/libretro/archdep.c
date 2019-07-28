@@ -78,15 +78,14 @@ static char *boot_path = NULL;
 /* alternate storage of preferences */
 const char *archdep_pref_path = NULL; /* NULL -> use home_path + ".vice" */
 
-#if defined(VITA) || defined(__SWITCH__)
 #include <stddef.h>
 
+#if defined(VITA) || defined(__SWITCH__)
 char* getcwd( char* buf, size_t size )
 {
-  if ( buf != NULL && size >= 2 )
+  if (size > strlen(retro_system_data_directory) && buf)
   {
-    buf[ 0 ] = '.';
-    buf[ 1 ] = 0;
+    strcpy(buf, retro_system_data_directory);
     return buf;
   }
 
@@ -139,16 +138,21 @@ int archdep_init(int *argc, char **argv)
 {
     argv0 = lib_stralloc(argv[0]);
 
-#if defined(__WIN32__)
-//FIXME
-	archdep_pref_path = archdep_boot_path();
-#endif
+    archdep_pref_path = archdep_boot_path();
+
     return 0;
 }
 
 char *archdep_default_rtc_file_name(void)
 {
-    return "~/rtcfile";
+    if (archdep_pref_path == NULL) {
+        const char *home;
+
+        home = archdep_home_path();
+        return util_concat(home, "/.vice/vice.rtc", NULL);
+    } else {
+        return util_concat(archdep_pref_path, "/vice.rtc", NULL);
+    }
 }
 
 int archdep_rename(const char *oldpath, const char *newpath)
@@ -178,57 +182,12 @@ char *archdep_program_name(void)
 
 const char *archdep_boot_path(void)
 {  
-#ifdef LIBRETROHACK
-//FIXME
-#if defined(__ANDROID__) || defined(ANDROID)
- return "/mnt/sdcard";
-#elif defined(VITA)
- return "ux0:/data";
-#elif defined(__SWITCH__)
- return "/";
-#else
-printf("bootp:(%s)\n",retro_system_data_directory);
- return retro_system_data_directory;
-#endif
-#endif
-
-    if (boot_path == NULL) {
-
-        boot_path = findpath(argv0, getenv("PATH"), IOUTIL_ACCESS_X_OK);
-
-        /* Remove the program name.  */
-        *strrchr(boot_path, '/') = '\0';
-    }
-
-    return boot_path;
+    return retro_system_data_directory;
 }
 
 const char *archdep_home_path(void)
 {
-#if defined(__ANDROID__) || defined(ANDROID)
-    return "/mnt/sdcard";
-#elif defined(VITA)
-    return "ux0:/data";
-#elif defined(__SWITCH__)
-    return "/";
-#elif defined(__WIN32__) || defined(GEKKO) || defined(__CELLOS_LV2__)
-return retro_system_data_directory;
-#else
-#include <pwd.h>
-    char *home;
-
-    home = getenv("HOME");
-    if (home == NULL) {
-        struct passwd *pwd;
-
-        pwd = getpwuid(getuid());
-        if ((pwd == NULL) || ((home = pwd->pw_dir) == NULL)) {
-            /* give up */
-            home = ".";
-        }
-    }
-    return home;
-#endif
+    return retro_system_data_directory;
 }
 
 char *archdep_default_autostart_disk_image_file_name(void)
@@ -412,6 +371,34 @@ int archdep_path_is_relative(const char *path)
 {
 #ifdef __WIN32__
   return !((isalpha(path[0]) && path[1] == ':') || path[0] == '/' || path[0] == '\\');
+#elif defined(VITA)
+    if (path == NULL)
+        return 0;
+    if (*path == '/')
+        return 0;
+    // Vita might also use "ux0:" or "uma0:" for absolute paths
+    for (int i = 0; i <= 4; i++)
+    {
+        if (path[i] == '\0')
+          return 1;
+        if (path[i] == ':')
+          return 0;
+    }
+    return 1;
+#elif defined(__SWITCH__)
+    if (path == NULL)
+        return 0;
+    if (*path == '/')
+        return 0;
+    // Switch might also use "sdmc:" for absolute paths
+    for (int i = 0; i <= 4; i++)
+    {
+        if (path[i] == '\0')
+          return 1;
+        if (path[i] == ':')
+          return 0;
+    }
+    return 1;
 #else
     if (path == NULL)
         return 0;

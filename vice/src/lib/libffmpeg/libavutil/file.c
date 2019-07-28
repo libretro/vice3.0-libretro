@@ -42,6 +42,10 @@
 #include <unistd.h>
 #endif
 
+#ifdef __LIBRETRO__
+extern  char retro_system_data_directory[512];
+#endif
+
 typedef struct {
     const AVClass *class;
     int   log_offset;
@@ -151,12 +155,20 @@ int av_tempfile(const char *prefix, char **filename, int log_offset, void *log_c
 #if !HAVE_MKSTEMP
     void *ptr= tempnam(NULL, prefix);
     if(!ptr)
+#ifdef __LIBRETRO__
+        ptr= tempnam(retro_system_data_directory, prefix);
+#else
         ptr= tempnam(".", prefix);
+#endif
     *filename = av_strdup(ptr);
 #undef free
     free(ptr);
 #else
+#ifdef __LIBRETRO__
+    size_t len = strlen(retro_system_data_directory) + strlen(prefix) + 12; /* room for "/tmp/" and "XXXXXX\0" */
+#else
     size_t len = strlen(prefix) + 12; /* room for "/tmp/" and "XXXXXX\0" */
+#endif
     *filename  = av_malloc(len);
 #endif
     /* -----common section-----*/
@@ -177,7 +189,11 @@ int av_tempfile(const char *prefix, char **filename, int log_offset, void *log_c
     fd = mkstemp(*filename);
 #ifdef _WIN32
     if (fd < 0) {
+#ifdef __LIBRETRO__
+        snprintf(*filename, len, "%s/%sXXXXXX", retro_system_data_directory, prefix);
+#else
         snprintf(*filename, len, "./%sXXXXXX", prefix);
+#endif
         fd = mkstemp(*filename);
     }
 #endif

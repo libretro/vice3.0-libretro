@@ -6,7 +6,6 @@
 	    //joystick options
 	    static int joy1on = nk_false;
     	    static int joy2on = nk_false;
-    	    static int retrojoyon = nk_false;
 
 	    if(cur_port==1){
 		joy1on = nk_true;
@@ -16,11 +15,6 @@
 		joy2on = nk_true;
 		joy1on = nk_false;
 	    }
-	    if(retrojoy_init)resources_get_int("RetroJoy",&tmpval);
-	    else tmpval=0;
-
-	    if(tmpval)retrojoyon=nk_true;
-	    else retrojoyon =nk_false;
 
 	    //misc options
 	    static int showled = nk_false;
@@ -137,7 +131,6 @@
             nk_layout_row_dynamic(ctx, DEFHSZ, 3);
             nk_checkbox_label(ctx, "Joy1 on", &joy1on);
             nk_checkbox_label(ctx, "Joy2 on", &joy2on);
-            nk_checkbox_label(ctx, "RetroJoy on", &retrojoyon);
 
 	    if(joy1on && cur_port!=1){
 		cur_port=1;
@@ -147,16 +140,6 @@
 	    	cur_port=2;
 		joy1on=false;
    	    }
-
-	    if(retrojoy_init)resources_get_int("RetroJoy",&tmpval);
-	    else tmpval=0;
-		
-	    if(retrojoyon){
-		if(!tmpval)
-		    resources_set_int( "RetroJoy", 1);
-	    }
-	    else if(tmpval)
-		resources_set_int("RetroJoy", 0);
 
 	    //misc options
             nk_layout_row_dynamic(ctx, DEFHSZ, 1);

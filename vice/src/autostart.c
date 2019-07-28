@@ -299,7 +299,7 @@ static const resource_int_t resources_int[] = {
       &AutostartRunWithColon, set_autostart_run_with_colon, NULL },
     { "AutostartHandleTrueDriveEmulation", 0, RES_EVENT_NO, (resource_value_t)0,
       &AutostartHandleTrueDriveEmulation, set_autostart_handle_tde, NULL },
-    { "AutostartWarp", 1, RES_EVENT_NO, (resource_value_t)0,
+    { "AutostartWarp", 0, RES_EVENT_NO, (resource_value_t)0,
       &AutostartWarp, set_autostart_warp, NULL },
     { "AutostartPrgMode", AUTOSTART_PRG_MODE_DEFAULT, RES_EVENT_NO, (resource_value_t)0,
       &AutostartPrgMode, set_autostart_prg_mode, NULL },

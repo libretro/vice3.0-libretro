@@ -20,8 +20,8 @@ extern void Screen_SetFullUpdate(int scr);
 extern void vkbd_key(int key,int pressed);
 extern void app_vkb_handle();
 
-extern char Core_Key_Sate[512];
-extern char Core_old_Key_Sate[512];
+extern char core_key_state[512];
+extern char core_old_key_state[512];
 extern char RPATH[512];
 extern int SHOWKEY;
 extern int want_quit;
@@ -88,15 +88,15 @@ int app_init()
 
     /* style.c */
     /* THEME_BLACK, THEME_WHITE, THEME_RED, THEME_BLUE, THEME_DARK */
-    set_style(ctx, THEME_DARK);
+    set_style(ctx, THEME_C64);
 
     /* icons */
 
     filebrowser_init();
     sprintf(LCONTENT,"%s",RPATH);
 
-    memset(Core_Key_Sate,0,512);
-    memset(Core_old_Key_Sate ,0, sizeof(Core_old_Key_Sate));
+    memset(core_key_state,0,512);
+    memset(core_old_key_state ,0, sizeof(core_old_key_state));
 
     printf("Init nuklear %d\n",0);
 

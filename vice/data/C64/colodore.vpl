@@ -5,36 +5,37 @@
 # Red Green Blue Dither
 #
 # VIC-II palette based on http://www.colodore.com/
+# note by rsn8887: This is the corrected palette that comes up on www.colodore.com with the default slider settings Brightness: 50, Contrast: 100, Saturation: 50.
 
 # Black
 00 00 00 0
 # White
-FF FF FF E
+ff ff ff e
 # Red
-96 28 2e 4
+81 33 38 4
 # Cyan
-5b d6 ce C
+75 ce c8 c
 # Purple
-9f 2d ad 8
+8e 3c 97 8
 # Green
-41 b9 36 4
+56 ac 4d 4
 # Blue
-27 24 c4 4
+2e 2c 9b 4
 # Yellow
-ef f3 47 C
+ed f1 71 c
 # Orange
-9f 48 15 4
+8e 50 29 4
 # Brown
-5e 35 00 4
+55 38 00 4
 # Light Red
-da 5f 66 8
+c4 6c 71 8
 # Dark Gray
-47 47 47 4
+4a 4a 4a 4
 # Medium Gray
-78 78 78 8
+7b 7b 7b 8
 # Light Green
-91 ff 84 8
+a9 ff 9f 8
 # Light Blue
-68 64 ff 8
+70 6d eb 8
 # Light Gray
-ae ae ae C
+b2 b2 b2 c
