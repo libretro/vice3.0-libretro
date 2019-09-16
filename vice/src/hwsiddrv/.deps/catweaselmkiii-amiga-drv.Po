@@ -1,0 +1,6 @@
+catweaselmkiii-amiga-drv.o: catweaselmkiii-amiga-drv.c ../../src/vice.h \
+ ../../src/config.h
+
+../../src/vice.h:
+
+../../src/config.h:

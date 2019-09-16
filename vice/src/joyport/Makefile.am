@@ -39,4 +39,10 @@ libjoyport_a_SOURCES = \
 	sampler4bit.c \
 	sampler4bit.h \
 	script64_dongle.c \
-	script64_dongle.h
+	script64_dongle.h \
+	snespad.c \
+	snespad.h \
+	vizawrite64_dongle.c \
+	vizawrite64_dongle.h \
+	waasoft_dongle.c \
+	waasoft_dongle.h

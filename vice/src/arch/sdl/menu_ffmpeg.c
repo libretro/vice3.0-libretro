@@ -33,6 +33,7 @@
 
 #include "types.h"
 
+#include "ffmpegdrv.h"
 #include "gfxoutput.h"
 #include "lib.h"
 #include "menu_common.h"
@@ -68,10 +69,18 @@ static UI_MENU_CALLBACK(save_movie_callback)
     int height;
 
     if (activated) {
-        if (!ffmpeg_drv) {
+
+        if (ffmpegdrv_formatlist == NULL || ffmpegdrv_formatlist[0].name == NULL) {
             ui_error("FFMPEG not available.");
             return NULL;
         }
+
+        ffmpeg_drv = gfxoutput_get_driver("FFMPEG");
+        if (ffmpeg_drv == NULL) {
+            ui_error("FFMPEG not available.");
+            return NULL;
+        }
+
         name = sdl_ui_file_selection_dialog("Choose movie file", FILEREQ_MODE_SAVE_FILE);
         if (name != NULL) {
             width = sdl_active_canvas->draw_buffer->draw_buffer_width;
@@ -116,22 +125,35 @@ ui_menu_entry_t ffmpeg_menu[] = {
     SDL_MENU_LIST_END
 };
 
+
+/** \brief  Regenerate the audio/video codec submenus
+ *
+ * \param[in]   current_format  FFMPEG driver name
+ *
+ * TODO:    Update code to use `ffmpegdrv_formatlist`
+ */
 static void update_codec_menus(const char *current_format)
 {
     int i;
     gfxoutputdrv_format_t *format;
     gfxoutputdrv_codec_t *codec;
 
+    int video_codec_id;
+    int audio_codec_id;
+
+    int codec_found;
+
     video_codec_menu[0].string = NULL;
     audio_codec_menu[0].string = NULL;
 
-    if (!ffmpeg_drv) {
+    if (ffmpegdrv_formatlist == NULL || ffmpegdrv_formatlist[0].name == NULL) {
 #ifdef SDL_DEBUG
         fprintf(stderr, "%s: no driver found\n", __func__);
 #endif
         return;
     }
 
+#if 0
     /* Find currently selected format */
     format = ffmpeg_drv->formatlist;
 
@@ -142,6 +164,16 @@ static void update_codec_menus(const char *current_format)
             format++;
         }
     }
+#else
+    format = NULL;
+    for (i = 0; ffmpegdrv_formatlist[i].name != NULL; i++) {
+        if (strcmp(ffmpegdrv_formatlist[i].name, current_format) == 0) {
+            /* got current format */
+            format = &(ffmpegdrv_formatlist[i]);
+            break;
+        }
+    }
+#endif
 
     if (!format) {
 #ifdef SDL_DEBUG
@@ -154,51 +186,91 @@ static void update_codec_menus(const char *current_format)
     codec = format->video_codecs;
     i = 0;
 
-    while (codec && codec->name) {
-        video_codec_menu[i].string = (char *)(codec->name);
-        video_codec_menu[i].type = MENU_ENTRY_RESOURCE_RADIO;
-        video_codec_menu[i].callback = radio_FFMPEGVideoCodec_callback;
-        video_codec_menu[i].data = int_to_void_ptr(codec->id);
-#ifdef SDL_DEBUG
-        fprintf(stderr, "%s: video codec %i: %s (%i)\n", __func__, i, (codec->name) ? codec->name : "(NULL)", codec->id);
-#endif
+    if (codec == NULL) {
+        video_codec_menu[0].string = NULL;
+    } else {
 
-        codec++;
-        i++;
+        /* get the currently used video codec */
+        resources_get_int("FFMPEGVideoCodec", &video_codec_id);
 
-        if (i == MAX_CODECS) {
+        codec_found = 0;
+        while (codec && codec->name) {
+            video_codec_menu[i].string = (char *)(codec->name);
+            video_codec_menu[i].type = MENU_ENTRY_RESOURCE_RADIO;
+            video_codec_menu[i].callback = radio_FFMPEGVideoCodec_callback;
+            video_codec_menu[i].data = int_to_void_ptr(codec->id);
 #ifdef SDL_DEBUG
-            fprintf(stderr, "%s: FIXME video codec %i > %i (MAX)\n", __func__, i, MAX_CODECS);
+            fprintf(stderr, "%s: video codec %i: %s (%i)\n", __func__, i, (codec->name) ? codec->name : "(NULL)", codec->id);
 #endif
-            break;
+            if (codec-> id == video_codec_id) {
+                /* old video codec is present in the new codecs */
+                codec_found = 1;
+            }
+
+            codec++;
+            i++;
+
+            if (i == MAX_CODECS) {
+#ifdef SDL_DEBUG
+                fprintf(stderr, "%s: FIXME video codec %i > %i (MAX)\n", __func__, i, MAX_CODECS);
+#endif
+                break;
+            }
+        }
+        video_codec_menu[i].string = NULL;
+
+        /* is the old codec still valid for the new driver? */
+        if (!codec_found) {
+            /* no: default to the first codec in the new submenu */
+            resources_set_int("FFMPEGVideoCodec", format->video_codecs[0].id);
         }
     }
-    video_codec_menu[i].string = NULL;
+
 
     /* Update audio codec menu */
     codec = format->audio_codecs;
     i = 0;
 
-    while (codec && codec->name) {
-        audio_codec_menu[i].string = (char *)(codec->name);
-        audio_codec_menu[i].type = MENU_ENTRY_RESOURCE_RADIO;
-        audio_codec_menu[i].callback = radio_FFMPEGAudioCodec_callback;
-        audio_codec_menu[i].data = int_to_void_ptr(codec->id);
+    if (codec == NULL) {
+        audio_codec_menu[0].string = NULL;
+    } else {
+
+        /* get the currently selected audio codec */
+        resources_get_int("FFMPEGAudioCodec", &audio_codec_id);
+        codec_found = 0;
+        while (codec && codec->name) {
+            audio_codec_menu[i].string = (char *)(codec->name);
+            audio_codec_menu[i].type = MENU_ENTRY_RESOURCE_RADIO;
+            audio_codec_menu[i].callback = radio_FFMPEGAudioCodec_callback;
+            audio_codec_menu[i].data = int_to_void_ptr(codec->id);
 #ifdef SDL_DEBUG
-        fprintf(stderr, "%s: audio codec %i: %s (%i)\n", __func__, i, (codec->name) ? codec->name : "(NULL)", codec->id);
+            fprintf(stderr, "%s: audio codec %i: %s (%i)\n", __func__, i, (codec->name) ? codec->name : "(NULL)", codec->id);
 #endif
 
-        codec++;
-        i++;
+            if (audio_codec_id == codec->id) {
+                /*old audio codec is present in the new codecs */
+                codec_found = 1;
+            }
 
-        if (i == MAX_CODECS) {
+            codec++;
+            i++;
+
+            if (i == MAX_CODECS) {
 #ifdef SDL_DEBUG
-            fprintf(stderr, "%s: FIXME audio codec %i > %i (MAX)\n", __func__, i, MAX_CODECS);
+                fprintf(stderr, "%s: FIXME audio codec %i > %i (MAX)\n", __func__, i, MAX_CODECS);
 #endif
-            break;
+                break;
+            }
+        }
+        audio_codec_menu[i].string = NULL;
+
+        /* is the old codec still valid for the new driver? */
+        if (!codec_found) {
+            /* no: default to the first codec in the new submenu */
+            resources_set_int("FFMPEGAudioCodec", format->audio_codecs[0].id);
         }
     }
-    audio_codec_menu[i].string = NULL;
+
 }
 
 static UI_MENU_CALLBACK(custom_FFMPEGFormat_callback)
@@ -210,6 +282,9 @@ static UI_MENU_CALLBACK(custom_FFMPEGFormat_callback)
         const char *w;
 
         resources_get_string("FFMPEGFormat", &w);
+#ifdef SDL_DEBUG
+        fprintf(stderr, "%s: FFMPEGFormat = '%s'\n", __func__, w);
+#endif
         if (!strcmp(w, (char *)param)) {
             return sdl_menu_text_tick;
         }
@@ -220,42 +295,45 @@ static UI_MENU_CALLBACK(custom_FFMPEGFormat_callback)
 void sdl_menu_ffmpeg_init(void)
 {
     int i;
-    gfxoutputdrv_format_t *format;
+    int k;
     const char *w;
 
-    ffmpeg_drv = gfxoutput_get_driver("FFMPEG");
-
-    if (!ffmpeg_drv) {
+    if (ffmpegdrv_formatlist == NULL || ffmpegdrv_formatlist[0].name == NULL) {
 #ifdef SDL_DEBUG
         fprintf(stderr, "%s: no driver found\n", __func__);
 #endif
         return;
     }
 
-    format = ffmpeg_drv->formatlist;
-    i = 0;
 
-    do {
-        format_menu[i].string = format->name;
-        format_menu[i].type = MENU_ENTRY_RESOURCE_RADIO;
-        format_menu[i].callback = custom_FFMPEGFormat_callback;
-        format_menu[i].data = (ui_callback_data_t)(format->name);
+    k = 0;
+    for (i = 0; ffmpegdrv_formatlist[i].name != NULL && i < MAX_FORMATS; i++) {
+        char *name = ffmpegdrv_formatlist[i].name;
+        if (ffmpegdrv_formatlist[i].audio_codecs != NULL &&
+                ffmpegdrv_formatlist[i].video_codecs != NULL) {
+            format_menu[k].string = name;
+            format_menu[k].type = MENU_ENTRY_RESOURCE_RADIO;
+            format_menu[k].callback = custom_FFMPEGFormat_callback;
+            format_menu[k].data = (ui_callback_data_t)(name);
 #ifdef SDL_DEBUG
-        fprintf(stderr, "%s: format %i: %s\n", __func__, i, (format->name) ? format->name : "(NULL)");
+            fprintf(stderr, "%s: format %i: %s selected\n",
+                    __func__, i, name ? name : "(NULL)");
 #endif
-
-        format++;
-        i++;
-
-        if (i == MAX_FORMATS) {
+            k++;
 #ifdef SDL_DEBUG
-            fprintf(stderr, "%s: FIXME format %i > %i (MAX)\n", __func__, i, MAX_FORMATS);
+        } else {
+            fprintf(stderr, "%s: format %i: %s not selected\n",
+                    __func__, i, name ? name : "(NULL)");
 #endif
-            break;
         }
-    } while (format->name);
+    }
+    if (k == MAX_FORMATS) {
+#ifdef SDL_DEBUG
+        fprintf(stderr, "%s: FIXME format %i > %i (MAX)\n", __func__, i, MAX_FORMATS);
+#endif
+    }
 
-    format_menu[i].string = NULL;
+    format_menu[k].string = NULL;
 
     resources_get_string("FFMPEGFormat", &w);
     update_codec_menus(w);

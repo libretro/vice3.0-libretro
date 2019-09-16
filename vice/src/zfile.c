@@ -102,6 +102,29 @@ static log_t zlog = LOG_ERR;
 
 static int zinit_done = 0;
 
+
+/** \@brief 'Check' is file \a name is a gzip or compress file
+ *
+ * \param[in]   name    filename or path
+ *
+ * \return  bool
+ *
+ * \fixme   this is a silly function and should be reimplemented using the
+ *          2-byte header of the file
+ */
+static int file_is_gzip(const char *name)
+{
+    size_t l = strlen(name);
+
+    if ((l < 4 || strcasecmp(name + l - 3, ".gz"))
+        && (l < 3 || strcasecmp(name + l - 2, ".z"))
+        && (l < 4 || toupper(name[l - 1]) != 'Z' || name[l - 4] != '.')) {
+          return 0;
+    }
+    return 1;
+}
+
+
 static void zfile_list_destroy(void)
 {
     zfile_t *p;
@@ -180,7 +203,7 @@ static char *try_uncompress_with_gzip(const char *name)
     char *tmp_name = NULL;
     int len;
 
-    if (!archdep_file_is_gzip(name)) {
+    if (!file_is_gzip(name)) {
         return NULL;
     }
 
@@ -222,7 +245,7 @@ static char *try_uncompress_with_gzip(const char *name)
     int exit_status;
     char *argv[4];
 
-    if (!archdep_file_is_gzip(name)) {
+    if (!file_is_gzip(name)) {
         return NULL;
     }
 
@@ -262,7 +285,7 @@ static char *try_uncompress_with_bzip(const char *name)
     char *argv[4];
 
     /* Check whether the name sounds like a bzipped file by checking the
-       extension.  MSDOS and UNIX variants of bzip v2 use the extension
+       extension.  UNIX variants of bzip v2 use the extension
        '.bz2'.  bzip v1 is obsolete.  */
     if (l < 5 || strcasecmp(name + l - 4, ".bz2") != 0) {
         return NULL;
@@ -458,11 +481,12 @@ static char *try_uncompress_archive(const char *name, int write_mode,
         l = strlen(tmp);
         while (l > 0) {
             tmp[--l] = 0;
-            if ((/* (nameoffset == SIZE_MAX) || */ (nameoffset > 1024)) && l >= len &&
-                !strcasecmp(tmp + l - len, search) != 0) {
+            if (((nameoffset == SIZE_MAX) || (nameoffset > 1024)) && l >= len
+                    && strcasecmp(tmp + l - len, search) == 0) {
                 nameoffset = l - 4;
             }
-            if (/* nameoffset >= 0 && */ nameoffset <= 1024 && is_valid_extension(tmp, l, nameoffset)) {
+            if (nameoffset <= 1024
+                    && is_valid_extension(tmp, l, nameoffset)) {
                 ZDEBUG(("try_uncompress_archive: found `%s'.",
                         tmp + nameoffset));
                 found = 1;
@@ -540,9 +564,6 @@ static char *try_uncompress_archive(const char *name, int write_mode,
 static char *try_uncompress_zipcode(const char *name, int write_mode)
 {
     char *tmp_name = NULL;
-    int i, count, sector, sectors = 0;
-    FILE *fd;
-    char tmp[256];
     char *argv[5];
     int exit_status;
 
@@ -557,6 +578,10 @@ static char *try_uncompress_zipcode(const char *name, int write_mode)
     }
     lib_free(tmp_name);
 
+
+    /* don't ask for permission. just do it, if it fails, it fails. This relies
+     * on zipcode.c doing the right thing, which I doubt */
+#if 0
     /* Can we read this file?  */
     fd = fopen(name, MODE_READ);
     if (fd == NULL) {
@@ -573,7 +598,7 @@ static char *try_uncompress_zipcode(const char *name, int write_mode)
         sectors |= 1 << sector;
     }
     fclose(fd);
-
+#endif
     /* it is a zipcode. We cannot support write_mode */
     if (write_mode) {
         return "";
@@ -606,7 +631,7 @@ static char *try_uncompress_zipcode(const char *name, int write_mode)
 }
 
 /* If the file looks like a lynx image, try to extract it using c1541. We have
-   to figure this out by reading the contsnts of the file */
+   to figure this out by reading the contents of the file */
 static char *try_uncompress_lynx(const char *name, int write_mode)
 {
     char *tmp_name;
@@ -715,7 +740,6 @@ struct valid_archives_s {
 typedef struct valid_archives_s valid_archives_t;
 
 static const valid_archives_t valid_archives[] = {
-#ifndef __MSDOS__
     { "unzip",   "-l",   "-p",    ".zip",    "Name" },
     { "lha",     "lv",   "pq",    ".lzh",    NULL },
     { "lha",     "lv",   "pq",    ".lha",    NULL },
@@ -728,11 +752,7 @@ static const valid_archives_t valid_archives[] = {
     { "tar",     "-ztf", "-zxOf", ".tgz",    NULL },
     /* this might be overkill, but adding this was sooo easy...  */
     { "zoo",     "lf1q", "xpq",   ".zoo",    NULL },
-#else
-    { "unzip",   "-l",   "-p",    ".zip",    "Name" },
-    { "lha",     "l",    "p",     ".lzh",    "Name" },
-#endif
-    { NULL }
+    { NULL, NULL, NULL, NULL, NULL }
 };
 
 /* Try to uncompress file `name' using the algorithms we know of.  If this is
@@ -817,8 +837,6 @@ static int compress_with_gzip(const char *src, const char *dest)
     gzclose(fddest);
     fclose(fdsrc);
 
-    archdep_file_set_gzip(dest);
-
     ZDEBUG(("compress with zlib: OK."));
 
     return 0;
@@ -857,7 +875,7 @@ static int compress_with_gzip(const char *src, const char *dest)
 /* Compress `src' into `dest' using bzip.  */
 static int compress_with_bzip(const char *src, const char *dest)
 {
-    static char *argv[4];
+    char *argv[4];
     int exit_status;
     char *mdest;
 

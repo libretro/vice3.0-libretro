@@ -54,10 +54,6 @@
 #include "video.h"
 #include "viewport.h"
 
-#if defined(__MSDOS__)
-#include "videoarch.h"
-#endif
-
 vdc_t vdc;
 
 static void vdc_raster_draw_alarm_handler(CLOCK offset, void *data);
@@ -284,6 +280,7 @@ static void vdc_update_geometry(void)
         vdc.screen_text_cols = VDC_SCREEN_MAX_TEXTCOLS;
     }
 
+    /* FIXME: this seems to have semi-randomly selected constants... */
     if(vdc.regs[25] & 0x10) { /* double pixel a.k.a 40column mode */
         charwidth = 2 * (vdc.regs[22] >> 4);
         hsync = 62 * 16            /* 992 */
@@ -293,13 +290,18 @@ static void vdc_update_geometry(void)
         hsync = 116 * 8            /* 928 */
             - vdc.regs[2] * charwidth;       /* default (102) - 816 = 112 */
     }
+    /* FIXME: It's potentially valid for the active display area to start off the left (or right) of the display,
+        because the VDC can put the horizontal sync anywhere. But we can't really emulate that (yet) without things crashing. */
     if (hsync < 0) {
             hsync = 0;
     }
     vdc.hsync_shift = hsync;
 
     /* clamp the display within the right edge of the screen */
-    if (vdc.hsync_shift + (vdc.screen_text_cols * charwidth) > VDC_SCREEN_WIDTH ) {
+    if ((vdc.screen_text_cols * charwidth) > VDC_SCREEN_WIDTH ) {
+        /* bounds check so we don't wind up with a "negative unsigned" hsync_shift (i.e. a massive value) which then causes a segfault in vdc-draw.. */
+        vdc.hsync_shift = 0;
+    } else if (vdc.hsync_shift + (vdc.screen_text_cols * charwidth) > VDC_SCREEN_WIDTH ) {
         vdc.hsync_shift = VDC_SCREEN_WIDTH - (vdc.screen_text_cols * charwidth);
     }
     vdc.border_width = vdc.hsync_shift;
@@ -339,7 +341,7 @@ void vdc_powerup(void)
 {
     /* Setup the VDC's ram with a 0xff00ff00.. pattern */
     unsigned int i;
-    BYTE v = 0xff;
+    uint8_t v = 0xff;
     for (i = 0; i < sizeof(vdc.ram); i++) {
         vdc.ram[i] = v;
         v ^= 0xff;
@@ -395,6 +397,7 @@ CLOCK vdc_lightpen_timing(int x, int y)
 /* Set the memory pointers according to the values in the registers. */
 void vdc_update_memory_ptrs(unsigned int cycle)
 {
+    /* FIXME: use it or lose it */
 }
 
 static void vdc_increment_memory_pointer(void)
@@ -408,6 +411,16 @@ static void vdc_increment_memory_pointer(void)
                           % (vdc.raster_ycounter_max + 1);
 
     vdc.bitmap_counter += vdc.mem_counter_inc + vdc.regs[27];
+}
+
+static void vdc_increment_memory_pointer_interlace_bitmap(void)
+{   /* This is identical to above (and should remain so), we just don't increment the bitmap pointer */
+    vdc.mem_counter_inc = vdc.screen_text_cols;
+    if (vdc.raster.ycounter >= vdc.raster_ycounter_max) {
+        vdc.mem_counter += vdc.mem_counter_inc + vdc.regs[27];
+    }
+    vdc.raster.ycounter = (vdc.raster.ycounter + 1)
+                          % (vdc.raster_ycounter_max + 1);
 }
 
 static void vdc_set_video_mode(void)
@@ -424,13 +437,21 @@ static void vdc_set_video_mode(void)
 /* Redraw the current raster line. */
 static void vdc_raster_draw_alarm_handler(CLOCK offset, void *data)
 {
-    int in_idle_state, calculated_border_height;
+    int in_idle_state, calculated_border_height, i;
     static unsigned int old_screen_adr, old_attribute_adr, screen_ystart, need_increment_memory_pointer;
 
     /* Update the memory pointers just before we draw the next line (vs after last line),
-       in case relevent registers changed since last call. */
+       in case relevant registers changed since last call. */
     if (need_increment_memory_pointer) {
         vdc_increment_memory_pointer();
+        /* If interlace we need to skip a line, so we increment again */
+        if ((vdc.regs[8] & 0x03) == 3) {
+            if (vdc.regs[25] & 0x80) {    /* in interlace bitmap mode we want to increment the attribute memory pointer again, but not the bitmap pointer */
+                vdc_increment_memory_pointer_interlace_bitmap();
+            } else {    /* text mode */
+                vdc_increment_memory_pointer();
+            }
+        }
         need_increment_memory_pointer = 0;
     }
 
@@ -448,15 +469,16 @@ static void vdc_raster_draw_alarm_handler(CLOCK offset, void *data)
         }
     }
 
-    if (vdc.raster.current_line == 0) {
+    if (vdc.raster.current_line == 0) { /* We are on the first raster line, so go reset and/or handle everything for a new frame */
         /* The top border position is based on the position of the vertical
            sync pulse [7] in relation to the total height of the screen [4]
            and the width of the sync pulse [3] */
         calculated_border_height = (vdc.regs[4] + 1 - vdc.regs[7])  /* # of rows from sync pulse */
                                    * ((vdc.regs[9] & 0x1f) + 1)     /* height of each row (R9) */
-                                   - (vdc.regs[3] >> 4);            /* vertical sync pulse width */
+                                   - (vdc.regs[3] >> 4)             /* vertical sync pulse width */
+                                   + (vdc.regs[5] & 0x1f);          /* vertical total adjust */
 
-        if (calculated_border_height >= 0) {
+        if (calculated_border_height >= 0 && calculated_border_height <= VDC_SCREEN_HEIGHT) {
             vdc.border_height = calculated_border_height;
         } else {
             vdc.border_height = 0;
@@ -465,6 +487,14 @@ static void vdc_raster_draw_alarm_handler(CLOCK offset, void *data)
         /* screen_ystart is the raster line the foreground data actually starts on, which may be above or below the border */
         screen_ystart = vdc.border_height + (((vdc.regs[9] & 0x1f) - (vdc.regs[24] & 0x1f)) & 0x1f);  /* - R24 is vertical smooth scroll, which interacts with the screen & R9 like this based on experimentation. */
         vdc.border_height = vdc.border_height + (vdc.regs[9] & 0x1f);
+        
+        /* If interlace we need to adjust the borders and screen height because they are twice as big otherwise */
+        if ((vdc.regs[8] & 0x03) == 3)  {
+            vdc.border_height >>= 1;
+            vdc.screen_ypix >>= 1;
+            screen_ystart >>= 1;
+        }
+        
         /* fix to catch the end of the display for the bitmap/character memory pointers */
         if ((vdc.border_height + vdc.screen_ypix + 1) > vdc.last_displayed_line) {
             vdc.screen_ypix = vdc.last_displayed_line - vdc.border_height - 1;
@@ -474,16 +504,76 @@ static void vdc_raster_draw_alarm_handler(CLOCK offset, void *data)
         vdc.row_counter = 0;
         vdc.row_counter_y = vdc.raster_ycounter_max;
         vdc.raster.video_mode = VDC_IDLE_MODE;
-        vdc.mem_counter = 0;
-        need_increment_memory_pointer = 0;
-        vdc.bitmap_counter = 0;
-        vdc.raster.ycounter = 0;
-        vdc.frame_counter++;
+        vdc.frame_counter++;    /* Note that as far as the frame counter is concerned, we are now on a new frame */
         if (vdc.regs[24] & 0x20) {
             vdc.attribute_blink = vdc.frame_counter & 16;
         } else {
             vdc.attribute_blink = vdc.frame_counter & 8;
         }
+        
+        /* Normally we would reset all the memory pointers etc. on a new frame.
+        BUT, in one particular circumstance we don't - interlace bitmap mode on an even frame -
+        because interlace bitmap is interleaved, we want it to keep reading into the 2nd bank on the even frame
+        (it starts on an odd frame) */
+        if (((vdc.regs[8] & 0x03) == 3)  /* interlace */
+            && (vdc.regs[25] & 0x80)    /* bitmap mode */
+            && !(vdc.frame_counter & 1)) { /* even frame */
+            /* FIXME: hideous hacks to fix VDCModeMania
+               Need to figure out WTF the VDC is doing with its memory pointers that we need this much hackery.. */
+            switch (vdc.regs[4]) {
+                case 0x84:  /* Option 1 - NTSC  Interlace */
+                    for (i = 0; i < 20; i++) { /* decrement the memory pointer a few times based on [WTF?] */
+                        vdc.mem_counter -= vdc.mem_counter_inc + vdc.regs[27];
+                    }
+                    for (i = 0; i < 40; i++) { /* decrement the bitmap memory pointer a few times based on how many columns are in a row */
+                        vdc.bitmap_counter -= (vdc.mem_counter_inc + vdc.regs[27]);
+                    }
+                    break;
+                case 0x68:  /* Option 2 - PAL Interlace */
+                    for (i = 0; i < 47; i++) { /* increment the memory pointer a few times based on [WTF?] */
+                        vdc_increment_memory_pointer_interlace_bitmap();    /* increment everything except the bitmap pointer */
+                    }
+                    for (i = 0; i < 23; i++) { /* increment the bitmap memory pointer a few times based on how many columns are in a row */
+                        vdc.bitmap_counter += (vdc.mem_counter_inc + vdc.regs[27]);
+                    }
+                    break;
+                case 0x6a:  /* Option 5 - "VDC-IMONO" 720x700 Mono Interlace */
+                    for (i = 0; i < 83; i++) { /* increment the bitmap memory pointer a few times based on how many columns are in a row */
+                        vdc.bitmap_counter += (vdc.mem_counter_inc + vdc.regs[27]);
+                    }
+                    break;
+                case 0x5c:  /* Option 6 - "VDC-IM800" 800x600 Mono Interlace */
+                    for (i = 0; i < 34; i++) { /* increment the bitmap memory pointer a few times based on how many columns are in a row */
+                        vdc.bitmap_counter += (vdc.mem_counter_inc + vdc.regs[27]);
+                    }
+                    break;
+                case 0x4c:  /* Platoterm - 640x532 Mono Interlace */
+                    for (i = 0; i < 20; i++) { /* decrement the bitmap memory pointer a few times based on how many columns are in a row */
+                        vdc.bitmap_counter -= (vdc.mem_counter_inc + vdc.regs[27]);
+                    }
+                    break;
+            }
+        } else {    /* Reset all the internal VDC memory pointers and counters to 0 */
+            vdc.mem_counter = 0;
+            need_increment_memory_pointer = 0;
+            vdc.bitmap_counter = 0;
+            vdc.raster.ycounter = 0;
+        }
+        
+        /* If interlace mode we need to skip to the 2nd line on an odd frame so that we render the odd field vs the even */
+        if (((vdc.regs[8] & 0x03) == 3)     /* interlace and */
+        && (vdc.frame_counter & 1)) {       /* odd frame */
+            if (!(vdc.regs[25] & 0x80)) {   /* text mode */
+                vdc_increment_memory_pointer();
+            } else {                        /* bitmap mode */
+                /* FIXME: this hack fixes VDCModeMania, but I'm not completely sure why, or if it's correct in general.. */
+                /* Add half the number of raster lines in a char * number of characters in a row, to the bitmap pointer only
+                    effectively skips the bitmap pointer over one full (interlace) attribute cell row worth of bitmap data
+                    but why, because we don't increment the attribute pointer?? */
+                vdc.bitmap_counter += (((vdc.regs[9] & 0x1f) + 1) >> 1) * (vdc.mem_counter_inc + vdc.regs[27]);
+            }
+        }
+        
         if (vdc.update_geometry) {
             vdc_update_geometry();
             vdc.force_resize = 1;
@@ -525,12 +615,6 @@ static void vdc_raster_draw_alarm_handler(CLOCK offset, void *data)
 
     /* actually draw the current raster line */
     raster_line_emulate(&vdc.raster);
-
-#ifdef __MSDOS__
-    if (vdc.raster.canvas->viewport->update_canvas) {
-        canvas_set_border_color(vdc.raster.canvas, vdc.raster.border_color);
-    }
-#endif
 
     /* see if we still should be drawing things - if we haven't drawn more than regs[6] rows since the top border */
     if (!in_idle_state) {

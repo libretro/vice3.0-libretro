@@ -1,15 +1,14 @@
+/** \file   keyboard.c
+ * \brief   Common keyboard emulation.
+ *
+ * \author  Andreas Boose <viceteam@t-online.de>
+ * \author  Ettore Perazzoli <ettore@comm2000.it>
+ * \author  Jouko Valta <jopi@stekt.oulu.fi>
+ * \author  Andre Fachat <fachat@physik.tu-chemnitz.de>
+ * \author  Bernhard Kuhn <kuhn@eikon.e-technik.tu-muenchen.de>
+ */
+
 /*
- * keyboard.c - Common keyboard emulation.
- *
- * Written by
- *  Andreas Boose <viceteam@t-online.de>
- *
- * Based on old code by
- *  Ettore Perazzoli <ettore@comm2000.it>
- *  Jouko Valta <jopi@stekt.oulu.fi>
- *  Andre Fachat <fachat@physik.tu-chemnitz.de>
- *  Bernhard Kuhn <kuhn@eikon.e-technik.tu-muenchen.de>
- *
  * This file is part of VICE, the Versatile Commodore Emulator.
  * See README for copyright notice.
  *
@@ -57,7 +56,6 @@
 #include "resources.h"
 #include "snapshot.h"
 #include "sysfile.h"
-#include "translate.h"
 #include "types.h"
 #include "util.h"
 #include "vice-event.h"
@@ -92,7 +90,7 @@ static log_t keyboard_log = LOG_DEFAULT;
 
 static keyboard_machine_func_t keyboard_machine_func = NULL;
 
-static CLOCK keyboard_delay;
+static CLOCK keyboard_delay = 0;
 
 static int keyboard_clear = 0;
 
@@ -129,9 +127,8 @@ static int keyboard_set_latch_keyarr(int row, int col, int value)
 }
 
 /*-----------------------------------------------------------------------*/
-#ifdef COMMON_KBD
+
 static void keyboard_key_clear_internal(void);
-#endif
 
 static void keyboard_event_record(void)
 {
@@ -155,7 +152,7 @@ void keyboard_event_playback(CLOCK offset, void *data)
 
 void keyboard_restore_event_playback(CLOCK offset, void *data)
 {
-    machine_set_restore_key((int)(*(DWORD *)data));
+    machine_set_restore_key((int)(*(uint32_t *)data));
 }
 
 static void keyboard_latch_handler(CLOCK offset, void *data)
@@ -185,9 +182,7 @@ void keyboard_event_delayed_playback(void *data)
     }
 
     if (keyboard_clear == 1) {
-#ifdef COMMON_KBD
         keyboard_key_clear_internal();
-#endif
         keyboard_clear = 0;
     }
 
@@ -228,7 +223,34 @@ void keyboard_register_clear(void)
 }
 /*-----------------------------------------------------------------------*/
 
-#ifdef COMMON_KBD
+/* 40/80 column key.  */
+static signed long key_ctrl_column4080 = -1;
+static key_ctrl_column4080_func_t key_ctrl_column4080_func = NULL;
+
+/* CAPS (ASCII/DIN) key.  */
+static signed long key_ctrl_caps = -1;
+static key_ctrl_caps_func_t key_ctrl_caps_func = NULL;
+
+/* joyport attached keypad. */
+static signed long key_joy_keypad[KBD_JOY_KEYPAD_ROWS][KDB_JOY_KEYPAD_COLS];
+static key_joy_keypad_func_t key_joy_keypad_func = NULL;
+
+void keyboard_register_column4080_key(key_ctrl_column4080_func_t func)
+{
+    key_ctrl_column4080_func = func;
+}
+
+void keyboard_register_caps_key(key_ctrl_caps_func_t func)
+{
+    key_ctrl_caps_func = func;
+}
+
+void keyboard_register_joy_keypad(key_joy_keypad_func_t func)
+{
+    key_joy_keypad_func = func;
+}
+
+/*-----------------------------------------------------------------------*/
 
 enum shift_type {
     NO_SHIFT = 0,             /* Key is not shifted. */
@@ -267,18 +289,6 @@ static int keyc_num = 0;
 /* Two possible restore keys.  */
 static signed long key_ctrl_restore1 = -1;
 static signed long key_ctrl_restore2 = -1;
-
-/* 40/80 column key.  */
-static signed long key_ctrl_column4080 = -1;
-static key_ctrl_column4080_func_t key_ctrl_column4080_func = NULL;
-
-/* CAPS (ASCII/DIN) key.  */
-static signed long key_ctrl_caps = -1;
-static key_ctrl_caps_func_t key_ctrl_caps_func = NULL;
-
-/* joyport attached keypad. */
-static signed long key_joy_keypad[KBD_JOY_KEYPAD_ROWS][KDB_JOY_KEYPAD_COLS];
-static key_joy_keypad_func_t key_joy_keypad_func = NULL;
 
 /* Is an alternative mapping active? */
 static int key_alternative = 0;
@@ -365,12 +375,12 @@ static int restore_quick_release = 0;
 
 static void restore_alarm_triggered(CLOCK offset, void *data)
 {
-    DWORD event_data;
+    uint32_t event_data;
     alarm_unset(restore_alarm);
 
-    event_data = (DWORD)restore_delayed;
+    event_data = (uint32_t)restore_delayed;
     machine_set_restore_key(restore_delayed);
-    event_record(EVENT_KEYBOARD_RESTORE, (void*)&event_data, sizeof(DWORD));
+    event_record(EVENT_KEYBOARD_RESTORE, (void*)&event_data, sizeof(uint32_t));
     restore_delayed = 0;
 
     if (restore_quick_release) {
@@ -381,10 +391,10 @@ static void restore_alarm_triggered(CLOCK offset, void *data)
 
 static void keyboard_restore_pressed(void)
 {
-    DWORD event_data;
-    event_data = (DWORD)1;
+    uint32_t event_data;
+    event_data = (uint32_t)1;
     if (network_connected()) {
-        network_event_record(EVENT_KEYBOARD_RESTORE, (void*)&event_data, sizeof(DWORD));
+        network_event_record(EVENT_KEYBOARD_RESTORE, (void*)&event_data, sizeof(uint32_t));
     } else {
         if (restore_raw == 0) {
             restore_delayed = 1;
@@ -397,10 +407,10 @@ static void keyboard_restore_pressed(void)
 
 static void keyboard_restore_released(void)
 {
-    DWORD event_data;
-    event_data = (DWORD)0;
+    uint32_t event_data;
+    event_data = (uint32_t)0;
     if (network_connected()) {
-        network_event_record(EVENT_KEYBOARD_RESTORE, (void*)&event_data, sizeof(DWORD));
+        network_event_record(EVENT_KEYBOARD_RESTORE, (void*)&event_data, sizeof(uint32_t));
     } else {
         if (restore_raw == 1) {
             if (restore_delayed) {
@@ -492,8 +502,8 @@ void keyboard_key_pressed(signed long key)
     if (latch) {
         keyboard_set_latch_keyarr(key_latch_row, key_latch_column, 1);
         if (network_connected()) {
-            CLOCK keyboard_delay = KEYBOARD_RAND();
-            network_event_record(EVENT_KEYBOARD_DELAY, (void *)&keyboard_delay, sizeof(keyboard_delay));
+            CLOCK delay = KEYBOARD_RAND();
+            network_event_record(EVENT_KEYBOARD_DELAY, (void *)&delay, sizeof(delay));
             network_event_record(EVENT_KEYBOARD_MATRIX, (void *)latch_keyarr, sizeof(latch_keyarr));
         } else {
             alarm_set(keyboard_alarm, maincpu_clk + KEYBOARD_RAND());
@@ -621,8 +631,8 @@ void keyboard_key_released(signed long key)
 
     if (latch) {
         if (network_connected()) {
-            CLOCK keyboard_delay = KEYBOARD_RAND();
-            network_event_record(EVENT_KEYBOARD_DELAY, (void *)&keyboard_delay, sizeof(keyboard_delay));
+            CLOCK delay = KEYBOARD_RAND();
+            network_event_record(EVENT_KEYBOARD_DELAY, (void *)&delay, sizeof(delay));
             network_event_record(EVENT_KEYBOARD_MATRIX, (void *)latch_keyarr, sizeof(latch_keyarr));
         } else {
             alarm_set(keyboard_alarm, maincpu_clk + KEYBOARD_RAND());
@@ -654,7 +664,6 @@ void keyboard_key_clear(void)
     keyboard_key_clear_internal();
 }
 
-/* FIXME: joystick mapping not handled here, is it needed? */
 void keyboard_set_keyarr_any(int row, int col, int value)
 {
     signed long sym;
@@ -820,7 +829,7 @@ static void keyboard_keyword_undef(void)
 {
     char *key;
 
-    /* TODO: this only unsets from the main table, not for joysticks 
+    /* TODO: this only unsets from the main table, not for joysticks
      *       inventing another keyword to reset joysticks only is perhaps a
      *       good idea.
      */
@@ -850,7 +859,9 @@ static void keyboard_parse_keyword(char *buffer)
         keyboard_keyword_undef();
     }
 
+#ifdef COMMON_JOYKEYS
     joystick_joypad_clear();
+#endif
 }
 
 static void keyboard_parse_set_pos_row(signed long sym, int row, int col,
@@ -889,9 +900,13 @@ static void keyboard_parse_set_pos_row(signed long sym, int row, int col,
 static int keyboard_parse_set_neg_row(signed long sym, int row, int col)
 {
     if (row == -1 && (col >= 0) && (col <= 8)) {
+#ifdef COMMON_JOYKEYS
         joykeys[JOYSTICK_KEYSET_IDX_A][col] = sym;
+#endif
     } else if (row == -2 && (col >= 0) && (col <= 8)) {
+#ifdef COMMON_JOYKEYS
         joykeys[JOYSTICK_KEYSET_IDX_B][col] = sym;
+#endif
     } else if (row == -3 && col == 0) {
         key_ctrl_restore1 = sym;
     } else if (row == -3 && col == 1) {
@@ -1125,6 +1140,9 @@ int keyboard_keymap_dump(const char *filename)
             "# When a bigger spaced key is used,\n"
             "# it uses the upper left most key value.\n"
            );
+    
+    /* FIXME: output the keyboard matrix for the respective target */
+    
     fprintf(fp, "!CLEAR\n");
     fprintf(fp, "!LSHIFT %d %d\n", kbd_lshiftrow, kbd_lshiftcol);
     fprintf(fp, "!RSHIFT %d %d\n", kbd_rshiftrow, kbd_rshiftcol);
@@ -1190,6 +1208,7 @@ int keyboard_keymap_dump(const char *filename)
         }
     }
 
+#ifdef COMMON_JOYKEYS
     for (i = 0; i < JOYSTICK_KEYSET_NUM_KEYS; i++) {
         if (joykeys[JOYSTICK_KEYSET_IDX_A][i] != ARCHDEP_KEYBOARD_SYM_NONE) {
             fprintf(fp, "#\n"
@@ -1219,6 +1238,7 @@ int keyboard_keymap_dump(const char *filename)
             break;
         }
     }
+#endif
 
     fclose(fp);
 
@@ -1227,23 +1247,6 @@ int keyboard_keymap_dump(const char *filename)
 
 /*-----------------------------------------------------------------------*/
 
-void keyboard_register_column4080_key(key_ctrl_column4080_func_t func)
-{
-    key_ctrl_column4080_func = func;
-}
-
-void keyboard_register_caps_key(key_ctrl_caps_func_t func)
-{
-    key_ctrl_caps_func = func;
-}
-
-void keyboard_register_joy_keypad(key_joy_keypad_func_t func)
-{
-    key_joy_keypad_func = func;
-}
-#endif
-
-/*-----------------------------------------------------------------------*/
 #define NUM_KEYBOARD_MAPPINGS 4
 
 static char *machine_keymap_res_name_list[NUM_KEYBOARD_MAPPINGS] = {
@@ -1271,8 +1274,6 @@ int machine_num_keyboard_mappings(void)
 }
 
 
-#ifdef COMMON_KBD
-
 static int machine_keyboard_mapping = 0;
 static int machine_keyboard_type = 0;
 
@@ -1280,7 +1281,7 @@ static int try_set_keymap_file(int atidx, int idx, int mapping, int type);
 static int switch_keymap_file(int *idxp, int *mapp, int *typep);
 
 /* (re)load keymap at index */
-int load_keymap_file(int val)
+static int load_keymap_file(int val)
 {
     const char *name, *resname;
 
@@ -1363,7 +1364,7 @@ int keyboard_set_keymap_index(int val, void *param)
     if (val < 2) {
         if (switch_keymap_file(&val, &mapping, &type) < 0) {
             DBG(("<keyboard_set_keymap_index switch_keymap_file ERROR\n"));
-            log_error(keyboard_log, "Default keymap not found, this should be fixed. Going on anyway...");
+            /*log_error(keyboard_log, "Default keymap not found, this should be fixed. Going on anyway...");*/
             /* return -1; */
             return 0; /* HACK: allow to start up when default keymap is missing */
         }
@@ -1382,7 +1383,7 @@ int keyboard_set_keymap_index(int val, void *param)
 }
 
 /* handle change if "KeyboardType" */
-int keyboard_set_keyboard_type(int val, void *param)
+static int keyboard_set_keyboard_type(int val, void *param)
 {
     int idx, mapping;
 
@@ -1392,7 +1393,7 @@ int keyboard_set_keyboard_type(int val, void *param)
     DBG((">keyboard_set_keyboard_type(idx:%d mapping:%d type:%d)\n", idx, mapping, val));
     if (idx < 2) {
         if (switch_keymap_file(&idx, &mapping, &val) < 0) {
-            log_error(keyboard_log, "Default keymap not found, this should be fixed. Going on anyway...");
+            /*log_error(keyboard_log, "Default keymap not found, this should be fixed. Going on anyway...");*/
             /* return -1; */
             return 0; /* HACK: allow to start up when default keymap is missing */
         }
@@ -1415,7 +1416,7 @@ int keyboard_set_keyboard_type(int val, void *param)
 #endif
 
 /* handle change if "KeyboardMapping" */
-int keyboard_set_keyboard_mapping(int val, void *param)
+static int keyboard_set_keyboard_mapping(int val, void *param)
 {
     int type;
     int idx;
@@ -1427,11 +1428,11 @@ int keyboard_set_keyboard_mapping(int val, void *param)
 
     if (idx < 2) {
         if (switch_keymap_file(&idx, &val, &type) < 0) {
-            log_error(keyboard_log, "Default keymap not found, this should be fixed. Going on anyway...");
+            /*log_error(keyboard_log, "Default keymap not found, this should be fixed. Going on anyway...");*/
             /* return -1; */
 #ifdef __LIBRETRO__
-log_error(keyboard_log, "Default keymap embedded libretro...");
-	retro_defaultkeyboard();
+            log_message(keyboard_log, "Default keymap embedded libretro...");
+            retro_defaultkeyboard();
 #endif
             return 0; /* HACK: allow to start up when default keymap is missing */
         }
@@ -1456,11 +1457,13 @@ int keyboard_get_num_mappings(void)
     return KBD_MAPPING_NUM;
 }
 
+/* (keep in sync with constants in keyboard.c) */
 static mapping_info_t kbdinfo[KBD_MAPPING_NUM + 1] = {
     { "American (us)", KBD_MAPPING_US, "" },
     { "British (uk)", KBD_MAPPING_UK, "uk" },
     { "German (de)", KBD_MAPPING_DE, "de" },
     { "Danish (da)", KBD_MAPPING_DA, "da" },
+    { "Dutch (nl)", KBD_MAPPING_NL, "nl" },
     { "Norwegian (no)", KBD_MAPPING_NO, "no" },
     { "Finnish (fi)", KBD_MAPPING_FI, "fi" },
     { "Italian (it)", KBD_MAPPING_IT, "it" },
@@ -1489,7 +1492,7 @@ static int try_set_keymap_file(int atidx, int idx, int mapping, int type)
         tstr = machine_get_keyboard_type_name(type);
     }
     mapname = keyboard_get_mapping_name(mapping);
-#if 1
+
     /* <port>_<type>_<idx>_<mapping>.vkm */
     if ((mapping == 0) && (tstr == NULL)) {
         name = util_concat(KBD_PORT_PREFIX, "_", sympos[idx], ".vkm", NULL);
@@ -1500,9 +1503,7 @@ static int try_set_keymap_file(int atidx, int idx, int mapping, int type)
     } else if ((mapping != 0) && (tstr != NULL)) {
         name = util_concat(KBD_PORT_PREFIX, "_", tstr, "_", sympos[idx], "_", mapname, ".vkm", NULL);
     }
-#else
-    /* FIXME: alternative solution for targets with 8.3 filenames */
-#endif
+
     DBG(("try_set_keymap_file: (port:%s type:%s idx:%d mapping:%d) '%s' = '%s'\n",
                 KBD_PORT_PREFIX, tstr ? tstr : "-", idx, mapping,
                 idx ? "KeymapPosFile" : "KeymapSymFile", name));
@@ -1644,7 +1645,6 @@ int keyboard_resources_init(void)
     DBG((">>keyboard_resources_init(first start:%s)\n", (npos && nsym) ? "yes" : "no"));
 
     if (npos && nsym) {
-
         mapping = kbd_arch_get_host_mapping();
         log_verbose("Setting up default keyboard mapping for host type %d (%s)",
                     mapping, keyboard_get_mapping_name(mapping));
@@ -1699,7 +1699,7 @@ int keyboard_resources_init(void)
     return 0;
 }
 
-void keyboard_resources_shutdown(void)
+static void keyboard_resources_shutdown(void)
 {
     /* VSID doesn't have a keyboard */
     if (machine_class == VICE_MACHINE_VSID) {
@@ -1715,40 +1715,27 @@ void keyboard_resources_shutdown(void)
     lib_free(resources_string_d3);
 }
 
-#endif /* COMMON_KBD */
-
 /*--------------------------------------------------------------------------*/
 
-#ifdef COMMON_KBD
 static cmdline_option_t const cmdline_options[] =
 {
-    { "-keymap", SET_RESOURCE, 1,
+    { "-keymap", SET_RESOURCE, CMDLINE_ATTRIB_NEED_ARGS,
       NULL, NULL, "KeymapIndex", NULL,
-      USE_PARAM_ID, USE_DESCRIPTION_ID,
-      IDCLS_P_NUMBER, IDCLS_SPECIFY_KEYMAP_FILE_INDEX,
-      NULL, NULL },
+      "<number>", "Specify index of keymap file (0=symbolic, 1=positional, 2=symbolic (user), 3=positional (user))" },
 /* FIXME: build description dynamically */
-    { "-keyboardmapping", SET_RESOURCE, 1,
+    { "-keyboardmapping", SET_RESOURCE, CMDLINE_ATTRIB_NEED_ARGS,
       NULL, NULL, "KeyboardMapping", NULL,
-      USE_PARAM_ID, USE_DESCRIPTION_ID,
-      IDCLS_P_NUMBER, IDCLS_SPECIFY_KEYBOARD_MAPPING,
-      NULL, NULL },
+      "<number>", "Specify host keyboard layout" },
 /* FIXME: build description dynamically */
-    { "-keyboardtype", SET_RESOURCE, 1,
+    { "-keyboardtype", SET_RESOURCE, CMDLINE_ATTRIB_NEED_ARGS,
       NULL, NULL, "KeyboardType", NULL,
-      USE_PARAM_ID, USE_DESCRIPTION_ID,
-      IDCLS_P_NUMBER, IDCLS_SPECIFY_KEYBOARD_TYPE,
-      NULL, NULL },
-    { "-symkeymap", SET_RESOURCE, 1,
+      "<number>", "Specify emulated keyboard type" },
+    { "-symkeymap", SET_RESOURCE, CMDLINE_ATTRIB_NEED_ARGS,
       NULL, NULL, "KeymapUserSymFile", NULL,
-      USE_PARAM_ID, USE_DESCRIPTION_ID,
-      IDCLS_P_NAME, IDCLS_SPECIFY_SYM_KEYMAP_FILE_NAME,
-      NULL, NULL },
-    { "-poskeymap", SET_RESOURCE, 1,
+      "<Name>", "Specify name of symbolic keymap file" },
+    { "-poskeymap", SET_RESOURCE, CMDLINE_ATTRIB_NEED_ARGS,
       NULL, NULL, "KeymapUserPosFile", NULL,
-      USE_PARAM_ID, USE_DESCRIPTION_ID,
-      IDCLS_P_NAME, IDCLS_SPECIFY_POS_KEYMAP_FILE_NAME,
-      NULL, NULL },
+      "<Name>", "Specify name of positional keymap file" },
     CMDLINE_LIST_END
 };
 
@@ -1759,7 +1746,6 @@ int keyboard_cmdline_options_init(void)
     }
     return 0;
 }
-#endif  /* COMMON_KBD */
 
 /*--------------------------------------------------------------------------*/
 
@@ -1769,7 +1755,6 @@ void keyboard_init(void)
 
     keyboard_alarm = alarm_new(maincpu_alarm_context, "Keyboard",
                             keyboard_latch_handler, NULL);
-#ifdef COMMON_KBD
     restore_alarm = alarm_new(maincpu_alarm_context, "Restore",
                             restore_alarm_triggered, NULL);
 
@@ -1779,15 +1764,12 @@ void keyboard_init(void)
         load_keymap_ok = 1;
         keyboard_set_keymap_index(machine_keymap_index, NULL);
     }
-#endif
 }
 
 void keyboard_shutdown(void)
 {
-#ifdef COMMON_KBD
     keyboard_keyconvmap_free();
     keyboard_resources_shutdown();      /* FIXME: perhaps call from elsewhere? */
-#endif
 }
 
 /*--------------------------------------------------------------------------*/
@@ -1807,8 +1789,8 @@ int keyboard_snapshot_write_module(snapshot_t *s)
     }
 
     if (0
-        || SMW_DWA(m, (DWORD *)keyarr, KBD_ROWS) < 0
-        || SMW_DWA(m, (DWORD *)rev_keyarr, KBD_COLS) < 0) {
+        || SMW_DWA(m, (uint32_t *)keyarr, KBD_ROWS) < 0
+        || SMW_DWA(m, (uint32_t *)rev_keyarr, KBD_COLS) < 0) {
         snapshot_module_close(m);
         return -1;
     }
@@ -1818,7 +1800,7 @@ int keyboard_snapshot_write_module(snapshot_t *s)
 
 int keyboard_snapshot_read_module(snapshot_t *s)
 {
-    BYTE major_version, minor_version;
+    uint8_t major_version, minor_version;
     snapshot_module_t *m;
 
     m = snapshot_module_open(s, SNAP_NAME, &major_version, &minor_version);
@@ -1835,8 +1817,8 @@ int keyboard_snapshot_read_module(snapshot_t *s)
     }
 
     if (0
-        || SMR_DWA(m, (DWORD *)keyarr, KBD_ROWS) < 0
-        || SMR_DWA(m, (DWORD *)rev_keyarr, KBD_COLS) < 0) {
+        || SMR_DWA(m, (uint32_t *)keyarr, KBD_ROWS) < 0
+        || SMR_DWA(m, (uint32_t *)rev_keyarr, KBD_COLS) < 0) {
         snapshot_module_close(m);
         return -1;
     }

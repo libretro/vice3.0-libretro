@@ -37,12 +37,12 @@
 #include "gfxoutput.h"
 #include "screenshot.h"
 #include "palette.h"
+#include "lib.h"
 #include "log.h"
 #include "util.h"
 #include "resources.h"
 #include "cmdline.h"
-#include "translate.h"
-#include "../sounddrv/soundmovie.h"
+#include "soundmovie.h"
 #include "quicktimedrv.h"
 
 #ifndef MAC_OS_X_VERSION_10_5
@@ -64,7 +64,7 @@ static gfxoutputdrv_codec_t mov_audio_codeclist[] = {
     { 0, NULL }
 };
 
-static gfxoutputdrv_codec_t mov_video_codeclist[] = { 
+static gfxoutputdrv_codec_t mov_video_codeclist[] = {
     { kPNGCodecType,        "PNG" },
     { kH264CodecType,       "H.264" },
     { kMotionJPEGACodecType,"Motion JPEG/A"},
@@ -186,17 +186,14 @@ static int quicktimedrv_resources_init(void)
     return resources_register_int(resources_int);
 }
 
-static const cmdline_option_t cmdline_options[] = {
-    { "-quicktimeaudiobitrate", SET_RESOURCE, 1,
+static const cmdline_option_t cmdline_options[] =
+{
+    { "-quicktimeaudiobitrate", SET_RESOURCE, CMDLINE_ATTRIB_NEED_ARGS,
       NULL, NULL, "QuickTimeAudioBitrate", NULL,
-      USE_PARAM_ID, USE_DESCRIPTION_ID,
-      IDCLS_P_VALUE, IDCLS_SET_AUDIO_STREAM_BITRATE,
-      NULL, NULL },
-    { "-quicktimevideobitrate", SET_RESOURCE, 1,
+      "<value>", "Set bitrate for audio stream in media file" },
+    { "-quicktimevideobitrate", SET_RESOURCE, CMDLINE_ATTRIB_NEED_ARGS,
       NULL, NULL, "QuickTimeVideoBitrate", NULL,
-      USE_PARAM_ID, USE_DESCRIPTION_ID,
-      IDCLS_P_VALUE, IDCLS_SET_VIDEO_STREAM_BITRATE,
-      NULL, NULL },
+      "<value>", "Set bitrate for video stream in media file" },
     CMDLINE_LIST_END
 };
 
@@ -328,7 +325,7 @@ static int init_audio(int speed, int channels, soundmovie_buffer_t **buffer)
     asbd.mFormatID = kAudioFormatLinearPCM;
     asbd.mFormatFlags = kAudioFormatFlagsNativeEndian | kAudioFormatFlagIsSignedInteger;
     asbd.mChannelsPerFrame = channels;
-    asbd.mBitsPerChannel = sizeof (SWORD) * 8;
+    asbd.mBitsPerChannel = sizeof (int16_t) * 8;
     asbd.mBytesPerFrame = (asbd.mBitsPerChannel >> 3)      // number of *bytes* per channel
                           * asbd.mChannelsPerFrame;         // channels per frame
     asbd.mFramesPerPacket = 1;      // For PCM, frames per packet is always 1
@@ -337,7 +334,7 @@ static int init_audio(int speed, int channels, soundmovie_buffer_t **buffer)
     UInt32 layoutSize;
     layoutSize = offsetof(AudioChannelLayout, mChannelDescriptions[0]);
     AudioChannelLayout *layout = NULL;
-    layout = calloc(layoutSize, 1);
+    layout = lib_calloc(layoutSize, 1);
     OSErr err = -1;
     if (layout != NULL) {
         if (channels == 1) {
@@ -354,7 +351,7 @@ static int init_audio(int speed, int channels, soundmovie_buffer_t **buffer)
             NULL, 0,                    // magic cookie (compression parameters)
             kQTSoundDescriptionKind_Movie_LowestPossibleVersion,
             &soundDescriptionHandle);         // SoundDescriptionHandle returned here
-        free(layout);
+        lib_free(layout);
     }
     if (err != noErr) {
         log_debug("quicktime_audio: error creating sound description!");
@@ -386,7 +383,7 @@ static int init_audio(int speed, int channels, soundmovie_buffer_t **buffer)
 
     *buffer = &audioBuffer;
     audioBuffer.size = speed * channels / 10;
-    audioBuffer.buffer = malloc(sizeof(SWORD) * audioBuffer.size);
+    audioBuffer.buffer = lib_malloc(sizeof(int16_t) * audioBuffer.size);
     audioBuffer.used = 0;
 
     audio_ready = 1;
@@ -401,7 +398,7 @@ int encode_audio(soundmovie_buffer_t *buffer)
 
     OSStatus err = AddMediaSample2 (audioMedia,
                                     (const UInt8 *)buffer->buffer,
-                                    buffer->used * sizeof(SWORD),
+                                    buffer->used * sizeof(int16_t),
                                     1,
                                     0,
                                     (SampleDescriptionHandle)soundDescriptionHandle,
@@ -447,7 +444,7 @@ void finish_audio(void)
 
     // free buffer
     if (audioBuffer.buffer != NULL) {
-        free(audioBuffer.buffer);
+        lib_free(audioBuffer.buffer);
         audioBuffer.buffer = NULL;
     }
 
@@ -549,7 +546,7 @@ static int quicktimedrv_record(screenshot_t *screenshot)
     int w = screenshot->width;
     int xoff = screenshot->x_offset;
     int yoff = screenshot->y_offset;
-    BYTE *srcBuffer = screenshot->draw_buffer;
+    uint8_t *srcBuffer = screenshot->draw_buffer;
 
     // move to last line in tgt buffer and to first in source
     buffer += (video_yoff) * bytesPerRow + video_xoff * 3;
@@ -559,7 +556,7 @@ static int quicktimedrv_record(screenshot_t *screenshot)
     for (y = 0; y < h; y++) {
         int pix = 0;
         for (x = 0; x < w; x++) {
-            BYTE val = srcBuffer[x];
+            uint8_t val = srcBuffer[x];
             buffer[pix++] = screenshot->palette->entries[val].red;
             buffer[pix++] = screenshot->palette->entries[val].green;
             buffer[pix++] = screenshot->palette->entries[val].blue;

@@ -37,9 +37,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#ifdef ENABLE_NLS
-#include <locale.h>
-#endif
 
 #include "archdep.h"
 #include "cmdline.h"
@@ -51,20 +48,13 @@
 #include "info.h"
 #include "init.h"
 #include "initcmdline.h"
-#ifdef HAS_TRANSLATION
-#include "intl.h"
-#endif
 #include "lib.h"
 #include "log.h"
 #include "machine.h"
 #include "maincpu.h"
 #include "main.h"
-#include "platform.h"
 #include "resources.h"
 #include "sysfile.h"
-#ifdef HAS_TRANSLATION
-#include "translate.h"
-#endif
 #include "types.h"
 #include "uiapi.h"
 #include "version.h"
@@ -106,7 +96,7 @@ static int init_done = 0;
 int main_program(int argc, char **argv)
 {
     int i, n;
-    char *program_name;
+    const char *program_name;
     int ishelp = 0;
     char term_tmp[TERM_TMP_SIZE];
     size_t name_len;
@@ -138,22 +128,14 @@ int main_program(int argc, char **argv)
         }
     }
 
-#ifdef ENABLE_NLS
-    /* gettext stuff, not needed in Gnome, but here I can
-       overrule the default locale path */
-    setlocale(LC_ALL, "");
-    bindtextdomain(PACKAGE, NLS_LOCALEDIR);
-    textdomain(PACKAGE);
-#endif
-
     DBG(("main:archdep_init(argc:%d)\n", argc));
     if (archdep_init(&argc, argv) != 0) {
         archdep_startup_log_error("archdep_init failed.\n");
         return -1;
     }
 #ifndef __LIBRETRO__
-    if (atexit(main_exit) < 0) {
-        archdep_startup_log_error("atexit failed.\n");
+    if (archdep_vice_atexit(main_exit) != 0) {
+        archdep_startup_log_error("archdep_vice_atexit failed.\n");
         return -1;
     }
 #else
@@ -165,6 +147,7 @@ int main_program(int argc, char **argv)
     }
 #endif
 #endif
+
     maincpu_early_init();
     machine_setup_context();
     drive_setup_context();
@@ -193,11 +176,6 @@ int main_program(int argc, char **argv)
         return -1;
     }
 
-#ifdef HAS_TRANSLATION
-    /* set the default arch language */
-    translate_arch_language_init();
-#endif
-
     if (!ishelp) {
         /* Load the user's default configuration file.  */
         if (resources_load(NULL) < 0) {
@@ -218,7 +196,7 @@ int main_program(int argc, char **argv)
     if (initcmdline_check_args(argc, argv) < 0) {
         return -1;
     }
-
+    
     program_name = archdep_program_name();
 
     /* VICE boot sequence.  */
@@ -228,12 +206,6 @@ int main_program(int argc, char **argv)
 #else
     log_message(LOG_DEFAULT, "*** VICE Version %s ***", VERSION);
 #endif
-    log_message(LOG_DEFAULT, "OS compiled for: %s", platform_get_compile_time_os());
-    log_message(LOG_DEFAULT, "GUI compiled for: %s", platform_get_ui());
-    log_message(LOG_DEFAULT, "CPU compiled for: %s", platform_get_compile_time_cpu());
-    log_message(LOG_DEFAULT, "Compiler used: %s", platform_get_compile_time_compiler());
-    log_message(LOG_DEFAULT, "Current OS: %s", platform_get_runtime_os());
-    log_message(LOG_DEFAULT, "Current CPU: %s", platform_get_runtime_cpu());
     log_message(LOG_DEFAULT, " ");
     if (machine_class == VICE_MACHINE_VSID) {
         log_message(LOG_DEFAULT, "Welcome to %s, the free portable SID Player.",
@@ -277,7 +249,7 @@ int main_program(int argc, char **argv)
     log_message(LOG_DEFAULT, "See the \"About VICE\" command for more info.");
     log_message(LOG_DEFAULT, " ");
 
-    lib_free(program_name);
+    /* lib_free(program_name); */
 
     /* Complete the GUI initialization (after loading the resources and
        parsing the command-line) if necessary.  */
@@ -305,13 +277,12 @@ int main_program(int argc, char **argv)
     log_message(LOG_DEFAULT, "Main CPU: starting at ($FFFC).");
 
 #ifdef __LIBRETRO__
-     resources_save("./vicerc0");
-     maincpu_mainloop_retro();
+    maincpu_mainloop_retro();
 #else
     maincpu_mainloop();
 #endif
 
-    log_error(LOG_DEFAULT, "perkele!");
+    //log_error(LOG_DEFAULT, "perkele!");
 
     return 0;
 }

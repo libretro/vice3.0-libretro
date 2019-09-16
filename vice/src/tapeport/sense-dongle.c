@@ -34,7 +34,9 @@
 #include "resources.h"
 #include "snapshot.h"
 #include "tapeport.h"
-#include "translate.h"
+
+#include "sense-dongle.h"
+
 
 static int sense_dongle_enabled = 0;
 
@@ -48,9 +50,9 @@ static int sense_dongle_read_snapshot(struct snapshot_s *s);
 static tapeport_device_t sense_dongle_device = {
     TAPEPORT_DEVICE_SENSE_DONGLE,
     "Sense dongle",
-    IDGS_SENSE_DONGLE,
     0,
     "TapeSenseDongle",
+    NULL, /* no shutdown */
     sense_dongle_reset,
     NULL, /* no set motor */
     NULL, /* no set write */
@@ -110,16 +112,12 @@ int sense_dongle_resources_init(void)
 
 static const cmdline_option_t cmdline_options[] =
 {
-    { "-tapesensedongle", SET_RESOURCE, 0,
+    { "-tapesensedongle", SET_RESOURCE, CMDLINE_ATTRIB_NONE,
       NULL, NULL, "TapeSenseDongle", (resource_value_t)1,
-      USE_PARAM_STRING, USE_DESCRIPTION_ID,
-      IDCLS_UNUSED, IDCLS_ENABLE_TAPE_SENSE_DONGLE,
-      NULL, NULL },
-    { "+tapesensedongle", SET_RESOURCE, 0,
+      NULL, "Enable tape sense dongle" },
+    { "+tapesensedongle", SET_RESOURCE, CMDLINE_ATTRIB_NONE,
       NULL, NULL, "TapeSenseDongle", (resource_value_t)0,
-      USE_PARAM_STRING, USE_DESCRIPTION_ID,
-      IDCLS_UNUSED, IDCLS_DISABLE_TAPE_SENSE_DONGLE,
-      NULL, NULL },
+      NULL, "Disable tape sense dongle" },
     CMDLINE_LIST_END
 };
 

@@ -32,18 +32,21 @@
 
 #include "debug.h"
 #include "c64mem.h"
+#include "c64ui.h"
 #include "menu_c64_common_expansions.h"
 #include "menu_c64cart.h"
 #include "menu_c64hw.h"
 #include "menu_common.h"
 #include "menu_debug.h"
 #include "menu_drive.h"
+#include "menu_edit.h"
 #include "menu_ethernet.h"
 #include "menu_ethernetcart.h"
 #include "menu_ffmpeg.h"
 #include "menu_help.h"
 #include "menu_jam.h"
 #include "menu_joyport.h"
+#include "menu_media.h"
 #include "menu_midi.h"
 #include "menu_monitor.h"
 #include "menu_network.h"
@@ -60,6 +63,7 @@
 #include "menu_video.h"
 #include "resources.h"
 #include "ui.h"
+#include "uifonts.h"
 #include "uimenu.h"
 #include "vicii.h"
 #include "vkbd.h"
@@ -105,10 +109,10 @@ static const ui_menu_entry_t x64sc_main_menu[] = {
       MENU_ENTRY_SUBMENU,
       submenu_callback,
       (ui_callback_data_t)snapshot_menu },
-    { "Screenshot",
+    { "Save media file",
       MENU_ENTRY_SUBMENU,
       submenu_callback,
-      (ui_callback_data_t)screenshot_vic_vicii_vdc_menu },
+      (ui_callback_data_t)media_menu },
     { "Speed settings",
       MENU_ENTRY_SUBMENU,
       submenu_callback,
@@ -128,8 +132,12 @@ static const ui_menu_entry_t x64sc_main_menu[] = {
       (ui_callback_data_t)network_menu },
 #endif
     { "Pause",
-      MENU_ENTRY_OTHER,
+      MENU_ENTRY_OTHER_TOGGLE,
       pause_callback,
+      NULL },
+    { "Advance Frame",
+      MENU_ENTRY_OTHER,
+      advance_frame_callback,
       NULL },
     { "Monitor",
       MENU_ENTRY_SUBMENU,
@@ -140,7 +148,7 @@ static const ui_menu_entry_t x64sc_main_menu[] = {
       vkbd_callback,
       NULL },
     { "Statusbar",
-      MENU_ENTRY_OTHER,
+      MENU_ENTRY_OTHER_TOGGLE,
       statusbar_callback,
       NULL },
 #ifdef DEBUG
@@ -157,6 +165,12 @@ static const ui_menu_entry_t x64sc_main_menu[] = {
       MENU_ENTRY_SUBMENU,
       submenu_callback,
       (ui_callback_data_t)settings_manager_menu },
+#ifdef USE_SDLUI2
+    { "Edit",
+      MENU_ENTRY_SUBMENU,
+      submenu_callback,
+      (ui_callback_data_t)edit_menu },
+#endif
     { "Quit emulator",
       MENU_ENTRY_OTHER,
       quit_callback,
@@ -164,10 +178,35 @@ static const ui_menu_entry_t x64sc_main_menu[] = {
     SDL_MENU_LIST_END
 };
 
-void c64scui_set_menu_params(int index, menu_draw_t *menu_draw)
+static void c64scui_set_menu_params(int index, menu_draw_t *menu_draw)
 {
+    /* VICII */
+    menu_draw->max_text_x = 40;
+    menu_draw->color_front = menu_draw->color_default_front = 1;
+    menu_draw->color_back = menu_draw->color_default_back = 0;
+    menu_draw->color_cursor_back = 6;
+    menu_draw->color_cursor_revers = 0;
+    menu_draw->color_active_green = 13;
+    menu_draw->color_inactive_red = 2;
+    menu_draw->color_active_grey = 15;
+    menu_draw->color_inactive_grey = 11;
+
+    sdl_ui_set_menu_params = NULL;
 }
 
+/** \brief  Pre-initialize the UI before the canvas window gets created
+ *
+ * \return  0 on success, -1 on failure
+ */
+int c64scui_init_early(void)
+{
+    return 0;
+}
+
+/** \brief  Initialize the UI
+ *
+ * \return  0 on success, -1 on failure
+ */
 int c64scui_init(void)
 {
 #ifdef SDL_DEBUG
@@ -185,9 +224,10 @@ int c64scui_init(void)
     uisid_menu_create();
     uiclockport_rr_mmc_menu_create();
     uiclockport_ide64_menu_create();
+    uimedia_menu_create();
 
     sdl_ui_set_main_menu(x64sc_main_menu);
-    sdl_ui_set_menu_font(mem_chargen_rom + 0x800, 8, 8);
+    sdl_ui_vicii_font_init();
     sdl_vkbd_set_vkbd(&vkbd_c64);
 
 #ifdef HAVE_FFMPEG
@@ -204,16 +244,18 @@ void c64scui_shutdown(void)
     uicart_menu_shutdown();
     uipalette_menu_shutdown();
     uijoyport_menu_shutdown();
+    uimedia_menu_shutdown();
 #ifdef HAVE_MIDI
     sdl_menu_midi_in_free();
     sdl_menu_midi_out_free();
 #endif
 
-#ifdef HAVE_PCAP
+#ifdef HAVE_RAWNET
     sdl_menu_ethernet_interface_free();
 #endif
 
 #ifdef HAVE_FFMPEG
     sdl_menu_ffmpeg_shutdown();
 #endif
+    sdl_ui_vicii_font_shutdown();
 }

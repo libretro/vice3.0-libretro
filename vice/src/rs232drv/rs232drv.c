@@ -32,7 +32,6 @@
 #include "resources.h"
 #include "rs232.h"
 #include "rs232drv.h"
-#include "translate.h"
 #include "types.h"
 #include "util.h"
 
@@ -83,27 +82,20 @@ void rs232drv_resources_shutdown(void)
     rs232_resources_shutdown();
 }
 
-static const cmdline_option_t cmdline_options[] = {
-    { "-rsdev1", SET_RESOURCE, 1,
+static const cmdline_option_t cmdline_options[] =
+{
+    { "-rsdev1", SET_RESOURCE, CMDLINE_ATTRIB_NEED_ARGS,
       NULL, NULL, "RsDevice1", NULL,
-      USE_PARAM_ID, USE_DESCRIPTION_ID,
-      IDCLS_P_NAME, IDCLS_SPECIFY_RS232_1_NAME,
-      NULL, NULL },
-    { "-rsdev2", SET_RESOURCE, 1,
+      "<Name>", "Specify name of first RS232 device" },
+    { "-rsdev2", SET_RESOURCE, CMDLINE_ATTRIB_NEED_ARGS,
       NULL, NULL, "RsDevice2", NULL,
-      USE_PARAM_ID, USE_DESCRIPTION_ID,
-      IDCLS_P_NAME, IDCLS_SPECIFY_RS232_2_NAME,
-      NULL, NULL },
-    { "-rsdev3", SET_RESOURCE, 1,
+      "<Name>", "Specify name of second RS232 device" },
+    { "-rsdev3", SET_RESOURCE, CMDLINE_ATTRIB_NEED_ARGS,
       NULL, NULL, "RsDevice3", NULL,
-      USE_PARAM_ID, USE_DESCRIPTION_ID,
-      IDCLS_P_NAME, IDCLS_SPECIFY_RS232_3_NAME,
-      NULL, NULL },
-    { "-rsdev4", SET_RESOURCE, 1,
+      "<Name>", "Specify name of third RS232 device" },
+    { "-rsdev4", SET_RESOURCE, CMDLINE_ATTRIB_NEED_ARGS,
       NULL, NULL, "RsDevice4", NULL,
-      USE_PARAM_ID, USE_DESCRIPTION_ID,
-      IDCLS_P_NAME, IDCLS_SPECIFY_RS232_4_NAME,
-      NULL, NULL },
+      "<Name>", "Specify name of fourth RS232 device" },
     CMDLINE_LIST_END
 };
 
@@ -136,12 +128,12 @@ void rs232drv_close(int fd)
     rs232_close(fd);
 }
 
-int rs232drv_putc(int fd, BYTE b)
+int rs232drv_putc(int fd, uint8_t b)
 {
     return rs232_putc(fd, b);
 }
 
-int rs232drv_getc(int fd, BYTE *b)
+int rs232drv_getc(int fd, uint8_t *b)
 {
     return rs232_getc(fd, b);
 }
@@ -180,12 +172,12 @@ void rs232drv_close(int fd)
 {
 }
 
-int rs232drv_putc(int fd, BYTE b)
+int rs232drv_putc(int fd, uint8_t b)
 {
     return -1;
 }
 
-int rs232drv_getc(int fd, BYTE *b)
+int rs232drv_getc(int fd, uint8_t *b)
 {
     return -1;
 }

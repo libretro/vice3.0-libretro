@@ -27,7 +27,9 @@
 #ifndef VICE_ARCHDEP_AMIGA_H
 #define VICE_ARCHDEP_AMIGA_H
 
+#define VICE_ARCHAPI_PRIVATE_API
 #include "archapi.h"
+#undef VICE_ARCHAPI_PRIVATE_API
 
 #ifdef AMIGA_M68K
 #include <sys/unistd.h>
@@ -101,5 +103,16 @@
 
 /* Keyword to use for a static prototype */
 #define STATIC_PROTOTYPE static
+
+extern int load_libs(void);
+extern void close_libs(void);
+
+extern int pci_lib_loaded;
+
+#if defined(HAVE_PROTO_OPENPCI_H) || defined(AMIGA_OS4)
+extern int pci_lib_loaded;
+#endif
+
+#define DEFAULT_MENU_KEY SDLK_F10
 
 #endif

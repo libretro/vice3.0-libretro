@@ -39,7 +39,6 @@
 #include "lib.h"
 #include "log.h"
 #include "resources.h"
-#include "translate.h"
 #include "util.h"
 
 #define NUM_DRIVES 4
@@ -110,11 +109,9 @@ void fliplist_resources_shutdown(void)
 
 static const cmdline_option_t cmdline_options[] =
 {
-    { "-flipname", SET_RESOURCE, 1,
+    { "-flipname", SET_RESOURCE, CMDLINE_ATTRIB_NEED_ARGS,
       NULL, NULL, "FliplistName", NULL,
-      USE_PARAM_ID, USE_DESCRIPTION_ID,
-      IDCLS_P_NAME, IDCLS_SPECIFY_FLIP_LIST_NAME,
-      NULL, NULL },
+      "<Name>", "Specify name of the flip list file image" },
     CMDLINE_LIST_END
 };
 
@@ -409,6 +406,13 @@ int fliplist_load_list(unsigned int unit, const char *filename, int autoattach)
                 long unit_long;
 
                 util_string_to_long(buffer + 5, NULL, 10, &unit_long);
+
+                if (unit_long < 8 || unit_long > 11) {
+                    log_message(LOG_DEFAULT,
+                            "Invalid unit number %ld for fliplist\n", unit_long);
+                    /* perhaps VICE should properly error out, ie quit? */
+                    return -1;
+                }
 
                 unit = (unsigned int)unit_long;
             }

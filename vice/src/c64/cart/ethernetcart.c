@@ -26,7 +26,7 @@
 
 #include "vice.h"
 
-#ifdef HAVE_PCAP
+#ifdef HAVE_RAWNET
 
 #include <assert.h>
 #include <stdio.h>
@@ -46,7 +46,6 @@
 #include "rawnet.h"
 #include "resources.h"
 #include "snapshot.h"
-#include "translate.h"
 #include "util.h"
 
 #define CARTRIDGE_INCLUDE_PRIVATE_API
@@ -70,9 +69,9 @@
 /*    resources support functions                                            */
 
 /* Some prototypes are needed */
-static BYTE ethernetcart_read(WORD io_address);
-static BYTE ethernetcart_peek(WORD io_address);
-static void ethernetcart_store(WORD io_address, BYTE byte);
+static uint8_t ethernetcart_read(uint16_t io_address);
+static uint8_t ethernetcart_peek(uint16_t io_address);
+static void ethernetcart_store(uint16_t io_address, uint8_t byte);
 static int ethernetcart_dump(void);
 
 static io_source_t ethernetcart_device = {
@@ -143,39 +142,39 @@ void ethernetcart_detach(void)
 /* ------------------------------------------------------------------------- */
 
 /* ----- read byte from I/O range in VICE ----- */
-static BYTE ethernetcart_read(WORD io_address)
+static uint8_t ethernetcart_read(uint16_t io_address)
 {
     ethernetcart_device.io_source_valid = 1;
 
     if (ethernetcart_mode == ETHERNETCART_MODE_RRNET) {
-        io_address ^= 8;
         if (io_address < 2) {
             return 0;
         }
+        io_address ^= 8;
     }
     return cs8900io_read(io_address);
 }
 
 /* ----- peek byte with no sideeffects from I/O range in VICE ----- */
-static BYTE ethernetcart_peek(WORD io_address)
+static uint8_t ethernetcart_peek(uint16_t io_address)
 {
     if (ethernetcart_mode == ETHERNETCART_MODE_RRNET) {
-        io_address ^= 8;
         if (io_address < 2) {
             return 0;
         }
+        io_address ^= 8;
     }
     return cs8900io_peek(io_address);
 }
 
 /* ----- write byte to I/O range of VICE ----- */
-static void ethernetcart_store(WORD io_address, BYTE byte)
+static void ethernetcart_store(uint16_t io_address, uint8_t byte)
 {
     if (ethernetcart_mode == ETHERNETCART_MODE_RRNET) {
-        io_address ^= 8;
         if (io_address < 2) {
             return;
         }
+        io_address ^= 8;
     }
     cs8900io_store(io_address, byte);
 }
@@ -266,8 +265,8 @@ static int set_ethernetcart_base(int val, void *param)
         case 0xdee0:
         case 0xdef0:
             if (machine_class != VICE_MACHINE_VIC20) {
-                ethernetcart_device.start_address = (WORD)addr;
-                ethernetcart_device.end_address = (WORD)(addr + 0xf);
+                ethernetcart_device.start_address = (uint16_t)addr;
+                ethernetcart_device.end_address = (uint16_t)(addr + 0xf);
                 export_res.io1 = &ethernetcart_device;
                 export_res.io2 = NULL;
             } else {
@@ -291,8 +290,8 @@ static int set_ethernetcart_base(int val, void *param)
         case 0xdfe0:
         case 0xdff0:
             if (machine_class != VICE_MACHINE_VIC20) {
-                ethernetcart_device.start_address = (WORD)addr;
-                ethernetcart_device.end_address = (WORD)(addr + 0xf);
+                ethernetcart_device.start_address = (uint16_t)addr;
+                ethernetcart_device.end_address = (uint16_t)(addr + 0xf);
                 export_res.io1 = NULL;
                 export_res.io2 = &ethernetcart_device;
             } else {
@@ -332,8 +331,8 @@ static int set_ethernetcart_base(int val, void *param)
         case 0x9ce0:
         case 0x9cf0:
             if (machine_class == VICE_MACHINE_VIC20) {
-                ethernetcart_device.start_address = (WORD)addr;
-                ethernetcart_device.end_address = (WORD)(addr + 0xf);
+                ethernetcart_device.start_address = (uint16_t)addr;
+                ethernetcart_device.end_address = (uint16_t)(addr + 0xf);
             } else {
                 return -1;
             }
@@ -360,6 +359,13 @@ int ethernetcart_enable(void)
 {
     return resources_set_int("ETHERNETCART_ACTIVE", 1);
 }
+
+
+int ethernetcart_disable(void)
+{
+    return resources_set_int("ETHERNETCART_ACTIVE", 0);
+}
+
 
 static const resource_int_t resources_int[] = {
     { "ETHERNETCART_ACTIVE", 0, RES_EVENT_STRICT, (resource_value_t)0,
@@ -411,41 +417,29 @@ static int set_rrnet_enable(const char *value, void *extra_param)
 
 static const cmdline_option_t cmdline_options[] =
 {
-    { "-ethernetcart", SET_RESOURCE, 0,
+    { "-ethernetcart", SET_RESOURCE, CMDLINE_ATTRIB_NONE,
       NULL, NULL, "ETHERNETCART_ACTIVE", (resource_value_t)1,
-      USE_PARAM_STRING, USE_DESCRIPTION_ID,
-      IDCLS_UNUSED, IDCLS_ENABLE_ETHERNETCART,
-      NULL, NULL },
-    { "+ethernetcart", SET_RESOURCE, 0,
+      NULL, "Enable the Ethernet Cartridge (TFE/RR-Net/64NIC/FB-NET)" },
+    { "+ethernetcart", SET_RESOURCE, CMDLINE_ATTRIB_NONE,
       NULL, NULL, "ETHERNETCART_ACTIVE", (resource_value_t)0,
-      USE_PARAM_STRING, USE_DESCRIPTION_ID,
-      IDCLS_UNUSED, IDCLS_DISABLE_ETHERNETCART,
-      NULL, NULL },
-    { "-tfe", CALL_FUNCTION, 0,
+      NULL, "Disable the Ethernet Cartridge (TFE/RR-Net/64NIC/FB-NET)" },
+    { "-tfe", CALL_FUNCTION, CMDLINE_ATTRIB_NONE,
       set_tfe_enable, NULL, NULL, NULL,
-      USE_PARAM_STRING, USE_DESCRIPTION_ID,
-      IDCLS_UNUSED, IDCLS_ENABLE_TFE,
-      NULL, NULL },
-    { "-rrnet", CALL_FUNCTION, 0,
+      NULL, "Enable the Ethernet Cartridge in TFE (\"The Final Ethernet\") compatible mode and set default I/O address" },
+    { "-rrnet", CALL_FUNCTION, CMDLINE_ATTRIB_NONE,
       set_rrnet_enable, NULL, NULL, NULL,
-      USE_PARAM_STRING, USE_DESCRIPTION_ID,
-      IDCLS_UNUSED, IDCLS_ENABLE_RRNET,
-      NULL, NULL },
-    { "-ethernetcartmode", SET_RESOURCE, 1,
+      NULL, "Enable the Ethernet Cartridge in RR-Net compatible mode and set default I/O address" },
+    { "-ethernetcartmode", SET_RESOURCE, CMDLINE_ATTRIB_NEED_ARGS,
       NULL, NULL, "ETHERNETCARTMode", NULL,
-      USE_PARAM_ID, USE_DESCRIPTION_ID,
-      IDCLS_P_MODE, IDCLS_ETHERNETCART_MODE,
-      NULL, NULL },
+      "<Mode>", "Mode of Ethernet Cartridge (0: TFE, 1: RR-Net)" },
     CMDLINE_LIST_END
 };
 
 static cmdline_option_t base_cmdline_options[] =
 {
-    { "-ethernetcartbase", SET_RESOURCE, 1,
+    { "-ethernetcartbase", SET_RESOURCE, CMDLINE_ATTRIB_NEED_ARGS,
       NULL, NULL, "ETHERNETCARTBase", NULL,
-      USE_PARAM_ID, USE_DESCRIPTION_COMBO,
-      IDCLS_P_BASE_ADDRESS, IDCLS_ETHERNETCART_BASE,
-      NULL, NULL },
+      "<Base address>", NULL },
     CMDLINE_LIST_END
 };
 
@@ -464,11 +458,11 @@ int ethernetcart_cmdline_options_init(void)
     if (machine_class == VICE_MACHINE_VIC20) {
         temp1 = util_gen_hex_address_list(0x9800, 0x9900, 0x10);
         temp2 = util_gen_hex_address_list(0x9c00, 0x9d00, 0x10);
-        ethernetcart_address_list = util_concat(". (", temp1, "/", temp2, ")", NULL);        
+        ethernetcart_address_list = util_concat("Base address of the Ethernet Cartridge. (", temp1, "/", temp2, ")", NULL);        
         lib_free(temp2);
     } else {
         temp1 = util_gen_hex_address_list(0xde00, 0xe000, 0x10);
-        ethernetcart_address_list = util_concat(". (", temp1, ")", NULL);
+        ethernetcart_address_list = util_concat("Base address of the Ethernet Cartridge. (", temp1, ")", NULL);
     }
     lib_free(temp1);
 
@@ -511,7 +505,7 @@ int ethernetcart_snapshot_read_module(snapshot_t *s)
 {
     return -1;
 #if 0
-    BYTE vmajor, vminor;
+    uint8_t vmajor, vminor;
     snapshot_module_t *m;
 
     m = snapshot_module_open(s, SNAP_MODULE_NAME, &vmajor, &vminor);
@@ -534,4 +528,4 @@ int ethernetcart_snapshot_read_module(snapshot_t *s)
 #endif
 }
 
-#endif /* #ifdef HAVE_PCAP */
+#endif /* #ifdef HAVE_RAWNET */

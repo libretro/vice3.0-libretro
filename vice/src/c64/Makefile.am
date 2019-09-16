@@ -18,7 +18,9 @@ AM_CPPFLAGS = \
 	-I$(top_srcdir)/src/rtc \
 	-I$(top_srcdir)/src/joyport \
 	-I$(top_srcdir)/src/samplerdrv \
-	-I$(top_srcdir)/src/tapeport
+	-I$(top_srcdir)/src/tapeport \
+	-I$(top_srcdir)/src/core \
+	-I$(top_srcdir)/src/hvsc
 
 noinst_LIBRARIES = libvsid.a libc64.a libc64sc.a libc64c128.a libc64c64dtv.a libc64scpu64.a
 
@@ -52,9 +54,11 @@ libvsid_a_SOURCES = \
 	psid.c \
 	psid.h \
 	psiddrv.a65 \
+	psiddrv.h \
 	reloc65.c \
 	vsid.c \
 	vsid-cmdline-options.c \
+	vsid-cmdline-options.h \
 	vsid-resources.c \
 	vsid-snapshot.c \
 	vsidcia1.c \
@@ -128,12 +132,7 @@ libc64_a_SOURCES = \
 	plus256k.c \
 	plus256k.h \
 	plus60k.c \
-	plus60k.h \
-	psid.c \
-	psid.h \
-	psiddrv.a65 \
-	psiddrv.h \
-	reloc65.c
+	plus60k.h
 
 libc64sc_a_SOURCES = \
 	c64-cmdline-options.c \
@@ -196,12 +195,7 @@ libc64sc_a_SOURCES = \
 	plus256k.c \
 	plus256k.h \
 	plus60k.c \
-	plus60k.h \
-	psid.c \
-	psid.h \
-	psiddrv.a65 \
-	psiddrv.h \
-	reloc65.c
+	plus60k.h
 
 libc64c64dtv_a_SOURCES = \
 	c64bus.c \
@@ -279,8 +273,7 @@ libc64scpu64_a_SOURCES = \
 	c64sound.c \
 	c64video.c \
 	patchrom.c \
-	patchrom.h \
-	reloc65.c
+	patchrom.h
 
 BUILT_SOURCES = psiddrv.h
 
@@ -289,8 +282,8 @@ EXTRA_DIST =
 SUFFIXES = .a65
 
 .a65.h:
-	xa -R -G $< -o $(srcdir)/$*.o65
-	od -v -An -w8 -tx1 $(srcdir)/$*.o65 | sed 's/\w\w/0x&,/g' > $(srcdir)/$@
+	$(XA) -R -G $< -o $*.o65 2>/dev/null
+	od -v -An -tx1 $*.o65 | sed 's/\([0-9a-f][0-9a-f]\)/0x\1,/g' > $@
 
 .PHONY: libc64cart libc64cartsystem libc64commoncart
 

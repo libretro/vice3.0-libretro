@@ -1,0 +1,5 @@
+version.o: version.cc resid-config.h siddefs.h
+
+resid-config.h:
+
+siddefs.h:

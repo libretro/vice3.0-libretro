@@ -24,16 +24,18 @@
  *
  */
 
+#include <stdint.h>
+
 #include "vice.h"
 
-#ifdef HAVE_PCAP
+#ifdef HAVE_RAWNET
 
 #ifdef UNIX_COMPILE
-#include "../unix/rawnetarch.c"
+#include "../gtk3/rawnetarch_unix.c"
 #endif
 
-#if defined(WIN32_COMPILE) && !defined(__XBOX__)
-#include "../win32/rawnetarch.c"
+#ifdef WIN32_COMPILE
+#include "../gtk3/rawnetarch_win32.c"
 #endif
 
 #endif

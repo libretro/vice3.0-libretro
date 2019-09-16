@@ -37,7 +37,6 @@
 #include "cartridge.h"
 #include "cartio.h"
 #include "clkguard.h"
-#include "cmdline.h"
 #include "coplin_keypad.h"
 #include "cx21.h"
 #include "cx85.h"
@@ -49,6 +48,7 @@
 #include "drive-sound.h"
 #include "drive.h"
 #include "fliplist.h"
+#include "fmopl.h"
 #include "fsdevice.h"
 #include "gfxoutput.h"
 #include "iecdrive.h"
@@ -86,7 +86,6 @@
 #include "sound.h"
 #include "tape.h"
 #include "tapeport.h"
-#include "translate.h"
 #include "traps.h"
 #include "types.h"
 #include "userport.h"
@@ -120,6 +119,12 @@
 #include "lightpen.h"
 #include "mouse.h"
 #endif
+
+
+/** \brief  Delay in seconds before pasting -keybuf argument into the buffer
+ */
+#define KBDBUF_ALARM_DELAY   1
+
 
 machine_context_t machine_context;
 
@@ -280,15 +285,96 @@ static int via1_dump(void)
     return viacore_dump(machine_context.via1);
 }
 
+static void vic_via1_via2_store(uint16_t addr, uint8_t data)
+{
+    if (addr & 0x10) {
+        via2_store(addr, data);
+    }
+    if (addr & 0x20) {
+        via1_store(addr, data);
+    }
+    vic_store(addr, data);
+}
+
+static uint8_t vic_via1_via2_read(uint16_t addr)
+{
+    uint8_t retval = vic_read(addr);
+
+    if (addr & 0x10) {
+        retval &= via2_read(addr);
+    }
+
+    if (addr & 0x20) {
+        retval &= via1_read(addr);
+    }
+
+    return retval;
+}
+
+static uint8_t vic_via1_via2_peek(uint16_t addr)
+{
+    uint8_t retval = vic_peek(addr);
+
+    if (addr & 0x10) {
+        retval &= via2_peek(addr);
+    }
+
+    if (addr & 0x20) {
+        retval &= via1_peek(addr);
+    }
+
+    return retval;
+}
+
+static void via1_via2_store(uint16_t addr, uint8_t data)
+{
+    if (addr & 0x10) {
+        via2_store(addr, data);
+    }
+    if (addr & 0x20) {
+        via1_store(addr, data);
+    }
+}
+
+static uint8_t via1_via2_read(uint16_t addr)
+{
+    uint8_t retval = 0xff;
+
+    if (addr & 0x10) {
+        retval &= via2_read(addr);
+    }
+
+    if (addr & 0x20) {
+        retval &= via1_read(addr);
+    }
+
+    return retval;
+}
+
+static uint8_t via1_via2_peek(uint16_t addr)
+{
+    uint8_t retval = 0xff;
+
+    if (addr & 0x10) {
+        retval &= via2_peek(addr);
+    }
+
+    if (addr & 0x20) {
+        retval &= via1_peek(addr);
+    }
+
+    return retval;
+}
+
 static io_source_t vic_device = {
     "VIC",
     IO_DETACH_CART, /* dummy */
     NULL,           /* dummy */
-    0x9000, 0x90ff, 0xf,
+    0x9000, 0x90ff, 0x3f, /* must include A5/A4 */
     1, /* read is always valid */
-    vic_store,
-    vic_read,
-    vic_peek,
+    vic_via1_via2_store,
+    vic_via1_via2_read,
+    vic_via1_via2_peek,
     vic_dump,
     0, /* dummy (not a cartridge) */
     IO_PRIO_HIGH, /* priority, device and mirrors never involved in collisions */
@@ -299,11 +385,11 @@ static io_source_t via2_device = {
     "VIA2",
     IO_DETACH_CART, /* dummy */
     NULL,           /* dummy */
-    0x9110, 0x911f, 0xf,
+    0x9110, 0x93ff, 0x3f, /* must include A5/A4 */
     1, /* read is always valid */
-    via2_store,
-    via2_read,
-    via2_peek,
+    via1_via2_store,
+    via1_via2_read,
+    via1_via2_peek,
     via2_dump,
     0, /* dummy (not a cartridge) */
     IO_PRIO_HIGH, /* priority, device and mirrors never involved in collisions */
@@ -314,11 +400,11 @@ static io_source_t via1_device = {
     "VIA1",
     IO_DETACH_CART, /* dummy */
     NULL,           /* dummy */
-    0x9120, 0x912f, 0xf,
+    0x9120, 0x93ff, 0x3f, /* must include A5/A4 */
     1, /* read is always valid */
-    via1_store,
-    via1_read,
-    via1_peek,
+    via1_via2_store,
+    via1_via2_read,
+    via1_via2_peek,
     via1_dump,
     0, /* dummy (not a cartridge) */
     IO_PRIO_HIGH, /* priority, device and mirrors never involved in collisions */
@@ -329,7 +415,7 @@ static io_source_list_t *vic_list_item = NULL;
 static io_source_list_t *via1_list_item = NULL;
 static io_source_list_t *via2_list_item = NULL;
 
-void vic20io0_init(void)
+static void vic20io0_init(void)
 {
     vic_list_item = io_source_register(&vic_device);
     via1_list_item = io_source_register(&via1_device);
@@ -338,31 +424,25 @@ void vic20io0_init(void)
 
 /* ------------------------------------------------------------------------ */
 
-static joyport_port_props_t control_port = 
-{
+static joyport_port_props_t control_port = {
     "Control port",
-    IDGS_CONTROL_PORT,
-    1,				/* has a potentiometer connected to this port */
-    1,				/* has lightpen support on this port */
-    1					/* port is always active */
+    1,  /* has a potentiometer connected to this port */
+    1,  /* has lightpen support on this port */
+    1   /* port is always active */
 };
 
-static joyport_port_props_t userport_joy_control_port_1 = 
-{
+static joyport_port_props_t userport_joy_control_port_1 = {
     "Userport joystick adapter port 1",
-    IDGS_USERPORT_JOY_ADAPTER_PORT_1,
-    0,				/* has NO potentiometer connected to this port */
-    0,				/* has NO lightpen support on this port */
-    0					/* port can be switched on/off */
+    0,  /* has NO potentiometer connected to this port */
+    0,  /* has NO lightpen support on this port */
+    0   /* port can be switched on/off */
 };
 
-static joyport_port_props_t userport_joy_control_port_2 = 
-{
+static joyport_port_props_t userport_joy_control_port_2 = {
     "Userport joystick adapter port 2",
-    IDGS_USERPORT_JOY_ADAPTER_PORT_2,
-    0,				/* has NO potentiometer connected to this port */
-    0,				/* has NO lightpen support on this port */
-    0					/* port can be switched on/off */
+    0,  /* has NO potentiometer connected to this port */
+    0,  /* has NO lightpen support on this port */
+    0   /* port can be switched on/off */
 };
 
 static int init_joyport_ports(void)
@@ -529,22 +609,21 @@ int machine_resources_init(void)
         return -1;
     }
 #endif
-#ifndef COMMON_KBD
-    if (kbd_resources_init() < 0) {
-        init_resource_fail("kbd");
-        return -1;
-    }
-#endif
     if (drive_resources_init() < 0) {
         init_resource_fail("drive");
         return -1;
     }
-    if (tapeport_resources_init() < 0) {
-        init_resource_fail("tapeport");
-        return -1;
-    }
+    /*
+     * This needs to be called before tapeport_resources_init(), otherwise
+     * the tapecart will fail to initialize due to the Datasette resource
+     * appearing after the Tapecart resources
+     */
     if (datasette_resources_init() < 0) {
         init_resource_fail("datasette");
+        return -1;
+    }
+    if (tapeport_resources_init() < 0) {
+        init_resource_fail("tapeport");
         return -1;
     }
     if (cartridge_resources_init() < 0) {
@@ -715,12 +794,6 @@ int machine_cmdline_options_init(void)
         return -1;
     }
 #endif
-#ifndef COMMON_KBD
-    if (kbd_cmdline_options_init() < 0) {
-        init_cmdline_options_fail("kbd");
-        return -1;
-    }
-#endif
     if (drive_cmdline_options_init() < 0) {
         init_cmdline_options_fail("drive");
         return -1;
@@ -860,12 +933,11 @@ int machine_specific_init(void)
                    (delay * VIC20_PAL_RFSH_PER_SEC * VIC20_PAL_CYCLES_PER_RFSH),
                    1, 0xcc, 0xd1, 0xd3, 0xd5);
 
-#ifdef USE_BEOS_UI
     /* Pre-init VIC20-specific parts of the menus before vic_init()
-       creates a canvas window with a menubar at the top. This could
-       also be used by other ports, e.g. GTK+...  */
-    vic20ui_init_early();
-#endif
+       creates a canvas window with a menubar at the top. */
+    if (!console_mode) {
+        vic20ui_init_early();
+    }
 
     /* Initialize the VIC-I emulation.  */
     if (vic_init() == NULL) {
@@ -877,13 +949,6 @@ int machine_specific_init(void)
 
     ieeevia1_init(machine_context.ieeevia1);
     ieeevia2_init(machine_context.ieeevia2);
-
-#ifndef COMMON_KBD
-    /* Load the default keymap file.  */
-    if (vic20_kbd_init() < 0) {
-        return -1;
-    }
-#endif
 
     vic20_monitor_init();
 
@@ -910,9 +975,12 @@ int machine_specific_init(void)
     /* Initialize sound.  Notice that this does not really open the audio
        device yet.  */
     sound_init(machine_timing.cycles_per_sec, machine_timing.cycles_per_rfsh);
+    fmopl_set_machine_parameter(machine_timing.cycles_per_sec);
 
     /* Initialize keyboard buffer.  */
-    kbdbuf_init(631, 198, 10, (CLOCK)(machine_timing.cycles_per_rfsh * machine_timing.rfsh_per_sec));
+    kbdbuf_init(631, 198, 10,
+            (CLOCK)(machine_timing.cycles_per_rfsh *
+                machine_timing.rfsh_per_sec * KBDBUF_ALARM_DELAY));
 
     /* Initialize the VIC20-specific I/O */
     vic20io0_init();
@@ -950,16 +1018,6 @@ int machine_specific_init(void)
 
     machine_drive_stub();
 
-#if defined (USE_XF86_EXTENSIONS) && (defined(USE_XF86_VIDMODE_EXT) || defined (HAVE_XRANDR))
-    {
-        /* set fullscreen if user used `-fullscreen' on cmdline */
-        int fs;
-        resources_get_int("UseFullscreen", &fs);
-        if (fs) {
-            resources_set_int("VICFullscreen", 1);
-        }
-    }
-#endif
     return 0;
 }
 
@@ -1110,6 +1168,8 @@ void machine_change_timing(int timeval, int border_mode)
 
     vic_change_timing(&machine_timing, border_mode);
 
+    fmopl_set_machine_parameter(machine_timing.cycles_per_sec);
+
     mem_patch_kernal();
 
     machine_trigger_reset(MACHINE_RESET_MODE_HARD);
@@ -1162,12 +1222,12 @@ struct image_contents_s *machine_diskcontents_bus_read(unsigned int unit)
     return diskcontents_iec_read(unit);
 }
 
-BYTE machine_tape_type_default(void)
+uint8_t machine_tape_type_default(void)
 {
     return TAPE_CAS_TYPE_BAS;
 }
 
-BYTE machine_tape_behaviour(void)
+uint8_t machine_tape_behaviour(void)
 {
     return TAPE_BEHAVIOUR_NORMAL;
 }
@@ -1184,7 +1244,7 @@ const char *machine_get_name(void)
 
 /* ------------------------------------------------------------------------- */
 
-static void vic20_userport_set_flag(BYTE b)
+static void vic20_userport_set_flag(uint8_t b)
 {
     viacore_signal(machine_context.via2, VIA_SIG_CB1, b ? VIA_SIG_RISE : VIA_SIG_FALL);
 }

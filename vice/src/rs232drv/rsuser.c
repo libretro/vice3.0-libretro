@@ -44,7 +44,6 @@
 #include "resources.h"
 #include "rs232drv.h"
 #include "rsuser.h"
-#include "translate.h"
 #include "types.h"
 
 static int fd = -1;
@@ -55,9 +54,9 @@ static int dtr;
 static int rts;
 
 static int rxstate;
-static BYTE rxdata;
-static BYTE txdata;
-static BYTE txbit;
+static uint8_t rxdata;
+static uint8_t txdata;
+static uint8_t txbit;
 
 static long cycles_per_sec = 1000000;
 
@@ -67,7 +66,7 @@ static CLOCK clk_start_bit = 0;
 static CLOCK clk_end_tx = 0;
 
 static void (*start_bit_trigger)(void);
-static void (*byte_rx_func)(BYTE);
+static void (*byte_rx_func)(uint8_t);
 
 static void clk_overflow_callback(CLOCK sub, void *data);
 
@@ -193,27 +192,20 @@ int rsuser_resources_init(void)
     return resources_register_int(resources_int);
 }
 
-static const cmdline_option_t cmdline_options[] = {
-    { "-rsuser", SET_RESOURCE, 0,
+static const cmdline_option_t cmdline_options[] =
+{
+    { "-rsuser", SET_RESOURCE, CMDLINE_ATTRIB_NONE,
       NULL, NULL, "RsUserEnable", (void *)1,
-      USE_PARAM_STRING, USE_DESCRIPTION_ID,
-      IDCLS_UNUSED, IDCLS_ENABLE_RS232_USERPORT,
-      NULL, NULL },
-    { "+rsuser", SET_RESOURCE, 0,
+      NULL, "Enable RS232 userport emulation" },
+    { "+rsuser", SET_RESOURCE, CMDLINE_ATTRIB_NONE,
       NULL, NULL, "RsUserEnable", (void *)0,
-      USE_PARAM_STRING, USE_DESCRIPTION_ID,
-      IDCLS_UNUSED, IDCLS_DISABLE_RS232_USERPORT,
-      NULL, NULL },
-    { "-rsuserbaud", SET_RESOURCE, 1,
+      NULL, "Disable RS232 userport emulation" },
+    { "-rsuserbaud", SET_RESOURCE, CMDLINE_ATTRIB_NEED_ARGS,
       NULL, NULL, "RsUserBaud", NULL,
-      USE_PARAM_ID, USE_DESCRIPTION_ID,
-      IDCLS_P_BAUD, IDCLS_SET_BAUD_RS232_USERPORT,
-      NULL, NULL },
-    { "-rsuserdev", SET_RESOURCE, 1,
+      "<baud>", "Set the baud rate of the RS232 userport emulation." },
+    { "-rsuserdev", SET_RESOURCE, CMDLINE_ATTRIB_NEED_ARGS,
       NULL, NULL, "RsUserDev", NULL,
-      USE_PARAM_STRING, USE_DESCRIPTION_ID,
-      IDCLS_UNUSED, IDCLS_SPECIFY_RS232_DEVICE_USERPORT,
-      "<0-3>", NULL },
+      "<0-3>", "Specify VICE RS232 device for userport" },
     CMDLINE_LIST_END
 };
 
@@ -233,7 +225,7 @@ static const unsigned int masks[] =
     0x1000, 0x2000, 0x4000, 0x8000
 };
 
-void rsuser_init(long cycles, void (*startfunc)(void), void (*bytefunc)(BYTE))
+void rsuser_init(long cycles, void (*startfunc)(void), void (*bytefunc)(uint8_t))
 {
     int i, j;
     unsigned char c, d;
@@ -295,7 +287,7 @@ static void rsuser_setup(void)
     alarm_set(rsuser_alarm, maincpu_clk + char_clk_ticks / 8);
 }
 
-void rsuser_write_ctrl(BYTE b)
+void rsuser_write_ctrl(uint8_t b)
 {
     int new_dtr = b & DTR_OUT;  /* = 0 is active, != 0 is inactive */
     int new_rts = b & RTS_OUT;  /* = 0 is active, != 0 is inactive */
@@ -320,7 +312,7 @@ void rsuser_write_ctrl(BYTE b)
 
 static void check_tx_buffer(void)
 {
-    BYTE c;
+    uint8_t c;
 
     while (valid >= 10 && (buf & masks[valid - 1])) {
         valid--;
@@ -333,7 +325,7 @@ static void check_tx_buffer(void)
             c = (buf >> (valid - 9)) & 0xff;
             if (fd != -1) {
                 LOG_DEBUG(("\"%c\" (%02x).", code[c], code[c]));
-                rs232drv_putc(fd, ((BYTE)(code[c])));
+                rs232drv_putc(fd, ((uint8_t)(code[c])));
             }
         }
         valid -= 10;
@@ -401,7 +393,7 @@ void rsuser_set_tx_bit(int b)
     }
 }
 
-BYTE rsuser_get_rx_bit(void)
+uint8_t rsuser_get_rx_bit(void)
 {
     int bit = 0, byte = 1;
     LOG_DEBUG_TIMING_RX(("rsuser_get_rx_bit(clk=%d, clk_start_rx=%d).",
@@ -427,12 +419,12 @@ BYTE rsuser_get_rx_bit(void)
     return byte;
 }
 
-BYTE rsuser_read_ctrl(BYTE b)
+uint8_t rsuser_read_ctrl(uint8_t b)
 {
     return b & (rsuser_get_rx_bit() | CTS_IN | (rsuser_baudrate > 2400 ? 0 : DCD_IN));
 }
 
-void rsuser_tx_byte(BYTE b)
+void rsuser_tx_byte(uint8_t b)
 {
     buf = (buf << 8) | b;
     valid += 8;
@@ -461,7 +453,7 @@ static void int_rsuser(CLOCK offset, void *data)
         case 1:
             /* now byte should be in shift register */
             if (byte_rx_func) {
-                byte_rx_func((BYTE)(code[rxdata]));
+                byte_rx_func((uint8_t)(code[rxdata]));
             }
             rxstate = 0;
             clk_start_rx = 0;

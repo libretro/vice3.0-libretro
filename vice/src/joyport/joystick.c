@@ -51,7 +51,6 @@
 #include "network.h"
 #include "resources.h"
 #include "snapshot.h"
-#include "translate.h"
 #include "types.h"
 #include "uiapi.h"
 #include "userport_joystick.h"
@@ -90,18 +89,18 @@ static int joyport_joystick[5] = { 0, 0, 0, 0, 0 };
 
 /* Global joystick value.  */
 /*! \todo SRT: document: what are these values joystick_value[0, 1, 2, ..., 5] used for? */
-BYTE joystick_value[JOYSTICK_NUM + 1] = { 0 };
-static BYTE network_joystick_value[JOYSTICK_NUM + 1] = { 0 };
+uint8_t joystick_value[JOYSTICK_NUM + 1] = { 0 };
+static uint8_t network_joystick_value[JOYSTICK_NUM + 1] = { 0 };
 
 /* Latched joystick status.  */
-static BYTE latch_joystick_value[JOYSTICK_NUM + 1] = { 0 };
+static uint8_t latch_joystick_value[JOYSTICK_NUM + 1] = { 0 };
 
 /* mapping of the joystick ports */
 int joystick_port_map[JOYSTICK_NUM] = { 0 };
 
 /* to prevent illegal direction combinations */
 static int joystick_opposite_enable = 0;
-static const BYTE joystick_opposite_direction[] = {
+static const uint8_t joystick_opposite_direction[] = {
                                                /* E W S N */
     0,                                         /*         */
     JOYPAD_S,                                  /*       + */
@@ -136,7 +135,7 @@ int joykeys[JOYSTICK_KEYSET_NUM][JOYSTICK_KEYSET_NUM_KEYS];
 
 static void joystick_latch_matrix(CLOCK offset)
 {
-    BYTE idx;
+    uint8_t idx;
 
     if (network_connected()) {
         idx = network_joystick_value[0];
@@ -226,7 +225,7 @@ static void joystick_process_latch(void)
     }
 }
 
-void joystick_set_value_absolute(unsigned int joyport, BYTE value)
+void joystick_set_value_absolute(unsigned int joyport, uint8_t value)
 {
     if (event_playback_active()) {
         return;
@@ -234,13 +233,13 @@ void joystick_set_value_absolute(unsigned int joyport, BYTE value)
 
     if (latch_joystick_value[joyport] != value) {
         latch_joystick_value[joyport] = value;
-        latch_joystick_value[0] = (BYTE)joyport;
+        latch_joystick_value[0] = (uint8_t)joyport;
         joystick_process_latch();
     }
 }
 
 /* set joystick bits */
-void joystick_set_value_or(unsigned int joyport, BYTE value)
+void joystick_set_value_or(unsigned int joyport, uint8_t value)
 {
     if (event_playback_active()) {
         return;
@@ -249,29 +248,29 @@ void joystick_set_value_or(unsigned int joyport, BYTE value)
     latch_joystick_value[joyport] |= value;
 
     if (!joystick_opposite_enable) {
-        latch_joystick_value[joyport] &= (BYTE)(~joystick_opposite_direction[value & 0xf]);
+        latch_joystick_value[joyport] &= (uint8_t)(~joystick_opposite_direction[value & 0xf]);
     }
 
-    latch_joystick_value[0] = (BYTE)joyport;
+    latch_joystick_value[0] = (uint8_t)joyport;
     joystick_process_latch();
 }
 
 /* release joystick bits */
-void joystick_set_value_and(unsigned int joyport, BYTE value)
+void joystick_set_value_and(unsigned int joyport, uint8_t value)
 {
     if (event_playback_active()) {
         return;
     }
 
     latch_joystick_value[joyport] &= value;
-    latch_joystick_value[0] = (BYTE)joyport;
+    latch_joystick_value[0] = (uint8_t)joyport;
     joystick_process_latch();
 }
 
 void joystick_clear(unsigned int joyport)
 {
     latch_joystick_value[joyport] = 0;
-    latch_joystick_value[0] = (BYTE)joyport;
+    latch_joystick_value[0] = (uint8_t)joyport;
     joystick_latch_matrix(0);
 }
 
@@ -281,7 +280,7 @@ void joystick_clear_all(void)
     joystick_latch_matrix(0);
 }
 
-BYTE get_joystick_value(int index)
+uint8_t get_joystick_value(int index)
 {
     return joystick_value[index];
 }
@@ -458,7 +457,7 @@ int joystick_check_set(signed long key, int keysetnum, unsigned int joyport)
                 }
             }
 
-            joystick_set_value_absolute(joyport, (BYTE)value);
+            joystick_set_value_absolute(joyport, (uint8_t)value);
 
             DBGSTATUS(keysetnum, value, joyport, key, 0);
             return 1;
@@ -493,7 +492,7 @@ int joystick_check_clr(signed long key, int keysetnum, unsigned int joyport)
                 }
             }
 
-            joystick_set_value_absolute(joyport, (BYTE)value);
+            joystick_set_value_absolute(joyport, (uint8_t)value);
 
             DBG(("joystick_check_clr:"));
             DBGSTATUS(keysetnum, value, joyport, key, 1);
@@ -517,9 +516,9 @@ static int joyport_enable_joystick(int port, int val)
     return 0;
 }
 
-static BYTE read_joystick(int port)
+static uint8_t read_joystick(int port)
 {
-    return (BYTE)(~joystick_value[port + 1]);
+    return (uint8_t)(~joystick_value[port + 1]);
 }
 
 /* Some prototypes are needed */
@@ -528,7 +527,6 @@ static int joystick_snapshot_read_module(snapshot_t *s, int port);
 
 static joyport_t joystick_device = {
     "Joystick",
-    IDGS_JOYSTICK,
     JOYPORT_RES_ID_NONE,
     JOYPORT_IS_NOT_LIGHTPEN,
     JOYPORT_POT_OPTIONAL,
@@ -676,27 +674,19 @@ int joystick_resources_init(void)
 
 static const cmdline_option_t cmdline_options[] =
 {
-    { "-joyopposite", SET_RESOURCE, 0,
+    { "-joyopposite", SET_RESOURCE, CMDLINE_ATTRIB_NONE,
       NULL, NULL, "JoyOpposite", (resource_value_t)1,
-      USE_PARAM_STRING, USE_DESCRIPTION_ID,
-      IDCLS_UNUSED, IDCLS_ENABLE_JOY_OPPOSITE,
-      NULL, NULL },
-    { "+joyopposite", SET_RESOURCE, 0,
+      NULL, "Enable opposite joystick directions" },
+    { "+joyopposite", SET_RESOURCE, CMDLINE_ATTRIB_NONE,
       NULL, NULL, "JoyOpposite", (resource_value_t)0,
-      USE_PARAM_STRING, USE_DESCRIPTION_ID,
-      IDCLS_UNUSED, IDCLS_DISABLE_JOY_OPPOSITE,
-      NULL, NULL },
+      NULL, "Disable opposite joystick directions" },
 #ifdef COMMON_JOYKEYS
-    { "-keyset", SET_RESOURCE, 0,
+    { "-keyset", SET_RESOURCE, CMDLINE_ATTRIB_NONE,
       NULL, NULL, "KeySetEnable", (resource_value_t)1,
-      USE_PARAM_STRING, USE_DESCRIPTION_ID,
-      IDCLS_UNUSED, IDCLS_ENABLE_KEYSET,
-      NULL, NULL },
-    { "+keyset", SET_RESOURCE, 0,
+      NULL, "Enable keyset" },
+    { "+keyset", SET_RESOURCE, CMDLINE_ATTRIB_NONE,
       NULL, NULL, "KeySetEnable", (resource_value_t)0,
-      USE_PARAM_STRING, USE_DESCRIPTION_ID,
-      IDCLS_UNUSED, IDCLS_DISABLE_KEYSET,
-      NULL, NULL },
+      NULL, "Disable keyset" },
 #endif
     CMDLINE_LIST_END
 };
@@ -751,7 +741,7 @@ static int joystick_snapshot_write_module(snapshot_t *s, int port)
 
 static int joystick_snapshot_read_module(snapshot_t *s, int port)
 {
-    BYTE major_version, minor_version;
+    uint8_t major_version, minor_version;
     snapshot_module_t *m;
     char snapshot_name[16];
 

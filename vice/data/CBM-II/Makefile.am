@@ -32,44 +32,27 @@ palettes = \
 	colodore.vpl \
 	ptoing.vpl \
 	deekay.vpl \
+	cjam.vpl \
 	rgb.vpl \
 	vice.vpl \
-	\
 	amber.vpl \
 	green.vpl \
 	white.vpl
 
-x11_keymaps = \
-	x11_sym.vkm \
-	x11_sym_de.vkm
+gtk3_keymaps = \
+	gtk3_sym.vkm \
+	gtk3_sym_de.vkm
 
 sdl_keymaps = \
+	sdl_hotkeys.vkm \
 	sdl_sym.vkm
-
-extra_keymaps = \
-	amiga_pos.vkm \
-	amiga_sym.vkm \
-	beos_bukp.vkm \
-	beos_buks.vkm \
-	dos_bukp.vkm \
-	dos_buks.vkm \
-	os2.vkm \
-	osx_pos_uk.vkm \
-	osx_sym_uk.vkm \
-	win_sym.vkm \
-	win_pos_uk.vkm \
-	win_sym_uk.vkm
-
-win32_files = \
-	win_hotkeys.vhk \
-	win_shortcuts.vsc
 
 if SDL_COMPILE
 cbm2_DATA = $(roms) $(romsets) $(palettes) $(sdl_keymaps)
 
-EXTRA_DIST = $(cbm2_DATA) $(extra_keymaps) $(x11_keymaps) $(win32_files)
+EXTRA_DIST = $(cbm2_DATA) $(gtk3_keymaps)
 else
-cbm2_DATA = $(roms) $(romsets) $(palettes) $(x11_keymaps)
+cbm2_DATA = $(roms) $(romsets) $(palettes) $(gtk3_keymaps)
 
-EXTRA_DIST = $(cbm2_DATA) $(extra_keymaps) $(sdl_keymaps) $(win32_files)
+EXTRA_DIST = $(cbm2_DATA) $(sdl_keymaps)
 endif

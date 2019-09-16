@@ -53,6 +53,7 @@
 #include "lib.h"
 #include "log.h"
 #include "rs232.h"
+#include "rs232net.h"
 #include "vicesocket.h"
 #include "types.h"
 #include "util.h"
@@ -90,7 +91,9 @@ typedef struct rs232net {
                     log from being flooded with error messages. */
 } rs232net_t;
 
-static rs232net_t fds[RS232_NUM_DEVICES] = {{0}};
+/* C99 standard guarantees all members of an object of static storage are
+ * initialized to their '0' value, see 6.7.8.10 */
+static rs232net_t fds[RS232_NUM_DEVICES];
 
 static log_t rs232net_log = LOG_ERR;
 
@@ -194,7 +197,7 @@ void rs232net_close(int fd)
 }
 
 /* sends a byte to the RS232 line */
-int rs232net_putc(int fd, BYTE b)
+int rs232net_putc(int fd, uint8_t b)
 {
     int n;
 
@@ -226,7 +229,7 @@ int rs232net_putc(int fd, BYTE b)
 }
 
 /* gets a byte to the RS232 line, returns !=0 if byte received, byte in *b. */
-int rs232net_getc(int fd, BYTE * b)
+int rs232net_getc(int fd, uint8_t * b)
 {
     int ret;
     int no_of_read_byte = -1;

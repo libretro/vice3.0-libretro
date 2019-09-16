@@ -34,9 +34,7 @@
 #include <string.h>
 #include <time.h>
 
-#ifdef WIN32_UNICODE_SUPPORT
-#include <wchar.h>
-#endif
+#include "archdep.h"
 
 #ifdef AMIGA_SUPPORT
 #ifndef __USE_INLINE__
@@ -54,6 +52,9 @@
 #include "types.h"
 #include "debug.h"
 
+#define COMPILING_LIB_DOT_C
+#include "lib.h"
+
 #if (defined(sun) || defined(__sun)) && !(defined(__SVR4) || defined(__svr4__))
 #  ifndef RAND_MAX
 #    define RAND_MAX 32767
@@ -62,17 +63,18 @@
 
 #ifdef DEBUG
 /* enable memory debugging */
-#define LIB_DEBUG
+# define LIB_DEBUG
 /* enable pinpointing of memory leaks, don't forget to enable in lib.h */
-#define LIB_DEBUG_PINPOINT
+# define LIB_DEBUG_PINPOINT
 /* warn on free(NULL) */
 /* #define LIB_DEBUG_WARN_FREE_NULL */
-#ifdef __GNUC__
-#define LIB_DEBUG_CALLER
-#define DEBUG_BT_MAXDEPTH 16
-#include <execinfo.h>
+# if defined(HAVE_EXECINFO_H) && defined(HAVE_BT_SYMBOLS)
+#  define LIB_DEBUG_CALLER
+#  define DEBUG_BT_MAXDEPTH 16
+#  include <execinfo.h>
+# endif
 #endif
-#endif
+
 
 #ifdef LIB_DEBUG
 #define LIB_DEBUG_SIZE  0x10000
@@ -362,7 +364,7 @@ static void lib_debug_libc_free(void *ptr)
         } else {
             free(ptr);
         }
-    } 
+    }
 #ifdef LIB_DEBUG_WARN_FREE_NULL
     else {
 #ifdef LIB_DEBUG_PINPOINT
@@ -439,7 +441,7 @@ void *lib_debug_leaklist_bt_caller[LIB_DEBUG_LEAKLIST_MAX][DEBUG_BT_MAXDEPTH];
 int lib_debug_leaklist_bt_numcaller[LIB_DEBUG_LEAKLIST_MAX];
 #endif
 
-void lib_debug_leaklist_add(unsigned int index)
+static void lib_debug_leaklist_add(unsigned int index)
 {
     unsigned int i;
 #ifdef LIB_DEBUG_CALLER
@@ -506,7 +508,7 @@ void lib_debug_check(void)
     printf("\n");
     for (index = 0; index < lib_debug_leaklist_num; index++) {
         printf("%s:%d: Warning: Memory block(s) allocated here was not free'd (Memory leak with size 0x%x at %p).",
-               lib_debug_leaklist_filename[index], lib_debug_leaklist_line[index], 
+               lib_debug_leaklist_filename[index], lib_debug_leaklist_line[index],
                lib_debug_leaklist_size[index], lib_debug_leaklist_address[index]);
 #ifdef LIB_DEBUG_CALLER
         printf("\ncallstack:\n");
@@ -554,6 +556,9 @@ void lib_debug_check(void)
 
 /*----------------------------------------------------------------------------*/
 /* like malloc, but abort on out of memory. */
+#ifdef LIB_DEBUG_PINPOINT
+static
+#endif
 void *lib_malloc(size_t size)
 {
 #ifdef LIB_DEBUG
@@ -565,7 +570,7 @@ void *lib_malloc(size_t size)
 #ifndef __OS2__
     if (ptr == NULL && size > 0) {
         fprintf(stderr, "error: lib_malloc failed\n");
-        exit(-1);
+        archdep_vice_exit(-1);
     }
 #endif
 #ifdef LIB_DEBUG
@@ -599,7 +604,7 @@ void *lib_AllocVec(unsigned long size, unsigned long attributes)
 #ifndef __OS2__
     if (ptr == NULL && size > 0) {
         fprintf(stderr, "error: lib_AllocVec failed\n");
-        exit(-1);
+        archdep_vice_exit(-1);
     }
 #endif
 #ifdef LIB_DEBUG
@@ -626,7 +631,7 @@ void *lib_AllocMem(unsigned long size, unsigned long attributes)
 #ifndef __OS2__
     if (ptr == NULL && size > 0) {
         fprintf(stderr, "error: lib_AllocMem failed\n");
-        exit(-1);
+        archdep_vice_exit(-1);
     }
 #endif
 #ifdef LIB_DEBUG
@@ -638,6 +643,9 @@ void *lib_AllocMem(unsigned long size, unsigned long attributes)
 #endif
 
 /* Like calloc, but abort if not enough memory is available.  */
+#ifdef LIB_DEBUG_PINPOINT
+static
+#endif
 void *lib_calloc(size_t nmemb, size_t size)
 {
 #ifdef LIB_DEBUG
@@ -649,7 +657,7 @@ void *lib_calloc(size_t nmemb, size_t size)
 #ifndef __OS2__
     if (ptr == NULL && (size * nmemb) > 0) {
         fprintf(stderr, "error: lib_calloc failed\n");
-        exit(-1);
+        archdep_vice_exit(-1);
     }
 #endif
 #ifdef LIB_DEBUG
@@ -660,6 +668,9 @@ void *lib_calloc(size_t nmemb, size_t size)
 }
 
 /* Like realloc, but abort if not enough memory is available.  */
+#ifdef LIB_DEBUG_PINPOINT
+static
+#endif
 void *lib_realloc(void *ptr, size_t size)
 {
 #ifdef LIB_DEBUG
@@ -671,7 +682,7 @@ void *lib_realloc(void *ptr, size_t size)
 #ifndef __OS2__
     if (new_ptr == NULL) {
         fprintf(stderr, "error: lib_realloc failed\n");
-        exit(-1);
+        archdep_vice_exit(-1);
     }
 #endif
 #ifdef LIB_DEBUG
@@ -682,6 +693,10 @@ void *lib_realloc(void *ptr, size_t size)
     return new_ptr;
 }
 
+
+#ifdef LIB_DEBUG_PINPOINT
+static
+#endif
 void lib_free(const void *constptr)
 {
     void * ptr = (void*) constptr;
@@ -720,16 +735,22 @@ void lib_FreeMem(void *ptr, unsigned long size)
 
 /*----------------------------------------------------------------------------*/
 
-/* Malloc enough space for `str', copy `str' into it and return its
-   address.  */
+/* Malloc enough space for `str'; copy `str' into it; then, return its
+   address. */
+#ifdef LIB_DEBUG_PINPOINT
+static
+#endif
 char *lib_stralloc(const char *str)
 {
     size_t size;
     char *ptr;
 
     if (str == NULL) {
-        fprintf(stderr, "error: lib_stralloc failed\n");
-        exit(-1);
+#ifdef LIB_DEBUG_PINPOINT
+        fprintf(stderr, "%s:%u: ", lib_debug_pinpoint_filename, lib_debug_pinpoint_line);
+#endif
+        fprintf(stderr, "error: lib_stralloc(NULL) not allowed.\n");
+        archdep_vice_exit(-1);
     }
 
     size = strlen(str) + 1;
@@ -740,49 +761,6 @@ char *lib_stralloc(const char *str)
 }
 
 #if defined(__CYGWIN32__) || defined(__CYGWIN__) || defined(WIN32_COMPILE)
-
-#ifdef WIN32_UNICODE_SUPPORT
-
-size_t lib_tcstostr(char *str, const wchar_t *tcs, size_t len)
-{
-    size_t cnt;
-
-    cnt = wcstombs(str, tcs, len);
-    if (cnt == len) {
-        str[--cnt] = 0;
-    }
-    return cnt;
-}
-
-size_t lib_strtotcs(wchar_t *tcs, const char *str, size_t len)
-{
-    size_t cnt;
-
-    cnt = mbstowcs(tcs, str, len);
-    if (cnt == len) {
-        tcs[--cnt] = 0;
-    }
-    return cnt;
-}
-
-int lib_swprintf(wchar_t *wcs, size_t len, const wchar_t *fmt, ...)
-{
-    va_list args;
-    int ret;
-
-    va_start(args, fmt);
-#ifdef HAVE_STDC_VSWPRINTF
-    ret = vswprintf(wcs, len, fmt, args);
-#else
-    /* alternately we use a Microsoft CRT func */
-    ret = _vsnwprintf(wcs, len, fmt, args);
-#endif
-    va_end(args);
-
-    return ret;
-}
-
-#else
 
 size_t lib_tcstostr(char *str, const char *tcs, size_t len)
 {
@@ -814,7 +792,6 @@ int lib_snprintf(char *str, size_t len, const char *fmt, ...)
 
     return ret;
 }
-#endif
 
 #endif /* CYGWIN or WIN32_COMPILE */
 
@@ -1138,12 +1115,14 @@ repeat:
                 break;
             case 'X':
                 flags |= LARGE;
+                /* FALLTHRU */ /* to lowercase hex */
             case 'x':
                 base = 16;
                 break;
             case 'd':
             case 'i':
                 flags |= SIGN;
+                /* FALLTHRU */ /* to unsigned dec */
             case 'u':
                 break;
 

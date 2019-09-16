@@ -39,7 +39,6 @@
 #include "log.h"
 #include "rawimage.h"
 #include "resources.h"
-#include "translate.h"
 #include "types.h"
 #include "util.h"
 
@@ -119,13 +118,13 @@ int rawimage_close(disk_image_t *image)
 
 /*-----------------------------------------------------------------------*/
 
-int rawimage_read_sector(const disk_image_t *image, BYTE *buf,
+int rawimage_read_sector(const disk_image_t *image, uint8_t *buf,
                          const disk_addr_t *dadr)
 {
     return blockdev_read_sector(buf, dadr->track, dadr->sector);
 }
 
-int rawimage_write_sector(disk_image_t *image, const BYTE *buf,
+int rawimage_write_sector(disk_image_t *image, const uint8_t *buf,
                           const disk_addr_t *dadr)
 {
     return blockdev_write_sector(buf, dadr->track, dadr->sector);
@@ -171,11 +170,9 @@ void rawimage_resources_shutdown(void)
 
 static const cmdline_option_t cmdline_options[] =
 {
-    { "-rawdrive", SET_RESOURCE, 1,
+    { "-rawdrive", SET_RESOURCE, CMDLINE_ATTRIB_NEED_ARGS,
       NULL, NULL, "RawDriveDriver", NULL,
-      USE_PARAM_ID, USE_DESCRIPTION_ID,
-      IDCLS_P_NAME, IDCLS_SET_RAW_DRIVE_DEVICE,
-      NULL, NULL },
+      "<Name>", "Set raw drive device name" },
     CMDLINE_LIST_END
 };
 

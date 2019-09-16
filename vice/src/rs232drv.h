@@ -37,8 +37,8 @@ extern void rs232drv_init(void);
 extern void rs232drv_reset(void);
 extern int rs232drv_open(int device);
 extern void rs232drv_close(int fd);
-extern int rs232drv_putc(int fd, BYTE b);
-extern int rs232drv_getc(int fd, BYTE *b);
+extern int rs232drv_putc(int fd, uint8_t b);
+extern int rs232drv_getc(int fd, uint8_t *b);
 
 enum rs232handshake_out {
     RS232_HSO_RTS = 0x01,

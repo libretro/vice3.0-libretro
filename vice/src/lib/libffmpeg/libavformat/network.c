@@ -26,6 +26,10 @@
 #include "libavutil/mem.h"
 #include "libavutil/time.h"
 
+#ifdef __AROS__
+#include <proto/socket.h>
+#endif
+
 #if HAVE_THREADS
 #if HAVE_PTHREADS
 #include <pthread.h>
@@ -144,11 +148,7 @@ int ff_network_init(void)
 int ff_network_wait_fd(int fd, int write)
 {
     int ev = write ? POLLOUT : POLLIN;
-#ifdef IDE_COMPILE
-    struct pollfd p = { fd, ev, 0 };
-#else
 	struct pollfd p = { .fd = fd, .events = ev, .revents = 0 };
-#endif
 	int ret;
     ret = poll(&p, 1, 100);
     return ret < 0 ? ff_neterrno() : p.revents & (ev | POLLERR | POLLHUP) ? 0 : AVERROR(EAGAIN);
@@ -279,7 +279,7 @@ int ff_listen_bind(int fd, const struct sockaddr *addr,
     if (ret < 0)
         return ret;
 
-    ret = accept(fd, NULL, NULL);
+    ret = vice_ffmpeg_accept(fd, NULL, NULL);
     if (ret < 0)
         return ff_neterrno();
 
@@ -302,7 +302,7 @@ int ff_listen_connect(int fd, const struct sockaddr *addr,
     if (ff_socket_nonblock(fd, 1) < 0)
         av_log(NULL, AV_LOG_DEBUG, "ff_socket_nonblock failed\n");
 
-    while ((ret = connect(fd, addr, addrlen))) {
+    while ((ret = vice_ffmpeg_connect(fd, addr, addrlen))) {
         ret = ff_neterrno();
         switch (ret) {
         case AVERROR(EINTR):

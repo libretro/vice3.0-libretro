@@ -43,7 +43,8 @@
 #include "util.h"
 #include "sysfile.h"
 #include "resources.h"
-#include "translate.h"
+
+#include "c64dtvflash.h"
 
 #ifndef AMIGA_SUPPORT
 #define DTVROM_NAME_DEFAULT   "dtvrom.bin"
@@ -62,7 +63,7 @@ static int flash_log_enabled = 0;
 static char *c64dtvflash_filename = NULL;
 
 /* (Flash)ROM array */
-BYTE c64dtvflash_mem[C64_ROM_SIZE];
+uint8_t c64dtvflash_mem[C64_ROM_SIZE];
 
 /* (Flash)ROM state */
 enum {
@@ -73,10 +74,12 @@ enum {
     FLASH_SETCONF,
     FLASH_PROGPROT,
     FLASH_SPPROGRAM
-} c64dtvflash_state = FLASH_IDLE;
+};
+
+uint8_t c64dtvflash_state = (uint8_t)FLASH_IDLE;
 
 /* (Flash)ROM sector lockdown */
-BYTE c64dtvflash_mem_lock[39];
+uint8_t c64dtvflash_mem_lock[39];
 
 /* (Flash)ROM image write */
 int c64dtvflash_mem_rw = 0;
@@ -90,17 +93,17 @@ static int paddr_to_sector(int paddr)
     }
 }
 
-void c64dtvflash_store_direct(int addr, BYTE value)
+void c64dtvflash_store_direct(int addr, uint8_t value)
 {
     c64dtvflash_mem[addr] = value;
 }
 
-BYTE c64dtvflash_read_direct(int addr)
+uint8_t c64dtvflash_read_direct(int addr)
 {
     return c64dtvflash_mem[addr];
 }
 
-void c64dtvflash_store(int addr, BYTE value)
+void c64dtvflash_store(int addr, uint8_t value)
 {
     int i, j, k;
 #ifdef DEBUG
@@ -126,7 +129,7 @@ void c64dtvflash_store(int addr, BYTE value)
                 switch (value) {
                     case 0x90:
                         c64dtvflash_state = FLASH_PRODUCTID;   /* Product ID Entry */
-                        return; 
+                        return;
                     case 0xf0:
                         c64dtvflash_state = FLASH_IDLE;        /* Product ID Exit */
                         return;
@@ -280,7 +283,7 @@ void c64dtvflash_store(int addr, BYTE value)
     }
 }
 
-BYTE c64dtvflash_read(int addr)
+uint8_t c64dtvflash_read(int addr)
 {
     if (c64dtvflash_state != FLASH_IDLE) {
 #ifdef DEBUG
@@ -352,7 +355,7 @@ BYTE c64dtvflash_read(int addr)
 
 /* ------------------------------------------------------------------------- */
 
-static BYTE buf[0x10000];
+static uint8_t buf[0x10000];
 
 
 void c64dtvflash_create_blank_image(char *filename, int copyroms)
@@ -365,7 +368,7 @@ void c64dtvflash_create_blank_image(char *filename, int copyroms)
 #ifdef DEBUG
         log_message(c64dtvflash_log, "No file name given for create_blank_image.");
 #endif
-        ui_error(translate_text(IDGS_NO_FILENAME));
+        ui_error("No filename!");
         return;
     }
 
@@ -373,7 +376,7 @@ void c64dtvflash_create_blank_image(char *filename, int copyroms)
 #ifdef DEBUG
         log_message(c64dtvflash_log, "Illegal filename in create_blank_image.");
 #endif
-        ui_error(translate_text(IDGS_ILLEGAL_FILENAME));
+        ui_error("Illegal filename!");
         return;
     }
 
@@ -393,7 +396,7 @@ void c64dtvflash_create_blank_image(char *filename, int copyroms)
 #ifdef DEBUG
         log_message(c64dtvflash_log, "Error creating file %s in create_blank_image.", filename);
 #endif
-        ui_error(translate_text(IDGS_ERROR_CREATING_FILE_S), filename);
+        ui_error("Error creating file %s!", filename);
         return;
     }
 
@@ -403,7 +406,7 @@ void c64dtvflash_create_blank_image(char *filename, int copyroms)
 #ifdef DEBUG
             log_message(c64dtvflash_log, "Error while writing to file %s in create_blank_image.", filename);
 #endif
-            ui_error(translate_text(IDGS_ERROR_WRITING_TO_FILE_S), filename);
+            ui_error("Error writing to file %s!", filename);
             fclose(fd);
             return;
         }
@@ -412,7 +415,7 @@ void c64dtvflash_create_blank_image(char *filename, int copyroms)
         }
     }
 
-    ui_message(translate_text(IDGS_DTV_ROM_CREATED));
+    ui_message("DTV ROM image created successfully");
 
     fclose(fd);
 
@@ -421,7 +424,7 @@ void c64dtvflash_create_blank_image(char *filename, int copyroms)
 
 /* ------------------------------------------------------------------------- */
 
-unsigned int c64dtvflash_rom_loaded = 0;
+int c64dtvflash_rom_loaded = 0;
 
 static int c64dtvflash_load_rom(void)
 {
@@ -624,32 +627,22 @@ void c64dtvflash_resources_shutdown(void)
 
 static const cmdline_option_t cmdline_options[] =
 {
-    { "-c64dtvromimage", SET_RESOURCE, 1,
+    { "-c64dtvromimage", SET_RESOURCE, CMDLINE_ATTRIB_NEED_ARGS,
       NULL, NULL, "c64dtvromfilename", NULL,
-      USE_PARAM_ID, USE_DESCRIPTION_ID,
-      IDCLS_P_NAME, IDCLS_SPECIFY_C64DTVROM_NAME,
-      NULL, NULL },
-    { "-c64dtvromrw", SET_RESOURCE, 0,
+      "<Name>", "Specify name of C64DTV ROM image" },
+    { "-c64dtvromrw", SET_RESOURCE, CMDLINE_ATTRIB_NONE,
       NULL, NULL, "c64dtvromrw", (void *)1,
-      USE_PARAM_STRING, USE_DESCRIPTION_ID,
-      IDCLS_UNUSED, IDCLS_ENABLE_C64DTVROM_RW,
-      NULL, NULL },
-    { "+c64dtvromrw", SET_RESOURCE, 0,
+      NULL, "Enable writes to C64DTV ROM image" },
+    { "+c64dtvromrw", SET_RESOURCE, CMDLINE_ATTRIB_NONE,
       NULL, NULL, "c64dtvromrw", (void *)0,
-      USE_PARAM_STRING, USE_DESCRIPTION_ID,
-      IDCLS_UNUSED, IDCLS_DISABLE_C64DTVROM_RW,
-      NULL, NULL },
+      NULL, "Disable writes to C64DTV ROM image" },
 #ifdef DEBUG
-    { "-dtvflashlog", SET_RESOURCE, 0,
+    { "-dtvflashlog", SET_RESOURCE, CMDLINE_ATTRIB_NONE,
       NULL, NULL, "DtvFlashLog", (resource_value_t)1,
-      USE_PARAM_STRING, USE_DESCRIPTION_ID,
-      IDCLS_UNUSED, IDCLS_ENABLE_DTV_FLASH_LOG,
-      NULL, NULL },
-    { "+dtvflashlog", SET_RESOURCE, 0,
+      NULL, "Enable DTV flash chip logs." },
+    { "+dtvflashlog", SET_RESOURCE, CMDLINE_ATTRIB_NONE,
       NULL, NULL, "DtvFlashLog", (resource_value_t)0,
-      USE_PARAM_STRING, USE_DESCRIPTION_ID,
-      IDCLS_UNUSED, IDCLS_DISABLE_DTV_FLASH_LOG,
-      NULL, NULL },
+      NULL, "Disable DTV flash chip logs." },
 #endif
     CMDLINE_LIST_END
 };

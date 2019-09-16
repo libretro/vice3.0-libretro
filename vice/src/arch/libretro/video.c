@@ -56,11 +56,11 @@ video_canvas_t *video_canvas_create(video_canvas_t *canvas,
 
    canvas->videoconfig->rendermode = VIDEO_RENDER_RGB_1X1;
 
-   printf ("canvas width wants to be : %d\ncanvas height wants to be : %d\ncanvas depth wants to be : %d\n", canvas->width, canvas->height, canvas->depth);
+   //printf ("canvas width wants to be : %d\ncanvas height wants to be : %d\ncanvas depth wants to be : %d\n", canvas->width, canvas->height, canvas->depth);
 
    canvas->depth = 8*PITCH;
 
-   printf ("canvas set to %d x %d :%d\n", canvas->width, canvas->height,canvas->depth);
+   //printf ("canvas set to %d x %d :%d\n", canvas->width, canvas->height,canvas->depth);
 
    video_canvas_set_palette(canvas, canvas->palette);
 

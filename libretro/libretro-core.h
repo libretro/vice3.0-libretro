@@ -15,8 +15,6 @@
 #define RETRO_DEVICE_VICE_KEYBOARD RETRO_DEVICE_SUBCLASS(RETRO_DEVICE_KEYBOARD, 0)
 #define RETRO_DEVICE_VICE_JOYSTICK RETRO_DEVICE_SUBCLASS(RETRO_DEVICE_JOYPAD, 1)
 
-extern unsigned vice_devices[ 2 ];
-
 //LOG
 #if  defined(__ANDROID__) || defined(ANDROID)
 #include <android/log.h>
@@ -27,7 +25,6 @@ extern unsigned vice_devices[ 2 ];
 #endif
 
 //TYPES
-
 #define UINT16 uint16_t
 #define UINT32 uint32_t
 #define uint32 uint32_t
@@ -57,8 +54,8 @@ extern unsigned vice_devices[ 2 ];
 
 
 //VKBD
-#define NPLGN 10
-#define NLIGN 5
+#define NPLGN 11
+#define NLIGN 7
 #define NLETT 5
 
 typedef struct {
@@ -85,14 +82,12 @@ typedef struct{
 } retro_pal;
 
 //VARIABLES
-extern int pauseg; 
 extern int CROP_WIDTH;
 extern int CROP_HEIGHT;
 extern int VIRTUAL_WIDTH;
-extern int retrow ; 
-extern int retroh ;
+extern int retrow; 
+extern int retroh;
 extern int cpuloop;
-extern int vice_statusbar;
 extern int retroXS;
 extern int retroYS;
 extern int retroH;

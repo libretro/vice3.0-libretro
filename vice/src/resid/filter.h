@@ -595,6 +595,11 @@ protected:
   chip_model sid_model;
 
   typedef struct {
+    unsigned short vx;
+    short dvx;
+  } opamp_t;
+
+  typedef struct {
     int kVddt;   // K*(Vdd - Vth)
     int voice_scale_s14;
     int voice_DC;
@@ -628,10 +633,11 @@ protected:
 
   // DAC gate voltage
   int kVgt;
+
   // Lookup tables for resonance
   static unsigned short resonance[16][1 << 16];
 
-  int solve_gain(int* opamp, int n, int vi_t, int& x, model_filter_t& mf);
+  int solve_gain(opamp_t* opamp, int n, int vi_t, int& x, model_filter_t& mf);
   int solve_integrate_6581(int dt, int vi_t, int& x, int& vc, model_filter_t& mf);
   int solve_integrate_8580(int dt, int vi_t, int& x, int& vc, model_filter_t& mf);
 
@@ -1489,7 +1495,7 @@ the equations for the root function and its derivative can be written as:
   df = 2*((b - (vx + x))*(dvx + 1) - a*(b - vx)*dvx)
 */
 RESID_INLINE
-int Filter::solve_gain(int* opamp, int n, int vi, int& x, model_filter_t& mf)
+int Filter::solve_gain(opamp_t* opamp, int n, int vi, int& x, model_filter_t& mf)
 {
   // Note that all variables are translated and scaled in order to fit
   // in 16 bits. It is not necessary to explicitly translate the variables here,
@@ -1510,9 +1516,8 @@ int Filter::solve_gain(int* opamp, int n, int vi, int& x, model_filter_t& mf)
     int xk = x;
 
     // Calculate f and df.
-    int vx_dvx = opamp[x];
-    int vx = vx_dvx & 0xffff;  // Scaled by m*2^16
-    int dvx = vx_dvx >> 16;    // Scaled by 2^11
+    int vx = opamp[x].vx;      // Scaled by m*2^16
+    int dvx = opamp[x].dvx;    // Scaled by 2^11
 
     // f = a*(b - vx)^2 - c - (b - vo)^2
     // df = 2*((b - vo)*(dvx + 1) - a*(b - vx)*dvx)
@@ -1535,7 +1540,10 @@ int Filter::solve_gain(int* opamp, int n, int vi, int& x, model_filter_t& mf)
     // The resulting quotient is thus scaled by m*2^16.
 
     // Newton-Raphson step: xk1 = xk - f(xk)/f'(xk)
-    x -= f/df;
+    // If f(xk) or f'(xk) are zero then we can't improve further.
+    if (df) {
+        x -= f/df;
+    }
     if (unlikely(x == xk)) {
       // No further root improvement possible.
       return vo;
@@ -1711,7 +1719,7 @@ int Filter::solve_integrate_6581(int dt, int vi, int& vx, int& vc, model_filter_
   if (Vgd < 0) Vgd = 0;
 
   // VCR current, scaled by m*2^15*2^15 = m*2^30
-  int n_I_vcr = (vcr_n_Ids_term[Vgs] - vcr_n_Ids_term[Vgd]) << 15;
+  int n_I_vcr = int(unsigned(vcr_n_Ids_term[Vgs] - vcr_n_Ids_term[Vgd]) << 15);
 
   // Change in capacitor charge.
   vc -= (n_I_snake + n_I_vcr)*dt;
@@ -1760,9 +1768,9 @@ int Filter::solve_integrate_8580(int dt, int vi, int& vx, int& vc, model_filter_
   // since they are all used in subtractions which cancel out the translation:
   // (a - t) - (b - t) = a - b
 
-  // Dac voltages for triode mode calculation.
+  // Dac voltages.
   unsigned int Vgst = kVgt - vx;
-  unsigned int Vgdt = kVgt - vi;
+  unsigned int Vgdt = (vi < kVgt) ? kVgt - vi : 0;  // triode/saturation mode
 
   // Dac current, scaled by (1/m)*2^13*m*2^16*m*2^16*2^-15 = m*2^30
   int n_I_rfc = n_dac*(int(Vgst*Vgst - Vgdt*Vgdt) >> 15);

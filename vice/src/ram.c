@@ -34,15 +34,14 @@
 #include "machine.h"
 #include "ram.h"
 #include "resources.h"
-#include "translate.h"
 #include "types.h"
 
 static int start_value = 0;
 static int value_invert = 64;
 static int pattern_invert = 0;
 
-extern BYTE mem_ram[] ;
-int g_mem_ram_size = 0 ;
+extern uint8_t mem_ram[];
+int g_mem_ram_size = 0;
 
 static int set_start_value(int val, void *param)
 {
@@ -88,22 +87,17 @@ int ram_resources_init(void)
     return 0;
 }
 
-static const cmdline_option_t cmdline_options[] = {
-    { "-raminitstartvalue", SET_RESOURCE, 1,
+static const cmdline_option_t cmdline_options[] =
+{
+    { "-raminitstartvalue", SET_RESOURCE, CMDLINE_ATTRIB_NEED_ARGS,
       NULL, NULL, "RAMInitStartValue", NULL,
-      USE_PARAM_ID, USE_DESCRIPTION_ID,
-      IDCLS_P_VALUE, IDCLS_SET_FIRST_RAM_ADDRESS_VALUE,
-      NULL, NULL },
-    { "-raminitvalueinvert", SET_RESOURCE, 1,
+      "<value>", "Set the value for the very first RAM address after powerup" },
+    { "-raminitvalueinvert", SET_RESOURCE, CMDLINE_ATTRIB_NEED_ARGS,
       NULL, NULL, "RAMInitValueInvert", NULL,
-      USE_PARAM_ID, USE_DESCRIPTION_ID,
-      IDCLS_P_NUM_OF_BYTES, IDCLS_LENGTH_BLOCK_SAME_VALUE,
-      NULL, NULL },
-    { "-raminitpatterninvert", SET_RESOURCE, 1,
+      "<num of bytes>", "Length of memory block initialized with the same value" },
+    { "-raminitpatterninvert", SET_RESOURCE, CMDLINE_ATTRIB_NEED_ARGS,
       NULL, NULL, "RAMInitPatternInvert", NULL,
-      USE_PARAM_ID, USE_DESCRIPTION_ID,
-      IDCLS_P_NUM_OF_BYTES, IDCLS_LENGTH_BLOCK_SAME_PATTERN,
-      NULL, NULL },
+      "<num of bytes>", "Length of memory block initialized with the same pattern" },
     CMDLINE_LIST_END
 };
 
@@ -116,10 +110,10 @@ int ram_cmdline_options_init(void)
 }
 
 
-void ram_init(BYTE *memram, unsigned int ramsize)
+void ram_init(uint8_t *memram, unsigned int ramsize)
 {
     unsigned int i, j, k, l;
-    BYTE v = start_value;
+    uint8_t v = start_value;
 
     j = value_invert - 1;
     k = pattern_invert - 1;
@@ -144,7 +138,7 @@ void ram_init(BYTE *memram, unsigned int ramsize)
     }
 
     if ( memram == mem_ram )
-        g_mem_ram_size = ramsize ;
+        g_mem_ram_size = ramsize;
 }
 
 /* create a preview of the RAM init pattern - this should be as fast as

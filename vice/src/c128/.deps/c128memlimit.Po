@@ -1,0 +1,8 @@
+c128memlimit.o: c128memlimit.c ../../src/vice.h ../../src/config.h \
+ c128memlimit.h
+
+../../src/vice.h:
+
+../../src/config.h:
+
+c128memlimit.h:

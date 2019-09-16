@@ -27,11 +27,11 @@
  * miscellaneous OS support macros and functions.
  */
 
-#ifdef IDE_COMPILE
-#include "ffmpeg-config.h"
-#include "ide-config.h"
-#else
 #include "config.h"
+
+#ifdef __AROS__
+#include <proto/socket.h>
+#include <sys/socket.h>
 #endif
 
 #include <sys/stat.h>
@@ -61,8 +61,17 @@
 #define mkdir(a, b) _mkdir(a)
 #endif
 
+#ifdef __amigaos4__
+#include <string.h>
+#endif
+
 static inline int is_dos_path(const char *path)
 {
+#ifdef __amigaos4__
+    if (!strstr(path, "://") && !strstr(path, ":\\")) {
+        return 1;
+    }
+#endif
 #if HAVE_DOS_PATHS
     if (path[0] && path[1] == ':')
         return 1;
@@ -70,7 +79,28 @@ static inline int is_dos_path(const char *path)
     return 0;
 }
 
-#if defined(__OS2__) || defined(__Plan9__)
+#ifdef __amigaos4__
+#  include <unistd.h>
+#  ifdef lseek
+#    undef lseek
+#  endif
+#  define lseek(f, p, w) lseek64((f), (p), (w))
+#  include <fcntl.h>
+#  ifdef stat
+#    undef stat
+#  endif
+#  define stat stat64
+#  ifdef fstat
+#    undef fstat
+#  endif
+#  define fstat(f, s) fstat64((f), (s))
+#  undef seek
+#  define seek seek64
+#  undef off_t
+#  define off_t int64_t
+#endif
+
+#if defined(__OS2__) || defined(__Plan9__) || defined(__amigaos4__)
 #define SHUT_RD 0
 #define SHUT_WR 1
 #define SHUT_RDWR 2
@@ -84,6 +114,7 @@ static inline int is_dos_path(const char *path)
 #ifndef S_IRUSR
 #define S_IRUSR S_IREAD
 #endif
+
 #ifndef S_IWUSR
 #define S_IWUSR S_IWRITE
 #endif
@@ -91,7 +122,9 @@ static inline int is_dos_path(const char *path)
 
 #if CONFIG_NETWORK
 #if !HAVE_SOCKLEN_T
+#if !(defined(__AROS__) && defined(__amd64__))
 typedef int socklen_t;
+#endif
 #endif
 
 /* most of the time closing a socket is just closing an fd */
@@ -132,5 +165,19 @@ int ff_poll(struct pollfd *fds, nfds_t numfds, int timeout);
 #define poll ff_poll
 #endif /* HAVE_POLL_H */
 #endif /* CONFIG_NETWORK */
+
+#ifdef __AROS__
+extern int vice_ffmpeg_accept(int socket, struct sockaddr *address, socklen_t *len);
+extern int vice_ffmpeg_connect(int socket, struct sockaddr *address, socklen_t *len);
+extern ssize_t vice_ffmpeg_recv(int socket, void *buffer, size_t len, int flags);
+extern ssize_t vice_ffmpeg_send(int socket, const void *buffer, size_t len, int flags);
+extern ssize_t vice_ffmpeg_sendto(int socket, const void *message, size_t len, int flags, const struct sockaddr *dest_adr, socklen_t dest_len);
+#else
+#define vice_ffmpeg_accept accept
+#define vice_ffmpeg_connect connect
+#define vice_ffmpeg_recv recv
+#define vice_ffmpeg_send send
+#define vice_ffmpeg_sendto sendto
+#endif
 
 #endif /* AVFORMAT_OS_SUPPORT_H */

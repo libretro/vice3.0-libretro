@@ -26,7 +26,7 @@
 
 #include "vice.h"
 
-#ifdef HAVE_PCAP
+#ifdef HAVE_RAWNET
 
 #include <stdio.h>
 
@@ -57,7 +57,7 @@ UI_MENU_DEFINE_STRING(ETHERNET_INTERFACE)
 #endif /* defined(UNIX_COMPILE) */
 
 /* win32 TFE settings */
-#if defined(WIN32_COMPILE) && !defined(__XBOX__)
+#ifdef WIN32_COMPILE
 
 UI_MENU_DEFINE_RADIO(ETHERNET_INTERFACE)
 
@@ -74,7 +74,7 @@ void sdl_menu_ethernet_interface_free(void)
     }
 }
 
-UI_MENU_CALLBACK(ETHERNET_INTERFACE_dynmenu_callback)
+static UI_MENU_CALLBACK(ETHERNET_INTERFACE_dynmenu_callback)
 {
     char *pname;
     char *pdescription;
@@ -107,7 +107,7 @@ UI_MENU_CALLBACK(ETHERNET_INTERFACE_dynmenu_callback)
         ethernet_interface_dyn_menu[i].callback = NULL;
         ethernet_interface_dyn_menu[i].data = NULL;
     }
-    return "->";
+    return MENU_SUBMENU_STRING;
 }
 
 #define VICE_SDL_ETHERNET_ARCHDEP_ITEMS    \
@@ -116,7 +116,7 @@ UI_MENU_CALLBACK(ETHERNET_INTERFACE_dynmenu_callback)
       ETHERNET_INTERFACE_dynmenu_callback, \
       (ui_callback_data_t)ethernet_interface_dyn_menu },
 
-#endif /* defined(WIN32_COMPILE) && !defined(__XBOX__) */
+#endif /* defined(WIN32_COMPILE) */
 
 /* Common menus */
 
@@ -138,4 +138,4 @@ const ui_menu_entry_t ethernet_menu[] = {
     SDL_MENU_LIST_END
 };
 
-#endif /* HAVE_PCAP */
+#endif /* HAVE_RAWNET */

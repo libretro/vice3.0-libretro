@@ -1,0 +1,5 @@
+menu_ffmpeg.o: menu_ffmpeg.c ../../../src/vice.h ../../../src/config.h
+
+../../../src/vice.h:
+
+../../../src/config.h:

@@ -44,26 +44,27 @@
 #include "uifilereq.h"
 #include "uimenu.h"
 #include "vkbd.h"
+#include "vsyncapi.h"
 
 
 /* ------------------------------------------------------------------ */
 /* Common strings */
 
-const char* sdl_menu_text_tick = "*";
-const char* sdl_menu_text_unknown = "?";
-const char* sdl_menu_text_exit_ui = "\1";
+const char* sdl_menu_text_tick = MENU_CHECKMARK_CHECKED_STRING;
+const char* sdl_menu_text_unknown = MENU_UNKNOWN_STRING;
+const char* sdl_menu_text_exit_ui = MENU_EXIT_UI_STRING;
 
 /* ------------------------------------------------------------------ */
 /* Common callbacks */
 
 UI_MENU_CALLBACK(submenu_callback)
 {
-    return "->";
+    return MENU_SUBMENU_STRING;
 }
 
 UI_MENU_CALLBACK(submenu_radio_callback)
 {
-    static char buf[100] = "-> ";
+    static char buf[100] = MENU_SUBMENU_STRING " ";
     char *dest = &(buf[3]);
     const char *src = NULL;
     ui_menu_entry_t *item = (ui_menu_entry_t *)param;
@@ -77,7 +78,7 @@ UI_MENU_CALLBACK(submenu_radio_callback)
     }
 
     if (src == NULL) {
-        return "-> ???";
+        return MENU_SUBMENU_STRING " ???";
     }
 
     while ((*dest++ = *src++)) {
@@ -96,9 +97,10 @@ UI_MENU_CALLBACK(autostart_callback)
     char *name = NULL;
 
     if (activated) {
-        name = sdl_ui_file_selection_dialog("Choose autostart image", FILEREQ_MODE_CHOOSE_FILE);
+        name = sdl_ui_file_selection_dialog("Choose autostart image", FILEREQ_MODE_CHOOSE_FILE_IN_IMAGE);
         if (name != NULL) {
-            if (autostart_autodetect(name, NULL, 0, AUTOSTART_MODE_RUN) < 0) {
+            /* FIXME: using last_selected_image_pos is kindof a hack */
+            if (autostart_autodetect(name, NULL, last_selected_image_pos, AUTOSTART_MODE_RUN) < 0) {
                 ui_error("could not start auto-image");
             }
             lib_free(name);
@@ -114,6 +116,21 @@ UI_MENU_CALLBACK(pause_callback)
 
     if (activated) {
         ui_pause_emulation(!paused);
+        return sdl_menu_text_exit_ui;
+    }
+    return NULL;
+}
+
+UI_MENU_CALLBACK(advance_frame_callback)
+{
+    int paused = ui_emulation_is_paused();
+
+    if (activated) {
+        if (paused) {
+            vsyncarch_advance_frame();
+        } else {
+            ui_pause_emulation(1);
+        }
         return sdl_menu_text_exit_ui;
     }
     return NULL;

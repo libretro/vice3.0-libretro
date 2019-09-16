@@ -41,7 +41,6 @@
 #include "palette.h"
 #include "resources.h"
 #include "screenshot.h"
-#include "translate.h"
 #include "types.h"
 #include "uiapi.h"
 #include "util.h"
@@ -81,7 +80,7 @@ static int oversize_handling;
 static int undersize_handling;
 static int ted_lum_handling;
 static int crtc_text_color;
-static BYTE crtc_fgcolor;
+static uint8_t crtc_fgcolor;
 
 static int set_oversize_handling(int val, void *param)
 {
@@ -194,35 +193,30 @@ static int koaladrv_resources_init(void)
     return resources_register_int(resources_int);
 }
 
-static const cmdline_option_t cmdline_options[] = {
-    { "-koalaoversize", SET_RESOURCE, 1,
+static const cmdline_option_t cmdline_options[] =
+{
+    { "-koalaoversize", SET_RESOURCE, CMDLINE_ATTRIB_NEED_ARGS,
       NULL, NULL, "KoalaOversizeHandling", NULL,
-      USE_PARAM_ID, USE_DESCRIPTION_ID,
-      IDCLS_P_METHOD, IDCLS_OVERSIZED_HANDLING,
-      NULL, NULL },
-    { "-koalaundersize", SET_RESOURCE, 1,
+      "<method>", "Select the way the oversized input should be handled, (0: scale down, 1: crop left top, 2: crop center top,  3: crop right top, 4: crop left center, 5: crop center, 6: crop right center, 7: crop left bottom, 8: crop center bottom, 9:  crop right bottom)" },
+    { "-koalaundersize", SET_RESOURCE, CMDLINE_ATTRIB_NEED_ARGS,
       NULL, NULL, "KoalaUndersizeHandling", NULL,
-      USE_PARAM_ID, USE_DESCRIPTION_ID,
-      IDCLS_P_METHOD, IDCLS_UNDERSIZED_HANDLING,
-      NULL, NULL },
+      "<method>", "Select the way the undersized input should be handled, (0: scale up, 1: borderize)" },
     CMDLINE_LIST_END
 };
 
-static const cmdline_option_t cmdline_options_plus4[] = {
-    { "-koalatedlum", SET_RESOURCE, 1,
+static const cmdline_option_t cmdline_options_plus4[] =
+{
+    { "-koalatedlum", SET_RESOURCE, CMDLINE_ATTRIB_NEED_ARGS,
       NULL, NULL, "KoalaTEDLumHandling", NULL,
-      USE_PARAM_ID, USE_DESCRIPTION_ID,
-      IDCLS_P_METHOD, IDCLS_TED_LUM_HANDLING,
-      NULL, NULL },
+      "<method>", "Select the way the TED luminosity should be handled, (0: ignore, 1: dither)" },
     CMDLINE_LIST_END
 };
 
-static const cmdline_option_t cmdline_options_crtc[] = {
-    { "-koalacrtctextcolor", SET_RESOURCE, 1,
+static const cmdline_option_t cmdline_options_crtc[] =
+{
+    { "-koalacrtctextcolor", SET_RESOURCE, CMDLINE_ATTRIB_NEED_ARGS,
       NULL, NULL, "KoalaCRTCTextColor", NULL,
-      USE_PARAM_ID, USE_DESCRIPTION_ID,
-      IDCLS_P_COLOR, IDCLS_CRTC_TEXT_COLOR,
-      NULL, NULL },
+      "<color>", "Select the CRTC text color (0: white, 1: amber, 2: green)" },
     CMDLINE_LIST_END
 };
 
@@ -256,7 +250,7 @@ static void koala_multicolorize_colormap(native_data_t *source)
     }
 }
 
-static void koala_check_and_correct_cell(native_data_t *source, BYTE bgcolor)
+static void koala_check_and_correct_cell(native_data_t *source, uint8_t bgcolor)
 {
     native_data_t *dest = lib_malloc(sizeof(native_data_t));
     int i, j, k, l, bgcolor_included;
@@ -310,17 +304,17 @@ static int koala_render_and_save(native_data_t *source, int compress)
 {
     FILE *fd;
     char *filename_ext = NULL;
-    BYTE *filebuffer = NULL;
-    BYTE *result = NULL;
+    uint8_t *filebuffer = NULL;
+    uint8_t *result = NULL;
     int i, j, k, l;
     int m = 0;
     int n = 0;
     int retval = 0;
-    BYTE color1 = 255;
-    BYTE color2 = 255;
-    BYTE color3 = 255;
-    BYTE colorbyte;
-    BYTE bgcolor;
+    uint8_t color1 = 255;
+    uint8_t color2 = 255;
+    uint8_t color3 = 255;
+    uint8_t colorbyte;
+    uint8_t bgcolor;
     native_color_sort_t *color_order = NULL;
 
     /* allocate file buffer */
@@ -454,20 +448,20 @@ static int koala_render_and_save(native_data_t *source, int compress)
     return retval;
 }
 
-static int koala_direct_save(native_data_t *source, int compress, BYTE bgcolor)
+static int koala_direct_save(native_data_t *source, int compress, uint8_t bgcolor)
 {
     FILE *fd;
     char *filename_ext = NULL;
-    BYTE *filebuffer = NULL;
-    BYTE *result = NULL;
+    uint8_t *filebuffer = NULL;
+    uint8_t *result = NULL;
     int i, j, k, l;
     int m = 0;
     int n = 0;
     int retval = 0;
-    BYTE color1 = 255;
-    BYTE color2 = 255;
-    BYTE color3 = 255;
-    BYTE colorbyte;
+    uint8_t color1 = 255;
+    uint8_t color2 = 255;
+    uint8_t color3 = 255;
+    uint8_t colorbyte;
 
     /* allocate file buffer */
     filebuffer = lib_malloc(10003);
@@ -593,11 +587,11 @@ static int koala_direct_save(native_data_t *source, int compress, BYTE bgcolor)
 
 static int koala_vicii_save(screenshot_t *screenshot, const char *filename, int compress)
 {
-    BYTE *regs = screenshot->video_regs;
-    BYTE mc;
-    BYTE eb;
-    BYTE bm;
-    BYTE blank;
+    uint8_t *regs = screenshot->video_regs;
+    uint8_t mc;
+    uint8_t eb;
+    uint8_t bm;
+    uint8_t blank;
     native_data_t *data = NULL;
 
     mc = (regs[0x16] & 0x10) >> 4;
@@ -630,7 +624,7 @@ static int koala_vicii_save(screenshot_t *screenshot, const char *filename, int 
             break;
         case 5:    /* multicolor bitmap mode */
             data = native_vicii_multicolor_bitmap_mode_render(screenshot, filename);
-            return koala_direct_save(data, compress, (BYTE)(regs[0x21] & 0xf));
+            return koala_direct_save(data, compress, (uint8_t)(regs[0x21] & 0xf));
             break;
         default:   /* illegal modes (3, 6 and 7) */
             ui_error("Illegal mode, no saving will be done");
@@ -644,10 +638,10 @@ static int koala_vicii_save(screenshot_t *screenshot, const char *filename, int 
 
 static int koala_ted_save(screenshot_t *screenshot, const char *filename, int compress)
 {
-    BYTE *regs = screenshot->video_regs;
-    BYTE mc;
-    BYTE eb;
-    BYTE bm;
+    uint8_t *regs = screenshot->video_regs;
+    uint8_t mc;
+    uint8_t eb;
+    uint8_t bm;
     native_data_t *data = NULL;
 
     mc = (regs[0x07] & 0x10) >> 4;
@@ -691,7 +685,7 @@ static int koala_ted_save(screenshot_t *screenshot, const char *filename, int co
 
 static int koala_vic_save(screenshot_t *screenshot, const char *filename, int compress)
 {
-    BYTE *regs = screenshot->video_regs;
+    uint8_t *regs = screenshot->video_regs;
     native_data_t *data = native_vic_render(screenshot, filename);
 
     if (data == NULL) {
@@ -701,7 +695,7 @@ static int koala_vic_save(screenshot_t *screenshot, const char *filename, int co
     vic_color_to_vicii_color_colormap(data);
 
     if (data->xsize != KOALA_SCREEN_PIXEL_WIDTH || data->ysize != KOALA_SCREEN_PIXEL_HEIGHT) {
-        data = native_resize_colormap(data, KOALA_SCREEN_PIXEL_WIDTH, KOALA_SCREEN_PIXEL_HEIGHT, (BYTE)(regs[0xf] & 7), oversize_handling, undersize_handling);
+        data = native_resize_colormap(data, KOALA_SCREEN_PIXEL_WIDTH, KOALA_SCREEN_PIXEL_HEIGHT, (uint8_t)(regs[0xf] & 7), oversize_handling, undersize_handling);
     }
 
     return koala_render_and_save(data, compress);
@@ -727,7 +721,7 @@ static int koala_crtc_save(screenshot_t *screenshot, const char *filename, int c
 
 static int koala_vdc_save(screenshot_t *screenshot, const char *filename, int compress)
 {
-    BYTE *regs = screenshot->video_regs;
+    uint8_t *regs = screenshot->video_regs;
     native_data_t *data = NULL;
 
     if (regs[25] & 0x80) {

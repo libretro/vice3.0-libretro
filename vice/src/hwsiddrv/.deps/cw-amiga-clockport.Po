@@ -1,0 +1,6 @@
+cw-amiga-clockport.o: cw-amiga-clockport.c ../../src/vice.h \
+ ../../src/config.h
+
+../../src/vice.h:
+
+../../src/config.h:

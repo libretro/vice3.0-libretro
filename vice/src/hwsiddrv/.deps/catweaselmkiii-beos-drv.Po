@@ -1,0 +1,6 @@
+catweaselmkiii-beos-drv.o: catweaselmkiii-beos-drv.c ../../src/vice.h \
+ ../../src/config.h
+
+../../src/vice.h:
+
+../../src/config.h:

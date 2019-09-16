@@ -1,0 +1,5 @@
+libm_math.o: libm_math.c vice.h config.h
+
+vice.h:
+
+config.h:

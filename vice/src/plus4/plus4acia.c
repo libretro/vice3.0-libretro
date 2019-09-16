@@ -29,6 +29,8 @@
 
 #include "vice.h"
 
+#include "plus4acia.h"
+
 #define mycpu           maincpu
 #define myclk           maincpu_clk
 #define mycpu_rmw_flag  maincpu_rmw_flag
@@ -42,6 +44,12 @@
 #define MyIrq    IK_IRQ
 
 #define myaciadev acia1dev
+
+/* prototypes to make modern compilers happy */
+int _acia_resources_init(void);
+int _acia_cmdline_options_init(void);
+int _acia_snapshot_read_module(struct snapshot_s *);
+int _acia_snapshot_write_module(struct snapshot_s *);
 
 #define myacia_init acia_init
 #define myacia_init_cmdline_options _acia_cmdline_options_init
@@ -151,14 +159,10 @@ static const cmdline_option_t acia_cmdline_options[] =
 {
     { "-acia", SET_RESOURCE, 0,
       NULL, NULL, "Acia1Enable", (void *)1,
-      USE_PARAM_STRING, USE_DESCRIPTION_ID,
-      IDCLS_UNUSED, IDCLS_ENABLE_ACIA_EMU,
-      NULL, NULL },
+      NULL, "Enable the ACIA emulation" },
     { "+acia", SET_RESOURCE, 0,
       NULL, NULL, "Acia1Enable", (void *)0,
-      USE_PARAM_STRING, USE_DESCRIPTION_ID,
-      IDCLS_UNUSED, IDCLS_DISABLE_ACIA_EMU,
-      NULL, NULL },
+      NULL, "Disable the ACIA emulation" },
     CMDLINE_LIST_END
 };
 

@@ -45,6 +45,7 @@
 #include "vicii_c64hq_vpl.h"
 #include "vicii_c64s_vpl.h"
 #include "vicii_ccs64_vpl.h"
+#include "vicii_colodore_vpl.h"
 #include "vicii_community_colors_vpl.h"
 #include "vicii_deekay_vpl.h"
 #include "vicii_frodo_vpl.h"
@@ -69,6 +70,7 @@ static embedded_palette_t palette_files[] = {
     { "c64hq", "c64hq.vpl", 16, vicii_c64hq_vpl },
     { "c64s", "c64s.vpl", 16, vicii_c64s_vpl  },
     { "ccs64", "ccs64.vpl", 16, vicii_ccs64_vpl },
+    { "colodore", "colodore.vpl", 16, vicii_colodore_vpl },
     { "community-colors", "community-colors.vpl", 16, vicii_community_colors_vpl },
     { "deekay", "deekay.vpl", 16, vicii_deekay_vpl },
     { "frodo", "frodo.vpl", 16, vicii_frodo_vpl },

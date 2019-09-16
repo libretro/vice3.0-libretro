@@ -1,0 +1,9 @@
+envelope.o: envelope.cc envelope.h resid-config.h siddefs.h dac.h
+
+envelope.h:
+
+resid-config.h:
+
+siddefs.h:
+
+dac.h:

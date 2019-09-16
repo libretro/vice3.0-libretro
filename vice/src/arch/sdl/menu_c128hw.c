@@ -56,7 +56,7 @@
 #include "menu_sid.h"
 #include "menu_tape.h"
 
-#ifdef HAVE_PCAP
+#ifdef HAVE_RAWNET
 #include "menu_ethernet.h"
 #include "menu_ethernetcart.h"
 #endif
@@ -70,7 +70,7 @@
           MENU_ENTRY_RESOURCE_TOGGLE,                           \
           radio_CIA##xyz##Model_callback,                       \
           (ui_callback_data_t)CIA_MODEL_6526 },                 \
-        { "6526 (new)",                                        \
+        { "8521 (new)",                                        \
           MENU_ENTRY_RESOURCE_TOGGLE,                           \
           radio_CIA##xyz##Model_callback,                       \
           (ui_callback_data_t)CIA_MODEL_6526A },                \
@@ -84,12 +84,20 @@ CIA_MODEL_MENU(2)
 
 static UI_MENU_CALLBACK(select_c128_model_callback)
 {
-    int model;
+    int model, selected;
 
-    model = vice_ptr_to_int(param);
+    selected = vice_ptr_to_int(param);
+
     if (activated) {
-        c128model_set(model);
+        c128model_set(selected);
+    } else {
+        model = c128model_get();
+
+        if (selected == model) {
+            return sdl_menu_text_tick;
+        }
     }
+
     return NULL;
 }
 
@@ -179,11 +187,12 @@ static const ui_menu_entry_t userport_menu[] = {
 
 UI_MENU_DEFINE_TOGGLE(IEEE488)
 UI_MENU_DEFINE_TOGGLE(C128FullBanks)
+UI_MENU_DEFINE_TOGGLE(Go64Mode)
 
 const ui_menu_entry_t c128_hardware_menu[] = {
     { "Select C128 model",
       MENU_ENTRY_SUBMENU,
-      submenu_callback,
+      submenu_radio_callback,
       (ui_callback_data_t)c128_model_menu },
     SDL_MENU_ITEM_SEPARATOR,
     { "Joyport settings",
@@ -229,6 +238,10 @@ const ui_menu_entry_t c128_hardware_menu[] = {
       MENU_ENTRY_SUBMENU,
       submenu_callback,
       (ui_callback_data_t)c128_rom_menu },
+    { "Switch to C64 mode on reset",
+        MENU_ENTRY_RESOURCE_TOGGLE,
+        toggle_Go64Mode_callback,
+        NULL },
     SDL_MENU_ITEM_SEPARATOR,
     SDL_MENU_ITEM_TITLE("Hardware expansions"),
 #if defined(HAVE_RS232DEV) || defined(HAVE_RS232NET)
@@ -263,7 +276,7 @@ const ui_menu_entry_t c128_hardware_menu[] = {
       submenu_callback,
       (ui_callback_data_t)midi_c64_menu },
 #endif
-#ifdef HAVE_PCAP
+#ifdef HAVE_RAWNET
     { "Ethernet settings",
       MENU_ENTRY_SUBMENU,
       submenu_callback,

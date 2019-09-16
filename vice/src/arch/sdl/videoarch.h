@@ -65,12 +65,6 @@ struct video_canvas_s {
     SDL_Surface* screen;
 
 #ifdef USE_SDLUI2
-    /* window */
-    SDL_Window *window;
-
-    /* renderer */
-    SDL_Renderer *renderer;
-
     /* texture */
     SDL_Texture *texture;
 #endif
@@ -86,7 +80,7 @@ struct video_canvas_s {
     struct video_draw_buffer_callback_s *video_draw_buffer_callback;
     struct fullscreenconfig_s *fullscreenconfig;
     video_refresh_func_t video_fullscreen_refresh_func;
-#ifdef HAVE_HWSCALE
+#if defined(HAVE_HWSCALE) && !defined(USE_SDLUI2)
     /* OpenGL context */
     SDL_Surface *hwscale_screen;
 #endif
@@ -106,7 +100,10 @@ extern int sdl_active_canvas_num;
 
 extern void sdl_ui_init_finalize(void);
 
-extern BYTE *draw_buffer_vsid;
+int sdl_ui_get_mouse_state(int *px, int *py, unsigned int *pbuttons);
+void sdl_ui_consume_mouse_event(SDL_Event *event);
+
+extern uint8_t *draw_buffer_vsid;
 
 /* Modes of resolution limitation */
 #define SDL_LIMIT_MODE_OFF   0

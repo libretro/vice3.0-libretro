@@ -39,6 +39,7 @@
 #include "uistatusbar.h"
 #include "videoarch.h"
 
+#include "libretro.h"
 #include "libretro-core.h"
 
 #include "joystick.h"
@@ -50,18 +51,18 @@
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #endif
 
-#define MAX_STATUSBAR_LEN           128
-#define STATUSBAR_SPEED_POS         0
-#define STATUSBAR_PAUSE_POS         4
-#define STATUSBAR_DRIVE_POS         12
-#define STATUSBAR_DRIVE8_TRACK_POS  14
-#define STATUSBAR_DRIVE9_TRACK_POS  19
-#define STATUSBAR_DRIVE10_TRACK_POS 24
-#define STATUSBAR_DRIVE11_TRACK_POS 29
-#define STATUSBAR_TAPE_POS          33
+#define MAX_STATUSBAR_LEN           47
+#define STATUSBAR_JOY_POS           0
+#define STATUSBAR_DRIVE_POS         38
+#define STATUSBAR_DRIVE8_TRACK_POS  40
+#define STATUSBAR_DRIVE9_TRACK_POS  40
+#define STATUSBAR_DRIVE10_TRACK_POS 40
+#define STATUSBAR_DRIVE11_TRACK_POS 40
+#define STATUSBAR_TAPE_POS          32
+#define STATUSBAR_PAUSE_POS         43
+#define STATUSBAR_SPEED_POS         44
 
-static char statusbar_text[MAX_STATUSBAR_LEN] = "                                       ";
-
+static char statusbar_text[MAX_STATUSBAR_LEN] = "                                              ";
 
 static int pitch;
 static int draw_offset;
@@ -89,6 +90,80 @@ static void display_tape(void)
     }
 }
 
+char* joystick_value_human(char val)
+{
+    static char str[3];
+    switch(val) {
+        default:
+            sprintf(str, "%3s", "   ");
+            break;
+        case 1:
+        case 17:
+            sprintf(str, "%3s", " ^ ");
+            break;
+        case 2:
+        case 18:
+            sprintf(str, "%3s", " v ");
+            break;
+        case 4:
+        case 20:
+            sprintf(str, "%3s", "<  ");
+            break;
+        case 5:
+        case 21:
+            sprintf(str, "%3s", "<^ ");
+            break;
+        case 6:
+        case 22:
+            sprintf(str, "%3s", "<v ");
+            break;
+        case 8:
+        case 24:
+            sprintf(str, "%3s", "  >");
+            break;
+        case 9:
+        case 25:
+            sprintf(str, "%3s", " ^>");
+            break;
+        case 10:
+        case 26:
+            sprintf(str, "%3s", " v>");
+            break;
+    }
+
+    str[1] = (val >= 16 ) ? (str[1] | 0x80) : str[1];
+    return str;
+}
+
+extern unsigned int cur_port;
+
+static void display_joyport(void)
+{
+    int len;
+    char tmpstr[25];
+    char joy1[2];
+    char joy2[2];
+    sprintf(joy1, "%s", "1");
+    sprintf(joy2, "%s", "2");
+    if(cur_port == 1)
+        joy1[0] = (joy1[0] | 0x80);
+    else if(cur_port == 2)
+        joy2[0] = (joy2[0] | 0x80);
+    
+    sprintf(tmpstr, "J%s%3s ", joy1, joystick_value_human(joystick_value[1]));
+    sprintf(tmpstr + strlen(tmpstr), "J%s%3s ", joy2, joystick_value_human(joystick_value[2]));
+    sprintf(tmpstr + strlen(tmpstr), "J%d%3s ", 3, joystick_value_human(joystick_value[3]));
+    sprintf(tmpstr + strlen(tmpstr), "J%d%3s", 4, joystick_value_human(joystick_value[4]));
+
+    len = sprintf(&(statusbar_text[STATUSBAR_JOY_POS]), "%s", tmpstr);
+    statusbar_text[STATUSBAR_JOY_POS + len] = ' ';
+
+    if (uistatusbar_state & UISTATUSBAR_ACTIVE) {
+        uistatusbar_state |= UISTATUSBAR_REPAINT;
+    }
+}
+
+
 static int per = 0;
 static int fps = 0;
 static int warp = 0;
@@ -97,10 +172,17 @@ static int paused = 0;
 static void display_speed(void)
 {
     int len;
-    char sep = paused ? ('P' | 0x80) : warp ? ('W' | 0x80) : '/';
+    //char sep = paused ? ('P' | 0x80) : warp ? ('W' | 0x80) : ' ';
+    char fps_str[3];
+    sprintf(fps_str, "%2d", fps);
+    if (warp)
+    {
+        fps_str[0] = (fps_str[0] | 0x80);
+        fps_str[1] = (fps_str[1] | 0x80);
+    }
 
-    len = sprintf(&(statusbar_text[STATUSBAR_SPEED_POS]), "%3d%%%c%2dfps", per, sep, fps);
-    statusbar_text[STATUSBAR_SPEED_POS + len] = ' ';
+    len = sprintf(&(statusbar_text[STATUSBAR_SPEED_POS]), "%2s", fps_str);
+    //statusbar_text[STATUSBAR_SPEED_POS + len] = ' '; /* No end separator for last element */
 
     if (uistatusbar_state & UISTATUSBAR_ACTIVE) {
         uistatusbar_state |= UISTATUSBAR_REPAINT;
@@ -371,13 +453,15 @@ void uistatusbar_draw(void)
 #ifdef M16B
 unsigned short int color_f, color_b;
     color_f = 0xffff;
-    color_b = 0;
+    color_b = 0x0001;
 #else
 unsigned int color_f, color_b;
     color_f = 0xffffffff;
-    color_b = 0;
+    color_b = 0x00000000;
 #endif
     unsigned int line;
+    unsigned int char_width;
+    unsigned int char_offset;
 
   //  color_f = 0xff;
   //  color_b = 0;
@@ -394,8 +478,37 @@ unsigned int color_f, color_b;
     fake.clip_rect.x=0;
     fake.clip_rect.y=0;
 
-    sprintf(tmpstr,"joy%d:%d",cur_port,joystick_value[cur_port]);
-    Retro_Draw_string(&fake, 200, 0, tmpstr,8,1,1, color_f, color_b);
+    /* Statusbar location with or without borders */
+    int x, y;
+    int border = 0;
+#if !defined(__PET__) && !defined(__CBM2__)
+#if defined(__VIC20__)
+    resources_get_int("VICBorderMode", &border);
+#elif defined(__PLUS4__)
+    resources_get_int("TEDBorderMode", &border);
+#else
+    resources_get_int("VICIIBorderMode", &border);
+#endif
+#endif
+
+    /* 0 : normal, 1: full, 2: debug, 3: none */
+    /* Placement on bottom + inside VIC */
+    switch(border) {
+        default:
+        case 0:
+            x=32;
+            y=227;/* Below VIC: 236 */
+            if(retro_get_region() == RETRO_REGION_NTSC) {
+                y=215;
+            }
+            break;
+        case 3: 
+            x=0;
+            y=192;
+            break;
+    }
+
+    display_joyport();
 
     for (i = 0; i < MAX_STATUSBAR_LEN; ++i) {
         c = statusbar_text[i];
@@ -403,16 +516,19 @@ unsigned int color_f, color_b;
         if (c == 0) {
             break;
         }
+        
+        /* Trickery to balance uneven character width with VIC area width */
+        char_width = 7;
+        char_offset = (MAX_STATUSBAR_LEN - i <= 4) ? -2 : 0;
 
         if (c & 0x80) {
-		sprintf(tmpstr,"%c",c&0x7f);
-		Retro_Draw_string(&fake, i*8, 0, tmpstr,2,1,1, color_b, color_f);
-	        //  uistatusbar_putchar((BYTE)(c & 0x7f), i, 0, color_b, color_f);
+            sprintf(tmpstr,"%c",c&0x7f);
+            Retro_Draw_string(&fake, x+char_offset+i*char_width, y, tmpstr,1,1,1, color_b, color_f);
+            //  uistatusbar_putchar((BYTE)(c & 0x7f), i, 0, color_b, color_f);
         } else {
-         	//  uistatusbar_putchar(c, i, 0, color_f, color_b);
-		sprintf(tmpstr,"%c",c);
-		Retro_Draw_string(&fake, i*8, 0, tmpstr,2,1,1, color_f, color_b);
-
+            sprintf(tmpstr,"%c",c);
+            Retro_Draw_string(&fake, x+char_offset+i*char_width, y, tmpstr,1,1,1, color_f, color_b);
+            //  uistatusbar_putchar(c, i, 0, color_f, color_b);
         }
     }
 }

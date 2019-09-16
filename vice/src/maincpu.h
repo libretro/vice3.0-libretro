@@ -42,6 +42,7 @@ extern unsigned int last_opcode_addr;
     ((opinfo) & OPINFO_NUMBER_MSK)
 
 /* The VIC-II emulation needs this ugly hack.  */
+/* FIXME: this should really be uint16_t, but it breaks things (eg trap17.prg) */
 extern unsigned int reg_pc;
 
 #ifdef C64DTV

@@ -1,0 +1,5 @@
+io-beos-access.o: io-beos-access.c ../../src/vice.h ../../src/config.h
+
+../../src/vice.h:
+
+../../src/config.h:

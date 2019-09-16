@@ -47,7 +47,6 @@
 #include "monitor.h"
 #include "resources.h"
 #include "sysfile.h"
-#include "translate.h"
 #include "ui.h"
 #include "uihotkey.h"
 #include "uimenu.h"
@@ -66,7 +65,7 @@ int sdl_ui_menukeys[MENU_ACTION_NUM];
 
 /* UI hotkeys: index is the key(combo), value is a pointer to the menu item.
    4 is the number of the supported modifiers: shift, alt, control, meta. */
-#define SDLKBD_UI_HOTKEYS_MAX (SDLK_LAST * (1 << 4))
+#define SDLKBD_UI_HOTKEYS_MAX (SDL_NUM_SCANCODES * (1 << 4))
 ui_menu_entry_t *sdlkbd_ui_hotkeys[SDLKBD_UI_HOTKEYS_MAX];
 
 /* ------------------------------------------------------------------------ */
@@ -112,11 +111,10 @@ void sdlkbd_resources_shutdown(void)
 
 /* ------------------------------------------------------------------------ */
 
-static const cmdline_option_t cmdline_options[] = {
-    { "-hotkeyfile", SET_RESOURCE, 1,
+static const cmdline_option_t cmdline_options[] =
+{
+    { "-hotkeyfile", SET_RESOURCE, CMDLINE_ATTRIB_NEED_ARGS,
       NULL, NULL, "HotkeyFile", NULL,
-      USE_PARAM_STRING, USE_DESCRIPTION_STRING,
-      IDCLS_UNUSED, IDCLS_UNUSED,
       "<name>", "Specify name of hotkey file" },
     CMDLINE_LIST_END
 };
@@ -235,8 +233,26 @@ SDLKey SDL2x_to_SDL1x_Keys(SDLKey key)
     /* unicode key, so return 'unknown' */
     return SDLK_UNKNOWN;
 }
+
+SDLKey SDL1x_to_SDL2x_Keys(SDLKey key)
+{
+    int i;
+
+    for (i = 0; SDL2xKeys[i].SDL1x; ++i) {
+        if (SDL2xKeys[i].SDL1x == key) {
+            return SDL2xKeys[i].SDL2x;
+        }
+    }
+
+    return key;
+}
 #else
 SDLKey SDL2x_to_SDL1x_Keys(SDLKey key)
+{
+    return key;
+}
+
+SDLKey SDL1x_to_SDL2x_Keys(SDLKey key)
 {
     return key;
 }
@@ -265,10 +281,10 @@ static inline int sdlkbd_key_mod_to_index(SDLKey key, SDLMod mod)
             i |= (1 << 3);
         }
     }
-    return i * SDLK_LAST + key;
+    return (i * SDL_NUM_SCANCODES) + key;
 }
 
-ui_menu_entry_t *sdlkbd_get_hotkey(SDLKey key, SDLMod mod)
+static ui_menu_entry_t *sdlkbd_get_hotkey(SDLKey key, SDLMod mod)
 {
     return sdlkbd_ui_hotkeys[sdlkbd_key_mod_to_index(key, mod)];
 }
@@ -357,7 +373,6 @@ int sdlkbd_hotkeys_load(const char *filename)
     do {
         buffer[0] = 0;
         if (fgets(buffer, 999, fp)) {
-            char *p;
 
             if (strlen(buffer) == 0) {
                 break;
@@ -365,8 +380,8 @@ int sdlkbd_hotkeys_load(const char *filename)
             buffer[strlen(buffer) - 1] = 0; /* remove newline */
 
             /* remove comments */
-            if ((p = strchr(buffer, '#'))) {
-                *p = 0;
+            if (buffer[0] == '#') {
+                buffer[0] = 0;
             }
 
             switch (*buffer) {
@@ -506,12 +521,22 @@ void kbd_arch_init(void)
     sdlkbd_log = log_open("SDLKeyboard");
 
     sdlkbd_keyword_clear();
+    /* first load the defaults, then patch them with the user defined hotkeys */
+    if (machine_class == VICE_MACHINE_VSID) {
+        sdlkbd_hotkeys_load("sdl_hotkeys_vsid.vkm");
+    } else {
+        sdlkbd_hotkeys_load("sdl_hotkeys.vkm");
+    }
     sdlkbd_hotkeys_load(hotkey_file);
 }
 
 signed long kbd_arch_keyname_to_keynum(char *keyname)
 {
-    return (signed long)atoi(keyname);
+    signed long keynum = (signed long)atoi(keyname);
+    if (keynum == 0) {
+        log_warning(sdlkbd_log, "Keycode 0 is reserved for unknown keys.");
+    }
+    return keynum;
 }
 
 const char *kbd_arch_keynum_to_keyname(signed long keynum)
@@ -536,4 +561,9 @@ void kbd_initialize_numpad_joykeys(int* joykeys)
     joykeys[6] = SDL2x_to_SDL1x_Keys(SDLK_KP7);
     joykeys[7] = SDL2x_to_SDL1x_Keys(SDLK_KP8);
     joykeys[8] = SDL2x_to_SDL1x_Keys(SDLK_KP9);
+}
+
+const char *kbd_get_menu_keyname(void)
+{
+    return SDL_GetKeyName(SDL1x_to_SDL2x_Keys(sdl_ui_menukeys[0]));
 }

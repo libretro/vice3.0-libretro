@@ -24,18 +24,17 @@
 #include <stdio.h>
 #include <string.h>
 
-#ifdef IDE_COMPILE
-#include "ffmpeg-config.h"
-#include "ide-config.h"
-#else
 #include "config.h"
-#endif
 
 #include "common.h"
 #include "mem.h"
 #include "avassert.h"
 #include "avstring.h"
 #include "bprint.h"
+
+#if !defined(EILSEQ)
+#define EILSEQ 138
+#endif
 
 int av_strstart(const char *str, const char *pfx, const char **ptr)
 {

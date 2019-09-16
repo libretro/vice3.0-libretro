@@ -4,13 +4,8 @@
 docdir = $(realdocdir)
 
 READMES = \
-	Readme-Amiga.txt \
-	Readme-BeOS.txt \
-	Readme-DOS.txt \
-	Readme-MacOSX.txt \
-	Readme-OS2.txt \
+	Readme-GTK3.txt \
 	Readme-SDL.txt \
-	Readme-SDL2.txt \
-	Readme-Unix.txt
+	Readme-SDL2.txt
 
 dist_doc_DATA = $(READMES)

@@ -4,45 +4,22 @@ SUBDIRS = android
 
 endif
 
-if SDL_COMPILE
+if NATIVE_GTK3_COMPILE
 
-SUBDIRS = sdl
+SUBDIRS = gtk3 shared
 
 else
 
-if UNIX_COMPILE
+if SDL_COMPILE
 
-SUBDIRS = unix
+SUBDIRS = sdl shared
 
-endif
+else
 
 if WIN32_COMPILE
 
-SUBDIRS = win32
+SUBDIRS = mingw32-pcap shared
 
 endif
-
-if MSDOS_COMPILE
-
-SUBDIRS = msdos
-
-endif
-
-if OS2_COMPILE
-
-SUBDIRS = os2 watcom-source-wrappers
-
-endif
-
-if BEOS_COMPILE
-
-SUBDIRS = beos
-
-endif
-
-if AMIGA_COMPILE
-
-SUBDIRS = amigaos
-
 endif
 endif

@@ -19,6 +19,7 @@
  */
 
 #include <string.h>
+
 #include "libavutil/avstring.h"
 #include "libavutil/base64.h"
 #include "libavutil/dict.h"
@@ -30,6 +31,7 @@
 #include "internal.h"
 #include "avc.h"
 #include "rtp.h"
+
 #if CONFIG_NETWORK
 #include "network.h"
 #endif
@@ -218,11 +220,7 @@ static char *extradata2psets(AVCodecContext *c)
             sps_end = r1;
         }
         if (!av_base64_encode(p, MAX_PSET_SIZE - (p - psets), r, r1 - r)) {
-#ifdef IDE_COMPILE
-            av_log(c, AV_LOG_ERROR, "Cannot Base64-encode %""td"" %""td""!\n", MAX_PSET_SIZE - (p - psets), r1 - r);
-#else
 			av_log(c, AV_LOG_ERROR, "Cannot Base64-encode %"PTRDIFF_SPECIFIER" %"PTRDIFF_SPECIFIER"!\n", MAX_PSET_SIZE - (p - psets), r1 - r);
-#endif
 			av_free(psets);
 
             return NULL;

@@ -1,4 +1,4 @@
-/* Copyright  (C) 2010-2017 The RetroArch team
+/* Copyright  (C) 2010-2018 The RetroArch team
  *
  * ---------------------------------------------------------------------------------------
  * The following license statement only applies to this file (archive_file.h).
@@ -39,6 +39,8 @@
 
 RETRO_BEGIN_DECLS
 
+struct archive_extract_userdata;
+
 enum file_archive_transfer_type
 {
    ARCHIVE_TRANSFER_NONE = 0,
@@ -62,6 +64,7 @@ typedef struct file_archive_transfer
 {
    enum file_archive_transfer_type type;
    int32_t archive_size;
+   ptrdiff_t start_delta;
    file_archive_file_data_t *handle;
    void *stream;
    const uint8_t *footer;
@@ -96,6 +99,7 @@ typedef struct
    char *callback_error;
 
    file_archive_transfer_t archive;
+   struct archive_extract_userdata *userdata;
 } decompress_state_t;
 
 struct archive_extract_userdata
@@ -210,4 +214,3 @@ extern const struct file_archive_file_backend sevenzip_backend;
 RETRO_END_DECLS
 
 #endif
-

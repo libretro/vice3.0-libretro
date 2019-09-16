@@ -13,22 +13,13 @@
 #include <libretro.h>
 #include <libretro-core.h>
 
-extern void filebrowser_init();
-extern void filebrowser_free();
-
 extern void Screen_SetFullUpdate(int scr);
-extern void vkbd_key(int key,int pressed);
 extern void app_vkb_handle();
 
-extern char Core_Key_Sate[512];
-extern char Core_old_Key_Sate[512];
+extern char core_key_state[512];
+extern char core_old_key_state[512];
 extern char RPATH[512];
 extern int SHOWKEY;
-extern int want_quit;
-
-char LCONTENT[512];
-int LOADCONTENT=-1;
-int LDRIVE=8;
 
 #define NK_INCLUDE_FIXED_TYPES
 #define NK_INCLUDE_STANDARD_IO
@@ -42,28 +33,22 @@ int LDRIVE=8;
 #include "nuklear_retro_soft.h"
 
 static RSDL_Surface *screen_surface;
-
-extern void restore_bgk();
-extern void save_bkg();
+struct nk_vec2 offset = {0, 0};
 
 /* macros */
-
 #define UNUSED(a) (void)a
 #define MIN(a,b) ((a) < (b) ? (a) : (b))
 #define MAX(a,b) ((a) < (b) ? (b) : (a))
 #define LEN(a) (sizeof(a)/sizeof(a)[0])
 
 /* Platform */
-
 float bg[4];
 struct nk_color background;
 /* GUI */
 struct nk_context *ctx;
-
 static nk_retro_Font *RSDL_font;
 
 #include "style.c"
-#include "filebrowser.c"
 #include "gui.i"
 
 int app_init()
@@ -78,8 +63,8 @@ int app_init()
 #endif
 
     RSDL_font = (nk_retro_Font*)calloc(1, sizeof(nk_retro_Font));
-    RSDL_font->width = 8;
-    RSDL_font->height = 8;
+    RSDL_font->width = 6;
+    RSDL_font->height = 7;
     if (!RSDL_font)
         return -1;
 
@@ -87,20 +72,15 @@ int app_init()
     ctx = nk_retro_init(RSDL_font,screen_surface,retrow,retroh);
 
     /* style.c */
-    /* THEME_BLACK, THEME_WHITE, THEME_RED, THEME_BLUE, THEME_DARK */
-    set_style(ctx, THEME_DARK);
+    set_style(ctx, THEME_C64);
 
-    /* icons */
+    memset(core_key_state,0,512);
+    memset(core_old_key_state ,0, sizeof(core_old_key_state));
 
-    filebrowser_init();
-    sprintf(LCONTENT,"%s",RPATH);
-
-    memset(Core_Key_Sate,0,512);
-    memset(Core_old_Key_Sate ,0, sizeof(Core_old_Key_Sate));
-
-    printf("Init nuklear %d\n",0);
-
- return 0;
+#ifdef RETRO_DEBUG
+    printf("Init nuklear\n");
+#endif
+    return 0;
 }
 
 int app_free()
@@ -109,11 +89,12 @@ int app_free()
    if (RSDL_font)
       free(RSDL_font);
    RSDL_font = NULL;
-   filebrowser_free();
    nk_retro_shutdown();
 
    Retro_FreeSurface(screen_surface);
-   printf("free surfscreen\n");
+#ifdef RETRO_DEBUG
+   printf("free surf screen\n");
+#endif
    if (screen_surface)
       free(screen_surface);
    screen_surface = NULL;
@@ -132,26 +113,23 @@ int app_event(int poll)
 	return 0;
 }
 
-int app_render(int poll)
+int app_render()
 {
-    static int prevpoll=0,prevstate=0,reset_state=0;
-    if(prevpoll!=poll || reset_state){nk_clear(ctx);reset_state=0;}
+    static int state_prev=0,state_reset=0;
+    if(state_reset)
+    {
+        nk_clear(ctx);
+        state_reset=0;
+    }
 
-    if(poll==0)
-	app_vkb_handle();
-    else 
-	restore_bgk();
+    app_vkb_handle();
+    app_event(0);
 
-    app_event(poll);
-
-    int state=gui(&browser,ctx);
-    if(state==1 && prevstate!=1)reset_state=1;
+    int state=gui(ctx);
+    if(state==1 && state_prev!=1) state_reset=1;
+    state_prev=state;
 
     nk_retro_render(nk_rgba(0,0,0,0));
-
-    prevpoll=poll;
-    prevstate=state;
-
     return 0;
 }
 

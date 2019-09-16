@@ -50,7 +50,6 @@ C64/C128 | CBM2 | ADC0820-1 | ADC0820-2 | NOTES
 #include "resources.h"
 #include "sampler.h"
 #include "snapshot.h"
-#include "translate.h"
 #include "userport.h"
 #include "userport_8bss.h"
 
@@ -62,14 +61,13 @@ int userport_8bss_channel = 1;
 
 /* Some prototypes are needed */
 static void userport_8bss_read_pbx(void);
-static void userport_8bss_store_pa3(BYTE value);
+static void userport_8bss_store_pa3(uint8_t value);
 static int userport_8bss_write_snapshot_module(snapshot_t *s);
 static int userport_8bss_read_snapshot_module(snapshot_t *s);
 
 static userport_device_t sampler_device = {
     USERPORT_DEVICE_8BSS,
     "Userport 8bit stereo sampler",
-    IDGS_USERPORT_8BSS,
     userport_8bss_read_pbx,
     NULL, /* NO pbx store */
     NULL, /* NO pa2 read */
@@ -138,16 +136,12 @@ int userport_8bss_resources_init(void)
 
 static const cmdline_option_t cmdline_options[] =
 {
-    { "-userport8bss", SET_RESOURCE, 0,
+    { "-userport8bss", SET_RESOURCE, CMDLINE_ATTRIB_NONE,
       NULL, NULL, "Userport8BSS", (resource_value_t)1,
-      USE_PARAM_STRING, USE_DESCRIPTION_ID,
-      IDCLS_UNUSED, IDCLS_ENABLE_USERPORT_8BSS,
-      NULL, NULL },
-    { "+userport8bss", SET_RESOURCE, 0,
+      NULL, "Enable Userport 8bit stereo sampler" },
+    { "+userport8bss", SET_RESOURCE, CMDLINE_ATTRIB_NONE,
       NULL, NULL, "Userport8BSS", (resource_value_t)0,
-      USE_PARAM_STRING, USE_DESCRIPTION_ID,
-      IDCLS_UNUSED, IDCLS_DISABLE_USERPORT_8BSS,
-      NULL, NULL },
+      NULL, "Disable Userport 8bit stereo sampler" },
     CMDLINE_LIST_END
 };
 
@@ -158,14 +152,14 @@ int userport_8bss_cmdline_options_init(void)
 
 /* ---------------------------------------------------------------------*/
 
-static void userport_8bss_store_pa3(BYTE value)
+static void userport_8bss_store_pa3(uint8_t value)
 {
     userport_8bss_channel = value & 1;
 }
 
 static void userport_8bss_read_pbx(void)
 {
-    BYTE retval;
+    uint8_t retval;
 
     if (userport_8bss_channel) {
         retval = sampler_get_sample(SAMPLER_CHANNEL_1);
@@ -198,7 +192,7 @@ static int userport_8bss_write_snapshot_module(snapshot_t *s)
         return -1;
     }
 
-    if (SMW_B(m, (BYTE)userport_8bss_channel) < 0) {
+    if (SMW_B(m, (uint8_t)userport_8bss_channel) < 0) {
         snapshot_module_close(m);
         return -1;
     }
@@ -207,7 +201,7 @@ static int userport_8bss_write_snapshot_module(snapshot_t *s)
 
 static int userport_8bss_read_snapshot_module(snapshot_t *s)
 {
-    BYTE major_version, minor_version;
+    uint8_t major_version, minor_version;
     snapshot_module_t *m;
 
     /* enable device */

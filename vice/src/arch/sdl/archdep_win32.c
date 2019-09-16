@@ -77,11 +77,11 @@
 
 #include "archdep.h"
 #include "ioutil.h"
+#include "kbd.h"
 #include "keyboard.h"
 #include "lib.h"
 #include "log.h"
 #include "machine.h"
-#include "platform.h"
 #include "util.h"
 
 #define STDIN_FILENO  0
@@ -168,32 +168,23 @@
 #define SUBLANG_ITALIAN 0x01
 #endif
 
+
 static char *argv0;
 
-static size_t system_wcstombs(char *mbs, const char *wcs, size_t len)
-{
-    strncpy(mbs, wcs, len);
-    return strlen(mbs);
-}
-
-static size_t system_mbstowcs(char *wcs, const char *mbs, size_t len)
-{
-    strncpy(wcs, mbs, len);
-    return strlen(wcs);
-}
 
 static char *system_mbstowcs_alloc(const char *mbs)
 {
     char *wcs;
+    size_t len;
 
     if (mbs == NULL) {
         return NULL;
     }
 
-    wcs = lib_malloc((strlen(mbs) + 1) * sizeof(char));
-    system_mbstowcs(wcs, mbs, strlen(mbs) + 1);
+    len = strlen(mbs);
 
-    return wcs;
+    wcs = lib_malloc(len + 1);
+    return memcpy(wcs, mbs, len + 1);
 }
 
 static void system_mbstowcs_free(char *wcs)
@@ -201,39 +192,6 @@ static void system_mbstowcs_free(char *wcs)
     lib_free(wcs);
 }
 
-static char *system_wcstombs_alloc(const char *wcs)
-{
-    char *mbs;
-
-    if (wcs == NULL) {
-        return NULL;
-    }
-
-    mbs = lib_malloc((strlen(wcs) + 1) * sizeof(char));
-    system_wcstombs(mbs, wcs, strlen(wcs) + 1);
-
-    return mbs;
-}
-
-static void system_wcstombs_free(char *mbs)
-{
-    lib_free(mbs);
-}
-
-int archdep_network_init(void)
-{
-    WORD wVersionRequested = MAKEWORD(1, 1);
-    WSADATA wsaData;
-
-    WSAStartup(wVersionRequested, &wsaData);
-
-    return 0;
-}
-
-void archdep_network_shutdown(void)
-{
-    WSACleanup();
-}
 
 static int archdep_init_extra(int *argc, char **argv)
 {
@@ -247,103 +205,6 @@ static int archdep_init_extra(int *argc, char **argv)
     return 0;
 }
 
-static char *program_name = NULL;
-
-char *archdep_program_name(void)
-{
-    if (program_name == NULL) {
-        char *s, *e;
-        int len;
-
-        s = strrchr(argv0, '\\');
-        if (s == NULL) {
-            s = argv0;
-        } else {
-            s++;
-        }
-        e = strchr(s, '.');
-        if (e == NULL) {
-            e = argv0 + strlen(argv0);
-        }
-        len = (int)(e - s + 1);
-        program_name = lib_malloc(len);
-        memcpy(program_name, s, len - 1);
-        program_name[len - 1] = 0;
-    }
-
-    return program_name;
-}
-
-char boot_path[MAX_PATH];
-
-const char *archdep_boot_path(void)
-{
-    char *checkpath;
-
-    GetModuleFileName(NULL, boot_path, MAX_PATH);
-
-    checkpath = boot_path + strlen(boot_path);
-
-    while (*checkpath != '\\') {
-        checkpath--;
-    }
-    *checkpath = 0;
-
-    return boot_path;
-}
-
-char *archdep_default_sysfile_pathlist(const char *emu_id)
-{
-    static char *default_path;
-
-    if (default_path == NULL) {
-        const char *boot_path = archdep_boot_path();
-
-        default_path = util_concat(boot_path, "\\", emu_id, ARCHDEP_FINDPATH_SEPARATOR_STRING,
-                                   boot_path, "\\DRIVES", ARCHDEP_FINDPATH_SEPARATOR_STRING,
-                                   boot_path, "\\PRINTER", NULL);
-    }
-
-    return default_path;
-}
-
-/* Return a malloc'ed backup file name for file `fname'.  */
-char *archdep_make_backup_filename(const char *fname)
-{
-    char *tmp;
-
-    tmp = util_concat(fname, NULL);
-    tmp[strlen(tmp) - 1] = '~';
-    return tmp;
-}
-
-char *archdep_default_save_resource_file_name(void)
-{
-    return archdep_default_resource_file_name();
-}
-
-char *archdep_default_resource_file_name(void)
-{
-    return util_concat(archdep_boot_path(), "\\sdl-vice.ini", NULL);
-}
-
-char *archdep_default_fliplist_file_name(void)
-{
-    return util_concat(archdep_boot_path(), "\\fliplist-", machine_get_name(), ".vfl", NULL);
-}
-
-char *archdep_default_rtc_file_name(void)
-{
-    return util_concat(archdep_boot_path(), "\\sdl-vice.rtc", NULL);
-}
-
-char *archdep_default_autostart_disk_image_file_name(void)
-{
-    const char *home;
-
-    home = archdep_boot_path();
-    return util_concat(home, "\\autostart-", machine_get_name(), ".d64", NULL);
-}
 
 char *archdep_default_hotkey_file_name(void)
 {
@@ -355,26 +216,6 @@ char *archdep_default_joymap_file_name(void)
     return util_concat(archdep_boot_path(), "\\sdl-joymap-", machine_get_name(), ".vjm", NULL);
 }
 
-/* windows programs will start with the console detached when SUBSYSTEM:WINDOWS
-   is used (which is the default). SUBSYSTEM:CONSOLE will provide a console
-   output and thus stdout. yes its ugly. */
-FILE *archdep_open_default_log_file(void)
-{
-/* older versions of MSVC used to define _CONSOLE - define manually if you need
-   it */
-#ifdef _CONSOLE
-    return stdout;
-#else
-    char *fname;
-    FILE *f;
-
-    fname = util_concat(archdep_boot_path(), "\\vice.log", NULL);
-    f = fopen(fname, "wt");
-    lib_free(fname);
-
-    return f;
-#endif
-}
 
 int archdep_default_logger(const char *level_string, const char *txt)
 {
@@ -388,17 +229,7 @@ int archdep_default_logger(const char *level_string, const char *txt)
     return 0;
 }
 
-int archdep_path_is_relative(const char *path)
-{
-    if (path == NULL) {
-        return 0;
-    }
-
-    /* `c:\foo', `c:/foo', `c:foo', `\foo' and `/foo' are absolute.  */
-
-    return !((isalpha(path[0]) && path[1] == ':') || path[0] == '/' || path[0] == '\\');
-}
-
+/* FIXME: do we still support Watcom? --compyx */
 #ifndef WATCOM_COMPILE
 #ifndef _S_IREAD
 #define _S_IREAD S_IREAD
@@ -484,46 +315,7 @@ cleanup:
 #endif
 }
 
-/* return malloc'd version of full pathname of orig_name */
-int archdep_expand_path(char **return_path, const char *orig_name)
-{
-    /*  Win32 version   */
-    *return_path = lib_stralloc(orig_name);
-    return 0;
-}
-
-void archdep_startup_log_error(const char *format, ...)
-{
-    char *tmp;
-    va_list args;
-
-    va_start(args, format);
-    tmp = lib_mvsprintf(format, args);
-    va_end(args);
-
-    ui_error(tmp);
-    lib_free(tmp);
-}
-
-char *archdep_quote_parameter(const char *name)
-{
-    char *a;
-
-    a = util_concat("\"", name, "\"", NULL);
-    return a;
-}
-
-char *archdep_filename_parameter(const char *name)
-{
-    char *exp;
-    char *a;
-
-    archdep_expand_path(&exp, name);
-    a = archdep_quote_parameter(exp);
-    lib_free(exp);
-    return a;
-}
-
+#if 0
 char *archdep_tmpnam(void)
 {
     if (getenv("temp")) {
@@ -534,6 +326,7 @@ char *archdep_tmpnam(void)
         return lib_stralloc(tmpnam(NULL));
     }
 }
+#endif
 
 FILE *archdep_mkstemp_fd(char **filename, const char *mode)
 {
@@ -559,39 +352,6 @@ FILE *archdep_mkstemp_fd(char **filename, const char *mode)
     return fd;
 }
 
-int archdep_file_is_gzip(const char *name)
-{
-    size_t l = strlen(name);
-
-    if ((l < 4 || strcasecmp(name + l - 3, ".gz")) && (l < 3 || strcasecmp(name + l - 2, ".z")) && (l < 4 || toupper(name[l - 1]) != 'Z' || name[l - 4] != '.')) {
-        return 0;
-    }
-    return 1;
-}
-
-int archdep_file_set_gzip(const char *name)
-{
-    return 0;
-}
-
-int archdep_mkdir(const char *pathname, int mode)
-{
-    return _mkdir(pathname);
-}
-
-int archdep_stat(const char *file_name, unsigned int *len, unsigned int *isdir)
-{
-    struct stat statbuf;
-
-    if (stat(file_name, &statbuf) < 0) {
-        return -1;
-    }
-
-    *len = statbuf.st_size;
-    *isdir = S_ISDIR(statbuf.st_mode);
-
-    return 0;
-}
 
 /* set permissions of given file to rw, respecting current umask */
 int archdep_fix_permissions(const char *file_name)
@@ -599,19 +359,6 @@ int archdep_fix_permissions(const char *file_name)
     return _chmod(file_name, _S_IREAD | _S_IWRITE);
 }
 
-int archdep_file_is_blockdev(const char *name)
-{
-    return 0;
-}
-
-int archdep_file_is_chardev(const char *name)
-{
-    if (strcmp(name, "/dev/cbm") == 0) {
-        return 1;
-    }
-
-    return 0;
-}
 
 #ifdef SDL_CHOOSE_DRIVES
 char **archdep_list_drives(void)
@@ -667,11 +414,6 @@ int archdep_require_vkbd(void)
     return 0;
 }
 
-int archdep_rename(const char *oldpath, const char *newpath)
-{
-    unlink(newpath);
-    return rename(oldpath, newpath);
-}
 
 static void archdep_shutdown_extra(void)
 {
@@ -744,24 +486,19 @@ void closedir(DIR *dir)
 }
 #endif
 
-char *archdep_get_runtime_os(void)
+int is_windows_nt(void)
 {
-#ifdef WINMIPS
-    return "MIPS NT";
-#else
-    return platform_get_windows_runtime_os();
-#endif
-}
+    OSVERSIONINFO os_version_info;
 
-char *archdep_get_runtime_cpu(void)
-{
-#if defined(__i386__) || defined(__i486__) || defined(__i586__) || defined(__i686__) || defined(__amd64__) || defined(__x86_64__)
-    return platform_get_x86_runtime_cpu();
-#else
-    /* TODO: add runtime cpu detection code */
-    /* arm/mips/alpha/ppc/ia64/sh */
-    return "Unknown CPU";
-#endif
+    ZeroMemory(&os_version_info, sizeof(os_version_info));
+    os_version_info.dwOSVersionInfoSize = sizeof(os_version_info);
+
+    GetVersionEx(&os_version_info);
+
+    if (os_version_info.dwPlatformId == VER_PLATFORM_WIN32_NT) {
+        return 1;
+    }
+    return 0;
 }
 
 /* returns host keyboard mapping. used to initialize the keyboard map when
@@ -777,17 +514,21 @@ int kbd_arch_get_host_mapping(void)
     int n;
     int maps[KBD_MAPPING_NUM] = {
         KBD_MAPPING_US, KBD_MAPPING_UK, KBD_MAPPING_DE, KBD_MAPPING_DA,
-        KBD_MAPPING_NO, KBD_MAPPING_FI, KBD_MAPPING_IT };
+        KBD_MAPPING_NO, KBD_MAPPING_FI, KBD_MAPPING_IT, KBD_MAPPING_NL };
     int langids[KBD_MAPPING_NUM] = {
-        MAKELANGID(LANG_ENGLISH,   SUBLANG_ENGLISH_US),
-        MAKELANGID(LANG_ENGLISH,   SUBLANG_ENGLISH_UK),
-        MAKELANGID(LANG_GERMAN,    SUBLANG_GERMAN),
-        MAKELANGID(LANG_DANISH,    SUBLANG_DANISH_DENMARK),
-        MAKELANGID(LANG_NORWEGIAN, SUBLANG_NORWEGIAN_BOKMAL),
-        MAKELANGID(LANG_FINNISH,   SUBLANG_FINNISH_FINLAND),
-        MAKELANGID(LANG_ITALIAN,   SUBLANG_ITALIAN)
+        MAKELANGID(LANG_ENGLISH,    SUBLANG_ENGLISH_US),
+        MAKELANGID(LANG_ENGLISH,    SUBLANG_ENGLISH_UK),
+        MAKELANGID(LANG_GERMAN,     SUBLANG_GERMAN),
+        MAKELANGID(LANG_DANISH,     SUBLANG_DANISH_DENMARK),
+        MAKELANGID(LANG_NORWEGIAN,  SUBLANG_NORWEGIAN_BOKMAL),
+        MAKELANGID(LANG_FINNISH,    SUBLANG_FINNISH_FINLAND),
+        MAKELANGID(LANG_ITALIAN,    SUBLANG_ITALIAN),
+        MAKELANGID(LANG_DUTCH,      SUBLANG_DUTCH)
     };
-    int lang = (int)GetKeyboardLayout(0);
+
+    /* GetKeyboardLayout returns a pointer, but the first 16 bits of it return a 'language identfier',
+     * whatever that is. This is seriously fucked */
+    uint64_t lang = (uint64_t)(void *)GetKeyboardLayout(0);
 
     /* try full match first */
     lang &= 0xffff; /* lower 16 bit contain the language id */
@@ -806,11 +547,10 @@ int kbd_arch_get_host_mapping(void)
     return KBD_MAPPING_US;
 }
 
-#ifdef IDE_COMPILE
 /* Provide a usleep replacement */
-void usleep(__int64 waitTime)
+void vice_usleep(uint64_t waitTime)
 { 
-    __int64 time1 = 0, time2 = 0, freq = 0;
+    uint64_t time1 = 0, time2 = 0, freq = 0;
 
     QueryPerformanceCounter((LARGE_INTEGER *) &time1);
     QueryPerformanceFrequency((LARGE_INTEGER *)&freq);
@@ -819,14 +559,3 @@ void usleep(__int64 waitTime)
         QueryPerformanceCounter((LARGE_INTEGER *) &time2);
     } while((time2-time1) < waitTime);
 }
-#endif
-
-#ifdef USE_SDLUI2
-char *archdep_sdl2_default_renderers[] = {
-    "direct3d11",
-    "direct3d",
-    "opengles",
-    "opengl",
-    NULL
-};
-#endif

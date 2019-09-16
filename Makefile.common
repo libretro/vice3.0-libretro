@@ -26,9 +26,6 @@ SOURCES_C  := \
 				 $(CORE_DIR)/libretro/retro_strings.c \
 				 $(CORE_DIR)/libretro/retro_files.c \
 				 $(CORE_DIR)/libretro/retro_disk_control.c \
-				 $(LIBRETRO_COMM_DIR)/compat/compat_strl.c \
-				 $(LIBRETRO_COMM_DIR)/file/retro_dirent.c \
-				 $(LIBRETRO_COMM_DIR)/encodings/encoding_utf.c \
 				 $(GUI)/retro/SDL_gfxPrimitives.c \
 				 $(GUI)/retro/retro_surface.c  \
 				 $(GUI)/app.c
@@ -73,7 +70,7 @@ SOURCES_C += \
 				 $(EMU)/arch/libretro/uimon.c \
 				 $(EMU)/arch/libretro/vsyncarch.c \
 				 $(EMU)/arch/libretro/mousedrv.c \
-				 $(EMU)/arch/libretro/signals.c  \
+				 $(EMU)/arch/libretro/signals.c \
 				 $(EMU)/arch/libretro/retrostubs.c \
 				 $(EMU)/arch/libretro/uistatusbar.c
 
@@ -92,4 +89,23 @@ SOURCES_C += \
 	$(DEPS_DIR)/libz/gzlib.c \
 	$(DEPS_DIR)/libz/gzclose.c \
 	$(DEPS_DIR)/libz/zutil.c
+endif
+
+ifneq ($(STATIC_LINKING), 1)
+SOURCES_C += \
+	$(LIBRETRO_COMM_DIR)/streams/file_stream.c \
+	$(LIBRETRO_COMM_DIR)/streams/file_stream_transforms.c \
+	$(LIBRETRO_COMM_DIR)/file/file_path.c \
+	$(LIBRETRO_COMM_DIR)/file/retro_dirent.c \
+	$(LIBRETRO_COMM_DIR)/vfs/vfs_implementation.c \
+	$(LIBRETRO_COMM_DIR)/lists/dir_list.c \
+	$(LIBRETRO_COMM_DIR)/lists/string_list.c \
+	$(LIBRETRO_COMM_DIR)/string/stdstring.c \
+	$(LIBRETRO_COMM_DIR)/compat/compat_strl.c \
+	$(LIBRETRO_COMM_DIR)/compat/fopen_utf8.c \
+	$(LIBRETRO_COMM_DIR)/compat/compat_strcasestr.c \
+	$(LIBRETRO_COMM_DIR)/compat/compat_posix_string.c \
+	$(LIBRETRO_COMM_DIR)/encodings/encoding_utf.c \
+	$(LIBRETRO_COMM_DIR)/memmap/memalign.c \
+	$(LIBRETRO_COMM_DIR)/hash/rhash.c
 endif

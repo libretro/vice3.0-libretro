@@ -49,7 +49,6 @@ C64/C128 | CBM2 | PET | VIC20 | NAME
 #include "resources.h"
 #include "rtc-58321a.h"
 #include "snapshot.h"
-#include "translate.h"
 #include "uiapi.h"
 #include "userport.h"
 #include "userport_rtc_58321a.h"
@@ -68,14 +67,13 @@ static int read_line_active = 0;
 
 /* Some prototypes are needed */
 static void userport_rtc_read_pbx(void);
-static void userport_rtc_store_pbx(BYTE value);
+static void userport_rtc_store_pbx(uint8_t value);
 static int userport_rtc_write_snapshot_module(snapshot_t *s);
 static int userport_rtc_read_snapshot_module(snapshot_t *s);
 
 static userport_device_t rtc_device = {
     USERPORT_DEVICE_RTC_58321A,
     "Userport RTC (RTC58321A)",
-    IDGS_USERPORT_RTC58321A,
     userport_rtc_read_pbx,
     userport_rtc_store_pbx,
     NULL, /* NO pa2 read */
@@ -156,26 +154,18 @@ int userport_rtc_58321a_resources_init(void)
 
 static const cmdline_option_t cmdline_options[] =
 {
-    { "-userportrtc58321a", SET_RESOURCE, 0,
+    { "-userportrtc58321a", SET_RESOURCE, CMDLINE_ATTRIB_NONE,
       NULL, NULL, "UserportRTC58321a", (resource_value_t)1,
-      USE_PARAM_STRING, USE_DESCRIPTION_ID,
-      IDCLS_UNUSED, IDCLS_ENABLE_USERPORT_RTC_58321A,
-      NULL, NULL },
-    { "+userportrtc58321a", SET_RESOURCE, 0,
+      NULL, "Enable Userport RTC (58321a)" },
+    { "+userportrtc58321a", SET_RESOURCE, CMDLINE_ATTRIB_NONE,
       NULL, NULL, "UserportRTC58321a", (resource_value_t)0,
-      USE_PARAM_STRING, USE_DESCRIPTION_ID,
-      IDCLS_UNUSED, IDCLS_DISABLE_USERPORT_RTC_58321A,
-      NULL, NULL },
-    { "-userportrtc58321asave", SET_RESOURCE, 0,
+      NULL, "Disable Userport RTC (58321a)" },
+    { "-userportrtc58321asave", SET_RESOURCE, CMDLINE_ATTRIB_NONE,
       NULL, NULL, "UserportRTC58321aSave", (resource_value_t)1,
-      USE_PARAM_STRING, USE_DESCRIPTION_ID,
-      IDCLS_UNUSED, IDCLS_ENABLE_USERPORT_RTC_58321A_SAVE,
-      NULL, NULL },
-    { "+userportrtc58321asave", SET_RESOURCE, 0,
+      NULL, "Enable saving of the Userport RTC (58321a) data when changed." },
+    { "+userportrtc58321asave", SET_RESOURCE, CMDLINE_ATTRIB_NONE,
       NULL, NULL, "UserportRTC58321aSave", (resource_value_t)0,
-      USE_PARAM_STRING, USE_DESCRIPTION_ID,
-      IDCLS_UNUSED, IDCLS_DISABLE_USERPORT_RTC_58321A_SAVE,
-      NULL, NULL },
+      NULL, "Disable saving of the Userport RTC (58321a) data when changed." },
     CMDLINE_LIST_END
 };
 
@@ -194,10 +184,10 @@ void userport_rtc_58321a_resources_shutdown(void)
 
 /* ---------------------------------------------------------------------*/
 
-static void userport_rtc_store_pbx(BYTE value)
+static void userport_rtc_store_pbx(uint8_t value)
 {
     if (value & 0x10) {
-        rtc58321a_write_address(rtc58321a_context, (BYTE)(value & 0xf));
+        rtc58321a_write_address(rtc58321a_context, (uint8_t)(value & 0xf));
     }
     if (value & 0x20) {
         read_line_active = 1;
@@ -205,13 +195,13 @@ static void userport_rtc_store_pbx(BYTE value)
         read_line_active = 0;
     }
     if (value & 0x40) {
-        rtc58321a_write_data(rtc58321a_context, (BYTE)(value & 0xf));
+        rtc58321a_write_data(rtc58321a_context, (uint8_t)(value & 0xf));
     }
 }
 
 static void userport_rtc_read_pbx(void)
 {
-    BYTE retval = 0xf;
+    uint8_t retval = 0xf;
 
     if (read_line_active) {
         retval = rtc58321a_read(rtc58321a_context);
@@ -242,7 +232,7 @@ static int userport_rtc_write_snapshot_module(snapshot_t *s)
         return -1;
     }
 
-    if (SMW_B(m, (BYTE)read_line_active) < 0) {
+    if (SMW_B(m, (uint8_t)read_line_active) < 0) {
         snapshot_module_close(m);
         return -1;
     }
@@ -253,7 +243,7 @@ static int userport_rtc_write_snapshot_module(snapshot_t *s)
 
 static int userport_rtc_read_snapshot_module(snapshot_t *s)
 {
-    BYTE major_version, minor_version;
+    uint8_t major_version, minor_version;
     snapshot_module_t *m;
 
     /* enable device */

@@ -35,10 +35,12 @@
 #include "menu_common.h"
 #include "menu_debug.h"
 #include "menu_drive.h"
+#include "menu_edit.h"
 #include "menu_ffmpeg.h"
 #include "menu_help.h"
 #include "menu_jam.h"
 #include "menu_joyport.h"
+#include "menu_media.h"
 #include "menu_monitor.h"
 #include "menu_network.h"
 #include "menu_plus4cart.h"
@@ -55,8 +57,10 @@
 #include "menu_tape.h"
 #include "menu_video.h"
 #include "plus4memrom.h"
+#include "plus4ui.h"
 #include "resources.h"
 #include "ui.h"
+#include "uifonts.h"
 #include "uimenu.h"
 #include "vkbd.h"
 
@@ -101,10 +105,10 @@ static const ui_menu_entry_t xplus4_main_menu[] = {
       MENU_ENTRY_SUBMENU,
       submenu_callback,
       (ui_callback_data_t)snapshot_menu },
-    { "Screenshot",
+    { "Save media file",
       MENU_ENTRY_SUBMENU,
       submenu_callback,
-      (ui_callback_data_t)screenshot_ted_menu },
+      (ui_callback_data_t)media_menu },
     { "Speed settings",
       MENU_ENTRY_SUBMENU,
       submenu_callback,
@@ -124,8 +128,12 @@ static const ui_menu_entry_t xplus4_main_menu[] = {
       (ui_callback_data_t)network_menu },
 #endif
     { "Pause",
-      MENU_ENTRY_OTHER,
+      MENU_ENTRY_OTHER_TOGGLE,
       pause_callback,
+      NULL },
+    { "Advance Frame",
+      MENU_ENTRY_OTHER,
+      advance_frame_callback,
       NULL },
     { "Monitor",
       MENU_ENTRY_SUBMENU,
@@ -136,7 +144,7 @@ static const ui_menu_entry_t xplus4_main_menu[] = {
       vkbd_callback,
       NULL },
     { "Statusbar",
-      MENU_ENTRY_OTHER,
+      MENU_ENTRY_OTHER_TOGGLE,
       statusbar_callback,
       NULL },
 #ifdef DEBUG
@@ -153,6 +161,12 @@ static const ui_menu_entry_t xplus4_main_menu[] = {
       MENU_ENTRY_SUBMENU,
       submenu_callback,
       (ui_callback_data_t)settings_manager_menu },
+#ifdef USE_SDLUI2
+    { "Edit",
+      MENU_ENTRY_SUBMENU,
+      submenu_callback,
+      (ui_callback_data_t)edit_menu },
+#endif
     { "Quit emulator",
       MENU_ENTRY_OTHER,
       quit_callback,
@@ -160,19 +174,37 @@ static const ui_menu_entry_t xplus4_main_menu[] = {
     SDL_MENU_LIST_END
 };
 
-void plus4ui_set_menu_params(int index, menu_draw_t *menu_draw)
+static void plus4ui_set_menu_params(int index, menu_draw_t *menu_draw)
 {
-    menu_draw->color_front = 113;
+    /* TED */
+    menu_draw->max_text_x = 40;
+    menu_draw->color_front = menu_draw->color_default_front = (7 * 16) + 1;
+    menu_draw->color_back = menu_draw->color_default_back = 0;
+    menu_draw->color_cursor_back = 6;
+    menu_draw->color_cursor_revers = 0;
+    menu_draw->color_active_green = (5 * 16) + 5;
+    menu_draw->color_inactive_red = 2;
+    menu_draw->color_active_grey = (5 * 16) + 1;
+    menu_draw->color_inactive_grey = (3 * 16) + 1;
 
     sdl_ui_set_menu_params = NULL;
 }
 
-static BYTE *plus4_font;
+/** \brief  Pre-initialize the UI before the canvas window gets created
+ *
+ * \return  0 on success, -1 on failure
+ */
+int plus4ui_init_early(void)
+{
+    return 0;
+}
 
+/** \brief  Initialize the UI
+ *
+ * \return  0 on success, -1 on failure
+ */
 int plus4ui_init(void)
 {
-    int i, j;
-
 #ifdef SDL_DEBUG
     fprintf(stderr, "%s\n", __func__);
 #endif
@@ -184,18 +216,10 @@ int plus4ui_init(void)
     uikeyboard_menu_create();
     uipalette_menu_create("TED", NULL);
     uisid_menu_create();
+    uimedia_menu_create();
 
     sdl_ui_set_main_menu(xplus4_main_menu);
-
-    plus4_font = lib_malloc(8 * 256);
-    for (i = 0; i < 128; i++) {
-        for (j = 0; j < 8; j++) {
-            plus4_font[(i * 8) + j] = plus4memrom_kernal_rom[(i * 8) + (128 * 8) + j + 0x1000];
-            plus4_font[(i * 8) + (128 * 8) + j] = plus4memrom_kernal_rom[(i * 8) + j + 0x1000];
-        }
-    }
-
-    sdl_ui_set_menu_font(plus4_font, 8, 8);
+    sdl_ui_ted_font_init();
     sdl_vkbd_set_vkbd(&vkbd_plus4);
 
 #ifdef HAVE_FFMPEG
@@ -211,6 +235,7 @@ void plus4ui_shutdown(void)
     uisid_menu_shutdown();
     uipalette_menu_shutdown();
     uijoyport_menu_shutdown();
+    uimedia_menu_shutdown();
 #ifdef SDL_DEBUG
     fprintf(stderr, "%s\n", __func__);
 #endif
@@ -219,5 +244,5 @@ void plus4ui_shutdown(void)
     sdl_menu_ffmpeg_shutdown();
 #endif
 
-    lib_free(plus4_font);
+    sdl_ui_ted_font_shutdown();
 }

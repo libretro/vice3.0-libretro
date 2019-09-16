@@ -43,7 +43,6 @@ extern void kbd_initialize_numpad_joykeys(int *joykeys);
 #ifdef USE_SDLUI2
 #define SDLKey SDL_Keycode
 #define SDLMod SDL_Keymod
-#define SDLK_LAST SDL_NUM_SCANCODES
 #define SDLK_KP0 SDLK_KP_0
 #define SDLK_KP1 SDLK_KP_1
 #define SDLK_KP2 SDLK_KP_2
@@ -61,6 +60,8 @@ extern void kbd_initialize_numpad_joykeys(int *joykeys);
 #define SDLK_PRINT SDLK_PRINTSCREEN
 #define SDLK_NUMLOCK SDLK_NUMLOCKCLEAR
 #define SDLK_SCROLLOCK SDLK_SCROLLLOCK
+#else
+#define SDL_NUM_SCANCODES   512 /* this must be the same value as in SDL2 headers */
 #endif
 
 #define VICE_SDLK_RIGHT     275
@@ -74,6 +75,7 @@ extern void kbd_initialize_numpad_joykeys(int *joykeys);
 #define VICE_SDLK_RETURN      SDLK_RETURN
 
 extern SDLKey SDL2x_to_SDL1x_Keys(SDLKey key);
+extern SDLKey SDL1x_to_SDL2x_Keys(SDLKey key);
 
 extern ui_menu_action_t sdlkbd_press(SDLKey key, SDLMod mod);
 extern ui_menu_action_t sdlkbd_release(SDLKey key, SDLMod mod);
@@ -93,5 +95,7 @@ extern void kbd_enter_leave(void);
 extern void kbd_focus_change(void);
 
 extern int sdl_ui_menukeys[];
+
+extern const char *kbd_get_menu_keyname(void);
 
 #endif

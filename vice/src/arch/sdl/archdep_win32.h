@@ -28,7 +28,9 @@
 #ifndef VICE_ARCHDEP_WIN32_H
 #define VICE_ARCHDEP_WIN32_H
 
+#define VICE_ARCHAPI_PRIVATE_API
 #include "archapi.h"
+#undef VICE_ARCHAPI_PRIVATE_API
 
 /* This platform supports choosing drives. */
 #define SDL_CHOOSE_DRIVES
@@ -119,5 +121,9 @@ extern void archdep_workaround_nop(const char *otto);
 
 /* Keyword to use for a static prototype */
 #define STATIC_PROTOTYPE static
+
+extern void vice_usleep(uint64_t waitTime);
+
+extern int is_windows_nt(void);
 
 #endif

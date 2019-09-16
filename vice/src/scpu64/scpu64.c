@@ -103,8 +103,8 @@
 #include "sid-cmdline-options.h"
 #include "sid-resources.h"
 #include "sid.h"
+#include "snespad.h"
 #include "sound.h"
-#include "translate.h"
 #include "traps.h"
 #include "types.h"
 #include "userport.h"
@@ -120,12 +120,19 @@
 #include "vicii-mem.h"
 #include "video.h"
 #include "video-sound.h"
+#include "vizawrite64_dongle.h"
 #include "vsync.h"
 
 #ifdef HAVE_MOUSE
 #include "lightpen.h"
 #include "mouse.h"
 #endif
+
+
+/** \brief  Delay in seconds before pasting -keybuf argument into the buffer
+ */
+#define KBDBUF_ALARM_DELAY   1
+
 
 machine_context_t machine_context;
 
@@ -322,40 +329,36 @@ static void c64io_init(void)
 
 /* ------------------------------------------------------------------------ */
 
-static joyport_port_props_t control_port_1 = 
+static joyport_port_props_t control_port_1 =
 {
     "Control port 1",
-    IDGS_CONTROL_PORT_1,
-    1,				/* has a potentiometer connected to this port */
-    1,				/* has lightpen support on this port */
-    1					/* port is always active */
+    1,                  /* has a potentiometer connected to this port */
+    1,                  /* has lightpen support on this port */
+    1                   /* port is always active */
 };
 
-static joyport_port_props_t control_port_2 = 
+static joyport_port_props_t control_port_2 =
 {
     "Control port 2",
-    IDGS_CONTROL_PORT_2,
-    1,				/* has a potentiometer connected to this port */
-    0,				/* has NO lightpen support on this port */
-    1					/* port is always active */
+    1,                  /* has a potentiometer connected to this port */
+    0,                  /* has NO lightpen support on this port */
+    1                   /* port is always active */
 };
 
-static joyport_port_props_t userport_joy_control_port_1 = 
+static joyport_port_props_t userport_joy_control_port_1 =
 {
     "Userport joystick adapter port 1",
-    IDGS_USERPORT_JOY_ADAPTER_PORT_1,
-    0,				/* has NO potentiometer connected to this port */
-    0,				/* has NO lightpen support on this port */
-    0					/* port can be switched on/off */
+    0,                  /* has NO potentiometer connected to this port */
+    0,                  /* has NO lightpen support on this port */
+    0                   /* port can be switched on/off */
 };
 
-static joyport_port_props_t userport_joy_control_port_2 = 
+static joyport_port_props_t userport_joy_control_port_2 =
 {
     "Userport joystick adapter port 2",
-    IDGS_USERPORT_JOY_ADAPTER_PORT_2,
-    0,				/* has NO potentiometer connected to this port */
-    0,				/* has NO lightpen support on this port */
-    0					/* port can be switched on/off */
+    0,                  /* has NO potentiometer connected to this port */
+    0,                  /* has NO lightpen support on this port */
+    0                   /* port can be switched on/off */
 };
 
 static int init_joyport_ports(void)
@@ -456,6 +459,10 @@ int machine_resources_init(void)
         init_resource_fail("joyport script64 dongle");
         return -1;
     }
+    if (joyport_vizawrite64_dongle_resources_init() < 0) {
+        init_resource_fail("joyport vizawrite64 dongle");
+        return -1;
+    }
     if (joyport_cx21_resources_init() < 0) {
         init_resource_fail("joyport cx21 keypad");
         return -1;
@@ -466,6 +473,10 @@ int machine_resources_init(void)
     }
     if (joyport_cardkey_resources_init() < 0) {
         init_resource_fail("joyport cardkey keypad");
+        return -1;
+    }
+    if (joyport_snespad_resources_init() < 0) {
+        init_resource_fail("joyport snespad");
         return -1;
     }
     if (joystick_resources_init() < 0) {
@@ -536,12 +547,6 @@ int machine_resources_init(void)
         return -1;
     }
 #endif
-#endif
-#ifndef COMMON_KBD
-    if (kbd_resources_init() < 0) {
-        init_resource_fail("kbd");
-        return -1;
-    }
 #endif
     if (drive_resources_init() < 0) {
         init_resource_fail("drive");
@@ -624,7 +629,7 @@ int machine_cmdline_options_init(void)
         init_cmdline_options_fail("vicii");
         return -1;
     }
-    if (sid_cmdline_options_init() < 0) {
+    if (sid_cmdline_options_init(SIDTYPE_SID) < 0) {
         init_cmdline_options_fail("sid");
         return -1;
     }
@@ -715,12 +720,6 @@ int machine_cmdline_options_init(void)
 #ifdef HAVE_MOUSE
     if (mouse_cmdline_options_init() < 0) {
         init_cmdline_options_fail("mouse");
-        return -1;
-    }
-#endif
-#ifndef COMMON_KBD
-    if (kbd_cmdline_options_init() < 0) {
-        init_cmdline_options_fail("kbd");
         return -1;
     }
 #endif
@@ -849,14 +848,11 @@ int machine_specific_init(void)
     /* Initialize autostart.  */
     autostart_init((CLOCK)(delay * SCPU64_PAL_RFSH_PER_SEC * SCPU64_PAL_CYCLES_PER_RFSH), 1, 0xcc, 0xd1, 0xd3, 0xd5);
 
-#ifdef USE_BEOS_UI
     /* Pre-init C64-specific parts of the menus before vicii_init()
-       creates a canvas window with a menubar at the top. This could
-       also be used by other ports, e.g. GTK+...  */
+       creates a canvas window with a menubar at the top. */
     if (!console_mode) {
         scpu64ui_init_early();
     }
-#endif
 
     if (vicii_init(VICII_STANDARD) == NULL && !video_disabled_mode) {
         return -1;
@@ -867,12 +863,7 @@ int machine_specific_init(void)
     cia1_init(machine_context.cia1);
     cia2_init(machine_context.cia2);
 
-#ifndef COMMON_KBD
     /* Initialize the keyboard.  */
-    if (c64_kbd_init() < 0) {
-        return -1;
-    }
-#endif
     c64keyboard_init();
 
     scpu64_monitor_init();
@@ -898,7 +889,9 @@ int machine_specific_init(void)
     sound_init(machine_timing.cycles_per_sec, machine_timing.cycles_per_rfsh);
 
     /* Initialize keyboard buffer.  */
-    kbdbuf_init(631, 198, 10, (CLOCK)(machine_timing.rfsh_per_sec * machine_timing.cycles_per_rfsh));
+    kbdbuf_init(631, 198, 10,
+            (CLOCK)(machine_timing.rfsh_per_sec *
+                machine_timing.cycles_per_rfsh * KBDBUF_ALARM_DELAY));
 
     /* Initialize the C64-specific I/O */
     c64io_init();
@@ -932,16 +925,6 @@ int machine_specific_init(void)
     cartridge_init();
 
     machine_drive_stub();
-#if defined (USE_XF86_EXTENSIONS) && (defined(USE_XF86_VIDMODE_EXT) || defined (HAVE_XRANDR))
-    {
-        /* set fullscreen if user used `-fullscreen' on cmdline */
-        int fs;
-        resources_get_int("UseFullscreen", &fs);
-        if (fs) {
-            resources_set_int("VICIIFullscreen", 1);
-        }
-    }
-#endif
 
     return 0;
 }
@@ -1177,12 +1160,12 @@ struct image_contents_s *machine_diskcontents_bus_read(unsigned int unit)
     return diskcontents_iec_read(unit);
 }
 
-BYTE machine_tape_type_default(void)
+uint8_t machine_tape_type_default(void)
 {
     return 0;
 }
 
-BYTE machine_tape_behaviour(void)
+uint8_t machine_tape_behaviour(void)
 {
     return 0;
 }
@@ -1219,7 +1202,7 @@ const char *machine_get_name(void)
 
 /* ------------------------------------------------------------------------- */
 
-static void scpu64_userport_set_flag(BYTE b)
+static void scpu64_userport_set_flag(uint8_t b)
 {
     if (b != 0) {
         ciacore_set_flag(machine_context.cia2);
@@ -1239,4 +1222,49 @@ int machine_register_userport(void)
     userport_port_register(&userport_props);
 
     return 0;
+}
+
+/* ------------------------------------------------------------------------- */
+
+/** \brief  List of drive type names and ID's supported by SCPU64
+ *
+ * Convenience function for UI's. This list should be updated whenever drive
+ * types are added or removed.
+ *
+ * XXX: This is here because c64drive.c is compiled into x64dtv, which supports
+ *      fewer drive types.
+ */
+static drive_type_info_t drive_type_info_list[] = {
+    { DRIVE_NAME_NONE, DRIVE_TYPE_NONE },
+    { DRIVE_NAME_1540, DRIVE_TYPE_1540 },
+    { DRIVE_NAME_1541, DRIVE_TYPE_1541 },
+    { DRIVE_NAME_1541II, DRIVE_TYPE_1541II },
+    { DRIVE_NAME_1570, DRIVE_TYPE_1570 },
+    { DRIVE_NAME_1571, DRIVE_TYPE_1571 },
+    { DRIVE_NAME_1581, DRIVE_TYPE_1581 },
+    { DRIVE_NAME_2000, DRIVE_TYPE_2000 },
+    { DRIVE_NAME_4000, DRIVE_TYPE_4000 },
+    { DRIVE_NAME_2031, DRIVE_TYPE_2031 },
+    { DRIVE_NAME_2040, DRIVE_TYPE_2040 },
+    { DRIVE_NAME_3040, DRIVE_TYPE_3040 },
+    { DRIVE_NAME_4040, DRIVE_TYPE_4040 },
+    { DRIVE_NAME_1001, DRIVE_TYPE_1001 },
+    { DRIVE_NAME_8050, DRIVE_TYPE_8050 },
+    { DRIVE_NAME_8250, DRIVE_TYPE_8250 },
+    { NULL, -1 }
+};
+
+/** \brief  Get a list of (name, id) tuples for the drives handles by SCPU64
+ *
+ * Usefull for UI's, get a list of currently supported drive types with a name
+ * to display and and ID to use in callbacks.
+ *
+ * \return  list of drive types, NULL terminated
+ *
+ * \note    'supported' in this context means the drives SCPU64 can support, not
+ *          what actually is supported due to ROMs and other settings
+ */
+drive_type_info_t *machine_drive_get_type_info_list(void)
+{
+    return drive_type_info_list;
 }

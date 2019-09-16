@@ -1,0 +1,6 @@
+ssi2001-beos-drv.o: ssi2001-beos-drv.c ../../src/vice.h \
+ ../../src/config.h
+
+../../src/vice.h:
+
+../../src/config.h:

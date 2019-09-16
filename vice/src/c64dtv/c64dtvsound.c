@@ -29,6 +29,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "machine.h"
 #include "sid.h"
 #include "sound.h"
 #include "types.h"
@@ -48,7 +49,7 @@ static sound_chip_t sid_sound_chip = {
     1 /* chip enabled */
 };
 
-static WORD sid_sound_chip_offset = 0;
+static uint16_t sid_sound_chip_offset = 0;
 
 void sid_sound_chip_init(void)
 {
@@ -63,6 +64,11 @@ int machine_sid2_check_range(unsigned int sid2_adr)
 }
 
 int machine_sid3_check_range(unsigned int sid3_adr)
+{
+    return -1;
+}
+
+int machine_sid4_check_range(unsigned int sid3_adr)
 {
     return -1;
 }

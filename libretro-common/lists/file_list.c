@@ -1,4 +1,4 @@
-/* Copyright  (C) 2010-2017 The RetroArch team
+/* Copyright  (C) 2010-2018 The RetroArch team
  *
  * ---------------------------------------------------------------------------------------
  * The following license statement only applies to this file (file_list.c).
@@ -39,22 +39,55 @@ bool file_list_reserve(file_list_t *list, size_t nitems)
 
    new_data = (struct item_file*)realloc(list->list, nitems * item_size);
 
-   if (new_data)
-   {
-      memset(&new_data[list->capacity], 0, item_size * (nitems - list->capacity));
+   if (!new_data)
+      return false;
 
-      list->list     = new_data;
-      list->capacity = nitems;
-   }
+   memset(&new_data[list->capacity], 0, item_size * (nitems - list->capacity));
 
-   return new_data != NULL;
+   list->list     = new_data;
+   list->capacity = nitems;
+
+   return true;
 }
 
-static void file_list_add(file_list_t *list, unsigned idx,
+bool file_list_prepend(file_list_t *list,
       const char *path, const char *label,
       unsigned type, size_t directory_ptr,
       size_t entry_idx)
 {
+   return file_list_insert(list, path,
+      label, type,
+      directory_ptr, entry_idx,
+      0
+   );
+}
+
+bool file_list_insert(file_list_t *list,
+      const char *path, const char *label,
+      unsigned type, size_t directory_ptr,
+      size_t entry_idx,
+      size_t idx)
+{
+   int i;
+
+   /* Expand file list if needed */
+   if (list->size >= list->capacity)
+      if (!file_list_reserve(list, list->capacity * 2 + 1))
+         return false;
+
+   for (i = (unsigned)list->size; i > (int)idx; i--)
+   {
+      struct item_file *copy = (struct item_file*)
+         calloc(1, sizeof(struct item_file));
+
+      memcpy(copy, &list->list[i-1], sizeof(struct item_file));
+
+      memcpy(&list->list[i-1], &list->list[i], sizeof(struct item_file));
+      memcpy(&list->list[i],             copy, sizeof(struct item_file));
+
+      free(copy);
+   }
+
    list->list[idx].path          = NULL;
    list->list[idx].label         = NULL;
    list->list[idx].alt           = NULL;
@@ -70,41 +103,6 @@ static void file_list_add(file_list_t *list, unsigned idx,
       list->list[idx].path       = strdup(path);
 
    list->size++;
-}
-
-static bool file_list_expand_if_needed(file_list_t *list)
-{
-   if (list->size >= list->capacity)
-      return file_list_reserve(list, list->capacity * 2 + 1);
-
-   return true;
-}
-
-bool file_list_prepend(file_list_t *list,
-      const char *path, const char *label,
-      unsigned type, size_t directory_ptr,
-      size_t entry_idx)
-{
-   unsigned i;
-
-   if (!file_list_expand_if_needed(list))
-      return false;
-
-   for (i = (unsigned)list->size; i > 0; i--)
-   {
-      struct item_file *copy = (struct item_file*)
-         calloc(1, sizeof(struct item_file));
-
-      memcpy(copy, &list->list[i-1], sizeof(struct item_file));
-
-      memcpy(&list->list[i-1], &list->list[i], sizeof(struct item_file));
-      memcpy(&list->list[i],             copy, sizeof(struct item_file));
-
-      free(copy);
-   }
-
-   file_list_add(list, 0, path, label, type,
-         directory_ptr, entry_idx);
 
    return true;
 }
@@ -114,11 +112,27 @@ bool file_list_append(file_list_t *list,
       unsigned type, size_t directory_ptr,
       size_t entry_idx)
 {
-   if (!file_list_expand_if_needed(list))
-      return false;
+   unsigned idx = (unsigned)list->size;
+   /* Expand file list if needed */
+   if (idx >= list->capacity)
+      if (!file_list_reserve(list, list->capacity * 2 + 1))
+         return false;
 
-   file_list_add(list, (unsigned)list->size, path, label, type,
-         directory_ptr, entry_idx);
+   list->list[idx].path          = NULL;
+   list->list[idx].label         = NULL;
+   list->list[idx].alt           = NULL;
+   list->list[idx].type          = type;
+   list->list[idx].directory_ptr = directory_ptr;
+   list->list[idx].entry_idx     = entry_idx;
+   list->list[idx].userdata      = NULL;
+   list->list[idx].actiondata    = NULL;
+
+   if (label)
+      list->list[idx].label      = strdup(label);
+   if (path)
+      list->list[idx].path       = strdup(path);
+
+   list->size++;
 
    return true;
 }
@@ -135,7 +149,6 @@ size_t file_list_get_directory_ptr(const file_list_t *list)
    size_t size = file_list_get_size(list);
    return list->list[size].directory_ptr;
 }
-
 
 void file_list_pop(file_list_t *list, size_t *directory_ptr)
 {
@@ -213,61 +226,6 @@ void file_list_clear(file_list_t *list)
    list->size = 0;
 }
 
-void file_list_copy(const file_list_t *src, file_list_t *dst)
-{
-   struct item_file *item = NULL;
-
-   if (!src || !dst)
-      return;
-
-   if (dst->list)
-   {
-      for (item = dst->list; item < &dst->list[dst->size]; ++item)
-      {
-         if (!item)
-            continue;
-
-         if (item->path)
-            free(item->path);
-         item->path = NULL;
-
-         if (item->label)
-            free(item->label);
-         item->label = NULL;
-
-         if (item->alt)
-            free(item->alt);
-         item->alt = NULL;
-      }
-
-      free(dst->list);
-      dst->list = NULL;
-   }
-
-   dst->size     = 0;
-   dst->capacity = 0;
-   dst->list     = (struct item_file*)malloc(src->size * sizeof(struct item_file));
-
-   if (!dst->list)
-      return;
-
-   dst->size     = dst->capacity = src->size;
-
-   memcpy(dst->list, src->list, dst->size * sizeof(struct item_file));
-
-   for (item = dst->list; item < &dst->list[dst->size]; ++item)
-   {
-      if (item->path)
-         item->path  = strdup(item->path);
-
-      if (item->label)
-         item->label = strdup(item->label);
-
-      if (item->alt)
-         item->alt   = strdup(item->alt);
-   }
-}
-
 void file_list_set_label_at_offset(file_list_t *list, size_t idx,
       const char *label)
 {
@@ -310,20 +268,18 @@ void file_list_set_alt_at_offset(file_list_t *list, size_t idx,
 void file_list_get_alt_at_offset(const file_list_t *list, size_t idx,
       const char **alt)
 {
-   if (!list)
-      return;
-
-   if (alt)
-      *alt = list->list[idx].alt ?
-         list->list[idx].alt : list->list[idx].path;
+   if (list && alt)
+      *alt = list->list[idx].alt 
+         ? list->list[idx].alt 
+         : list->list[idx].path;
 }
 
 static int file_list_alt_cmp(const void *a_, const void *b_)
 {
    const struct item_file *a = (const struct item_file*)a_;
    const struct item_file *b = (const struct item_file*)b_;
-   const char *cmp_a = a->alt ? a->alt : a->path;
-   const char *cmp_b = b->alt ? b->alt : b->path;
+   const char *cmp_a         = a->alt ? a->alt : a->path;
+   const char *cmp_b         = b->alt ? b->alt : b->path;
    return strcasecmp(cmp_a, cmp_b);
 }
 
@@ -358,16 +314,14 @@ void *file_list_get_userdata_at_offset(const file_list_t *list, size_t idx)
 
 void file_list_set_userdata(const file_list_t *list, size_t idx, void *ptr)
 {
-   if (!list || !ptr)
-      return;
-   list->list[idx].userdata = ptr;
+   if (list && ptr)
+      list->list[idx].userdata = ptr;
 }
 
 void file_list_set_actiondata(const file_list_t *list, size_t idx, void *ptr)
 {
-   if (!list || !ptr)
-      return;
-   list->list[idx].actiondata = ptr;
+   if (list && ptr)
+      list->list[idx].actiondata = ptr;
 }
 
 void *file_list_get_actiondata_at_offset(const file_list_t *list, size_t idx)
@@ -423,10 +377,7 @@ void file_list_get_last(const file_list_t *list,
       const char **path, const char **label,
       unsigned *file_type, size_t *entry_idx)
 {
-   if (!list)
-      return;
-
-   if (list->size)
+   if (list && list->size)
       file_list_get_at_offset(list, list->size - 1, path, label, file_type, entry_idx);
 }
 
@@ -456,7 +407,7 @@ bool file_list_search(const file_list_t *list, const char *needle, size_t *idx)
       {
          /* Found match with first chars, best possible match. */
          *idx = i;
-         ret = true;
+         ret  = true;
          break;
       }
       else if (str && !ret)
@@ -464,7 +415,7 @@ bool file_list_search(const file_list_t *list, const char *needle, size_t *idx)
          /* Found mid-string match, but try to find a match with
           * first characters before we settle. */
          *idx = i;
-         ret = true;
+         ret  = true;
       }
    }
 

@@ -29,7 +29,9 @@
 #ifndef VICE_ARCHDEP_UNIX_H
 #define VICE_ARCHDEP_UNIX_H
 
+#define VICE_ARCHAPI_PRIVATE_API
 #include "archapi.h"
+#undef VICE_ARCHAPI_PRIVATE_API
 
 /* Filesystem dependant operators.  */
 #define FSDEVICE_DEFAULT_DIR "."
@@ -61,6 +63,10 @@
 #define ARCHDEP_RS232_DEV2 "/dev/ttyS1"
 #define ARCHDEP_RS232_DEV3 "rs232.dump"
 #define ARCHDEP_RS232_DEV4 "|lpr"
+
+/* Default MIDI devices.  */
+#define ARCHDEP_MIDI_IN_DEV  "/dev/midi"
+#define ARCHDEP_MIDI_OUT_DEV "/dev/midi"
 
 /* Default location of raw disk images.  */
 #define ARCHDEP_RAWDRIVE_DEFAULT "/dev/fd0"

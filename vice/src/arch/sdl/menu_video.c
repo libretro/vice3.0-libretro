@@ -48,6 +48,12 @@ static ui_menu_entry_t *palette_dyn_menu2 = NULL;
 static ui_menu_entry_t palette_menu1[4];
 static ui_menu_entry_t palette_menu2[4];
 
+#define UI_MENU_DEFINE_SLIDER_VIDEO(resource, min, max)                                  \
+    static UI_MENU_CALLBACK(slider_##resource##_callback)                          \
+    {                                                                              \
+        return sdl_ui_menu_video_slider_helper(activated, param, #resource, min, max);   \
+    }
+
 /* Border mode menu */
 
 UI_MENU_DEFINE_RADIO(VICIIBorderMode)
@@ -126,30 +132,30 @@ UI_MENU_DEFINE_TOGGLE(VICAudioLeak)
 
 /* CRT emulation menu */
 
-UI_MENU_DEFINE_SLIDER(VICPALScanLineShade, 0, 1000)
-UI_MENU_DEFINE_SLIDER(VICPALBlur, 0, 1000)
-UI_MENU_DEFINE_SLIDER(VICPALOddLinePhase, 0, 2000)
-UI_MENU_DEFINE_SLIDER(VICPALOddLineOffset, 0, 2000)
+UI_MENU_DEFINE_SLIDER_VIDEO(VICPALScanLineShade, 0, 1000)
+UI_MENU_DEFINE_SLIDER_VIDEO(VICPALBlur, 0, 1000)
+UI_MENU_DEFINE_SLIDER_VIDEO(VICPALOddLinePhase, 0, 2000)
+UI_MENU_DEFINE_SLIDER_VIDEO(VICPALOddLineOffset, 0, 2000)
 
-UI_MENU_DEFINE_SLIDER(VDCPALScanLineShade, 0, 1000)
-UI_MENU_DEFINE_SLIDER(VDCPALBlur, 0, 1000)
-UI_MENU_DEFINE_SLIDER(VDCPALOddLinePhase, 0, 2000)
-UI_MENU_DEFINE_SLIDER(VDCPALOddLineOffset, 0, 2000)
+UI_MENU_DEFINE_SLIDER_VIDEO(VDCPALScanLineShade, 0, 1000)
+UI_MENU_DEFINE_SLIDER_VIDEO(VDCPALBlur, 0, 1000)
+UI_MENU_DEFINE_SLIDER_VIDEO(VDCPALOddLinePhase, 0, 2000)
+UI_MENU_DEFINE_SLIDER_VIDEO(VDCPALOddLineOffset, 0, 2000)
 
-UI_MENU_DEFINE_SLIDER(VICIIPALScanLineShade, 0, 1000)
-UI_MENU_DEFINE_SLIDER(VICIIPALBlur, 0, 1000)
-UI_MENU_DEFINE_SLIDER(VICIIPALOddLinePhase, 0, 2000)
-UI_MENU_DEFINE_SLIDER(VICIIPALOddLineOffset, 0, 2000)
+UI_MENU_DEFINE_SLIDER_VIDEO(VICIIPALScanLineShade, 0, 1000)
+UI_MENU_DEFINE_SLIDER_VIDEO(VICIIPALBlur, 0, 1000)
+UI_MENU_DEFINE_SLIDER_VIDEO(VICIIPALOddLinePhase, 0, 2000)
+UI_MENU_DEFINE_SLIDER_VIDEO(VICIIPALOddLineOffset, 0, 2000)
 
-UI_MENU_DEFINE_SLIDER(TEDPALScanLineShade, 0, 1000)
-UI_MENU_DEFINE_SLIDER(TEDPALBlur, 0, 1000)
-UI_MENU_DEFINE_SLIDER(TEDPALOddLinePhase, 0, 2000)
-UI_MENU_DEFINE_SLIDER(TEDPALOddLineOffset, 0, 2000)
+UI_MENU_DEFINE_SLIDER_VIDEO(TEDPALScanLineShade, 0, 1000)
+UI_MENU_DEFINE_SLIDER_VIDEO(TEDPALBlur, 0, 1000)
+UI_MENU_DEFINE_SLIDER_VIDEO(TEDPALOddLinePhase, 0, 2000)
+UI_MENU_DEFINE_SLIDER_VIDEO(TEDPALOddLineOffset, 0, 2000)
 
-UI_MENU_DEFINE_SLIDER(CrtcPALScanLineShade, 0, 1000)
-UI_MENU_DEFINE_SLIDER(CrtcPALBlur, 0, 1000)
-UI_MENU_DEFINE_SLIDER(CrtcPALOddLinePhase, 0, 2000)
-UI_MENU_DEFINE_SLIDER(CrtcPALOddLineOffset, 0, 2000)
+UI_MENU_DEFINE_SLIDER_VIDEO(CrtcPALScanLineShade, 0, 1000)
+UI_MENU_DEFINE_SLIDER_VIDEO(CrtcPALBlur, 0, 1000)
+UI_MENU_DEFINE_SLIDER_VIDEO(CrtcPALOddLinePhase, 0, 2000)
+UI_MENU_DEFINE_SLIDER_VIDEO(CrtcPALOddLineOffset, 0, 2000)
 
 #define VICE_SDL_CRTEMU_MENU_ITEMS(chip)                        \
     { "Scanline shade",                                         \
@@ -197,35 +203,35 @@ static const ui_menu_entry_t crtc_crt_controls_menu[] = {
 
 /* Color menu */
 
-UI_MENU_DEFINE_SLIDER(VICColorGamma, 0, 4000)
-UI_MENU_DEFINE_SLIDER(VICColorTint, 0, 2000)
-UI_MENU_DEFINE_SLIDER(VICColorSaturation, 0, 2000)
-UI_MENU_DEFINE_SLIDER(VICColorContrast, 0, 2000)
-UI_MENU_DEFINE_SLIDER(VICColorBrightness, 0, 2000)
+UI_MENU_DEFINE_SLIDER_VIDEO(VICColorGamma, 0, 4000)
+UI_MENU_DEFINE_SLIDER_VIDEO(VICColorTint, 0, 2000)
+UI_MENU_DEFINE_SLIDER_VIDEO(VICColorSaturation, 0, 2000)
+UI_MENU_DEFINE_SLIDER_VIDEO(VICColorContrast, 0, 2000)
+UI_MENU_DEFINE_SLIDER_VIDEO(VICColorBrightness, 0, 2000)
 
-UI_MENU_DEFINE_SLIDER(VICIIColorGamma, 0, 4000)
-UI_MENU_DEFINE_SLIDER(VICIIColorTint, 0, 2000)
-UI_MENU_DEFINE_SLIDER(VICIIColorSaturation, 0, 2000)
-UI_MENU_DEFINE_SLIDER(VICIIColorContrast, 0, 2000)
-UI_MENU_DEFINE_SLIDER(VICIIColorBrightness, 0, 2000)
+UI_MENU_DEFINE_SLIDER_VIDEO(VICIIColorGamma, 0, 4000)
+UI_MENU_DEFINE_SLIDER_VIDEO(VICIIColorTint, 0, 2000)
+UI_MENU_DEFINE_SLIDER_VIDEO(VICIIColorSaturation, 0, 2000)
+UI_MENU_DEFINE_SLIDER_VIDEO(VICIIColorContrast, 0, 2000)
+UI_MENU_DEFINE_SLIDER_VIDEO(VICIIColorBrightness, 0, 2000)
 
-UI_MENU_DEFINE_SLIDER(VDCColorGamma, 0, 4000)
-UI_MENU_DEFINE_SLIDER(VDCColorTint, 0, 2000)
-UI_MENU_DEFINE_SLIDER(VDCColorSaturation, 0, 2000)
-UI_MENU_DEFINE_SLIDER(VDCColorContrast, 0, 2000)
-UI_MENU_DEFINE_SLIDER(VDCColorBrightness, 0, 2000)
+UI_MENU_DEFINE_SLIDER_VIDEO(VDCColorGamma, 0, 4000)
+UI_MENU_DEFINE_SLIDER_VIDEO(VDCColorTint, 0, 2000)
+UI_MENU_DEFINE_SLIDER_VIDEO(VDCColorSaturation, 0, 2000)
+UI_MENU_DEFINE_SLIDER_VIDEO(VDCColorContrast, 0, 2000)
+UI_MENU_DEFINE_SLIDER_VIDEO(VDCColorBrightness, 0, 2000)
 
-UI_MENU_DEFINE_SLIDER(TEDColorGamma, 0, 4000)
-UI_MENU_DEFINE_SLIDER(TEDColorTint, 0, 2000)
-UI_MENU_DEFINE_SLIDER(TEDColorSaturation, 0, 2000)
-UI_MENU_DEFINE_SLIDER(TEDColorContrast, 0, 2000)
-UI_MENU_DEFINE_SLIDER(TEDColorBrightness, 0, 2000)
+UI_MENU_DEFINE_SLIDER_VIDEO(TEDColorGamma, 0, 4000)
+UI_MENU_DEFINE_SLIDER_VIDEO(TEDColorTint, 0, 2000)
+UI_MENU_DEFINE_SLIDER_VIDEO(TEDColorSaturation, 0, 2000)
+UI_MENU_DEFINE_SLIDER_VIDEO(TEDColorContrast, 0, 2000)
+UI_MENU_DEFINE_SLIDER_VIDEO(TEDColorBrightness, 0, 2000)
 
-UI_MENU_DEFINE_SLIDER(CrtcColorGamma, 0, 4000)
-UI_MENU_DEFINE_SLIDER(CrtcColorTint, 0, 2000)
-UI_MENU_DEFINE_SLIDER(CrtcColorSaturation, 0, 2000)
-UI_MENU_DEFINE_SLIDER(CrtcColorContrast, 0, 2000)
-UI_MENU_DEFINE_SLIDER(CrtcColorBrightness, 0, 2000)
+UI_MENU_DEFINE_SLIDER_VIDEO(CrtcColorGamma, 0, 4000)
+UI_MENU_DEFINE_SLIDER_VIDEO(CrtcColorTint, 0, 2000)
+UI_MENU_DEFINE_SLIDER_VIDEO(CrtcColorSaturation, 0, 2000)
+UI_MENU_DEFINE_SLIDER_VIDEO(CrtcColorContrast, 0, 2000)
+UI_MENU_DEFINE_SLIDER_VIDEO(CrtcColorBrightness, 0, 2000)
 
 #define VICE_SDL_COLOR_MENU_ITEMS(chip)                        \
     { "Gamma",                                                 \
@@ -278,7 +284,12 @@ static const ui_menu_entry_t crtc_color_controls_menu[] = {
 
 UI_MENU_DEFINE_INT(SDLCustomWidth)
 UI_MENU_DEFINE_INT(SDLCustomHeight)
+#ifndef USE_SDLUI2    
 UI_MENU_DEFINE_RADIO(SDLLimitMode)
+#endif
+UI_MENU_DEFINE_INT(SDLWindowWidth)
+UI_MENU_DEFINE_INT(SDLWindowHeight)
+    
 
 #define VICE_SDL_SIZE_MENU_DOUBLESIZE(chip)         \
     { "Double size",                                \
@@ -292,7 +303,7 @@ UI_MENU_DEFINE_RADIO(SDLLimitMode)
       toggle_##chip##StretchVertical_callback,      \
       NULL },
 
-#define VICE_SDL_SIZE_MENU_ITEMS(chip)              \
+#define VICE_SDL_SIZE_MENU_ITEMS_SHARED(chip)       \
     { "Double scan",                                \
       MENU_ENTRY_RESOURCE_TOGGLE,                   \
       toggle_##chip##DoubleScan_callback,           \
@@ -320,7 +331,9 @@ UI_MENU_DEFINE_RADIO(SDLLimitMode)
     { "Height",                                     \
       MENU_ENTRY_RESOURCE_INT,                      \
       int_SDLCustomHeight_callback,                 \
-      (ui_callback_data_t)"Set height" },           \
+      (ui_callback_data_t)"Set height" },
+#ifndef USE_SDLUI2
+#define VICE_SDL_SIZE_MENU_ITEMS_LIMIT(chip)        \
     SDL_MENU_ITEM_SEPARATOR,                        \
     SDL_MENU_ITEM_TITLE("Resolution limit mode"),   \
     { "Off",                                        \
@@ -335,6 +348,25 @@ UI_MENU_DEFINE_RADIO(SDLLimitMode)
       MENU_ENTRY_RESOURCE_RADIO,                    \
       radio_SDLLimitMode_callback,                  \
       (ui_callback_data_t)SDL_LIMIT_MODE_FIXED },
+#else
+#define VICE_SDL_SIZE_MENU_ITEMS_LIMIT(chip)
+#endif
+#define VICE_SDL_SIZE_MENU_ITEMS_LATER_SHARED(chip) \
+    SDL_MENU_ITEM_SEPARATOR,                        \
+    SDL_MENU_ITEM_TITLE("Initial resolution"),      \
+    { "Width",                                      \
+      MENU_ENTRY_RESOURCE_INT,                      \
+      int_SDLWindowWidth_callback,                  \
+      (ui_callback_data_t)"Set width" },            \
+    { "Height",                                     \
+      MENU_ENTRY_RESOURCE_INT,                      \
+      int_SDLWindowHeight_callback,                 \
+      (ui_callback_data_t)"Set height" },
+
+#define VICE_SDL_SIZE_MENU_ITEMS(chip)              \
+VICE_SDL_SIZE_MENU_ITEMS_SHARED(chip)               \
+VICE_SDL_SIZE_MENU_ITEMS_LIMIT(chip)                \
+VICE_SDL_SIZE_MENU_ITEMS_LATER_SHARED(chip)
 
 #if defined(HAVE_HWSCALE) || defined(USE_SDLUI2)
 
@@ -356,7 +388,6 @@ static const ui_menu_entry_t aspect_menu[] = {
     SDL_MENU_LIST_END
 };
 
-#ifndef USE_SDLUI2
 UI_MENU_DEFINE_RADIO(SDLGLFilter)
 
 static const ui_menu_entry_t filter_menu[] = {
@@ -371,6 +402,7 @@ static const ui_menu_entry_t filter_menu[] = {
     SDL_MENU_LIST_END
 };
 
+#ifndef USE_SDLUI2
 UI_MENU_DEFINE_TOGGLE(VICIIHwScale)
 UI_MENU_DEFINE_TOGGLE(VDCHwScale)
 UI_MENU_DEFINE_TOGGLE(CrtcHwScale)
@@ -421,6 +453,10 @@ UI_MENU_DEFINE_TOGGLE(SDLGLFlipY)
       MENU_ENTRY_RESOURCE_STRING,                           \
       string_AspectRatio_callback,                          \
       (ui_callback_data_t)"Set aspect ratio (0.5 - 2.0)" }, \
+    { "Filter",                                             \
+      MENU_ENTRY_SUBMENU,                                   \
+      submenu_radio_callback,                               \
+      (ui_callback_data_t)filter_menu },                    \
     { "Flip X",                                             \
       MENU_ENTRY_RESOURCE_TOGGLE,                           \
       toggle_SDLGLFlipX_callback,                           \
@@ -1171,7 +1207,7 @@ const ui_menu_entry_t vic20_video_menu[] = {
 static char *video_chip1_used = NULL;
 static char *video_chip2_used = NULL;
 
-UI_MENU_CALLBACK(external_palette_file1_callback)
+static UI_MENU_CALLBACK(external_palette_file1_callback)
 {
     const char *external_file_name;
     char *name = (char *)param;
@@ -1182,14 +1218,14 @@ UI_MENU_CALLBACK(external_palette_file1_callback)
         resources_get_string_sprintf("%sPaletteFile", &external_file_name, video_chip1_used);
         if (external_file_name) {
             if (!strcmp(external_file_name, name)) {
-                return "*";
+                return MENU_CHECKMARK_CHECKED_STRING;
             }
         }
     }
-    return "";
+    return NULL;
 }
 
-UI_MENU_CALLBACK(external_palette_file2_callback)
+static UI_MENU_CALLBACK(external_palette_file2_callback)
 {
     const char *external_file_name;
     char *name = (char *)param;
@@ -1200,11 +1236,11 @@ UI_MENU_CALLBACK(external_palette_file2_callback)
         resources_get_string_sprintf("%sPaletteFile", &external_file_name, video_chip2_used);
         if (external_file_name) {
             if (!strcmp(external_file_name, name)) {
-                return "*";
+                return MENU_CHECKMARK_CHECKED_STRING;
             }
         }
     }
-    return "";
+    return NULL;
 }
 
 static int countgroup(palette_info_t *palettelist, char *chip)
@@ -1273,7 +1309,7 @@ void uipalette_menu_create(char *chip1_name, char *chip2_name)
     while (palettelist->name) {
         if (palettelist->chip && !strcmp(palettelist->chip, video_chip1_used)) {
             palette_dyn_menu1[i].string = (char *)lib_stralloc(palettelist->name);
-            palette_dyn_menu1[i].type = MENU_ENTRY_OTHER;
+            palette_dyn_menu1[i].type = MENU_ENTRY_OTHER_TOGGLE;
             palette_dyn_menu1[i].callback = external_palette_file1_callback;
             palette_dyn_menu1[i].data = (ui_callback_data_t)lib_stralloc(palettelist->file);
             ++i;
@@ -1296,7 +1332,7 @@ void uipalette_menu_create(char *chip1_name, char *chip2_name)
         while (palettelist->name) {
             if (palettelist->chip && !strcmp(palettelist->chip, video_chip2_used)) {
                 palette_dyn_menu2[i].string = (char *)lib_stralloc(palettelist->name);
-                palette_dyn_menu2[i].type = MENU_ENTRY_OTHER;
+                palette_dyn_menu2[i].type = MENU_ENTRY_OTHER_TOGGLE;
                 palette_dyn_menu2[i].callback = external_palette_file2_callback;
                 palette_dyn_menu2[i].data = (ui_callback_data_t)lib_stralloc(palettelist->file);
                 ++i;

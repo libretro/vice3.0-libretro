@@ -1,12 +1,11 @@
+/** \file   console_unix.c
+ * \brief   Unix specific console access interface for SDL.
+ *
+ * \author  Hannu Nuotio <hannu.nuotio@tut.fi>
+ * \author  Andreas Boose <viceteam@t-online.de>
+ */
+
 /*
- * console_unix.c - Unix specific console access interface for SDL.
- *
- * Written by
- *  Hannu Nuotio <hannu.nuotio@tut.fi>
- *
- * Based on code by
- *  Andreas Boose <viceteam@t-online.de>
- *
  * This file is part of VICE, the Versatile Commodore Emulator.
  * See README for copyright notice.
  *
@@ -39,6 +38,7 @@
 #include <string.h>
 
 #include "lib.h"
+#include "charset.h"
 
 static FILE *mon_input, *mon_output;
 
@@ -73,11 +73,26 @@ int console_close(console_t *log)
 int console_out(console_t *log, const char *format, ...)
 {
     va_list ap;
+    char *buf;
+    unsigned char c;
+    int i;
 
     va_start(ap, format);
-    vfprintf(stdout, format, ap);
+    buf = lib_mvsprintf(format, ap);
     va_end(ap);
 
+    if (buf) {
+        for (i = 0; (c = buf[i]) != 0; i++) {
+            if (c == '\t') {
+                buf[i] = ' ';
+            } else if (((c < 32) || (c > 126)) && (c != '\n')) {
+                    buf[i] = charset_p_toascii(c, 1);
+            }
+        }
+
+        fprintf(stdout, "%s", buf);
+        lib_free(buf);
+    }
     return 0;
 }
 
@@ -85,21 +100,22 @@ int console_out(console_t *log, const char *format, ...)
 char *readline(const char *prompt)
 {
     char *p = lib_malloc(1024);
+    size_t len;
 
     console_out(NULL, "%s", prompt);
 
     fflush(mon_output);
-    fgets(p, 1024, mon_input);
-
-    /* Remove trailing newlines.  */
-    {
-        int len;
-
-        for (len = strlen(p); len > 0 && (p[len - 1] == '\r' || p[len - 1] == '\n'); len--) {
-            p[len - 1] = '\0';
-        }
+    if (fgets(p, 1024, mon_input) == NULL) {
+        lib_free(p);
+        return NULL;
     }
 
+    /* Remove trailing newlines.  */
+    for (len = strlen(p);
+            len > 0 && (p[len - 1] == '\r' || p[len - 1] == '\n');
+            len--) {
+        p[len - 1] = '\0';
+    }
     return p;
 }
 #endif

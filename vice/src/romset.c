@@ -45,7 +45,6 @@
 #include "resources.h"
 #include "romset.h"
 #include "sysfile.h"
-#include "translate.h"
 #include "types.h"
 #include "util.h"
 
@@ -76,22 +75,17 @@ static int option_romsetarchiveselect(const char *value, void *extra_param)
     return romset_archive_item_select(value);
 }
 
-static const cmdline_option_t cmdline_options[] = {
-    { "-romsetfile", CALL_FUNCTION, 1,
+static const cmdline_option_t cmdline_options[] =
+{
+    { "-romsetfile", CALL_FUNCTION, CMDLINE_ATTRIB_NEED_ARGS,
       option_romsetfile, NULL, NULL, NULL,
-      USE_PARAM_ID, USE_DESCRIPTION_ID,
-      IDCLS_PB_FILE, IDCLS_LOAD_ROMSET_FILE,
-      NULL, NULL },
-    { "-romsetarchive", CALL_FUNCTION, 1,
+      "<File>", "load the given romset file" },
+    { "-romsetarchive", CALL_FUNCTION, CMDLINE_ATTRIB_NEED_ARGS,
       option_romsetarchive, NULL, NULL, NULL,
-      USE_PARAM_ID, USE_DESCRIPTION_ID,
-      IDCLS_PB_FILE, IDCLS_LOAD_ROMSET_ARCHIVE,
-      NULL, NULL },
-    { "-romsetarchiveselect", CALL_FUNCTION, 1,
+      "<File>", "load the given romset archive" },
+    { "-romsetarchiveselect", CALL_FUNCTION, CMDLINE_ATTRIB_NEED_ARGS,
       option_romsetarchiveselect, NULL, NULL, NULL,
-      USE_PARAM_ID, USE_DESCRIPTION_ID,
-      IDCLS_P_ITEM_NUMBER, IDCLS_SELECT_ITEM_FROM_ROMSET_ARCHIVE,
-      NULL, NULL },
+      "<Item number>", "select the given item from the current romset archive" },
     CMDLINE_LIST_END
 };
 
@@ -100,7 +94,7 @@ int romset_cmdline_options_init()
     return cmdline_register_options(cmdline_options);
 }
 
-const char *prepend_dir_to_path(const char *dir)
+static const char *prepend_dir_to_path(const char *dir)
 {
     const char *saved_path;
     char *new_path;
@@ -126,9 +120,9 @@ const char *prepend_dir_to_path(const char *dir)
     lib_free(new_path);
 
     return saved_path;
-} 
+}
 
-void restore_path(const char *saved_path)
+static void restore_path(const char *saved_path)
 {
     resources_set_string("Directory", saved_path);
     lib_free(saved_path);

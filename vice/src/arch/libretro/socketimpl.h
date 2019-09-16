@@ -24,27 +24,25 @@
  *
  */
 
-#ifndef VICE_SDL_SOCKETIMPL_H
-#define VICE_SDL_SOCKETIMPL_H
+#ifndef VICE_SOCKETIMPL_H
+#define VICE_SOCKETIMPL_H
 
 #include "vice.h"
 
-/* since the socketimpl.h file won't change
-   the arch specific header is included directly. */
 #ifdef AMIGA_SUPPORT
-#include "../amigaos/socketimpl.h"
+#include "socket-amiga-impl.h"
 #endif
 
 #ifdef BEOS_COMPILE
-#include "../beos/socketimpl.h"
+#include "socket-beos-impl.h"
 #endif
 
 #ifdef __linux__
-#include "../unix/socketimpl.h"
+#include "socket-unix-impl.h"
 #endif
 
-#if __WIN32__
-#include "../win32/socketimpl.h"
+#ifdef __WIN32__
+#include "socket-win32-impl.h"
 #endif
 
 #endif

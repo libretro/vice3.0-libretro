@@ -21,13 +21,9 @@
 #ifndef AVUTIL_AVSTRING_H
 #define AVUTIL_AVSTRING_H
 
-#ifdef IDE_COMPILE
-#include "ffmpeg-config.h"
-#include "ide-config.h"
-#endif
-
 #include <stddef.h>
 #include <stdint.h>
+
 #include "attributes.h"
 
 /**

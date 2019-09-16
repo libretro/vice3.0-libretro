@@ -1,0 +1,14 @@
+voice.o: voice.cc voice.h residdtv-config.h siddtvdefs.h wave.h \
+ bittrain.h envelope.h
+
+voice.h:
+
+residdtv-config.h:
+
+siddtvdefs.h:
+
+wave.h:
+
+bittrain.h:
+
+envelope.h:

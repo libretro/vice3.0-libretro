@@ -16,6 +16,10 @@ SUBDIRS = \
 	samplerdrv \
 	joyport \
 	sounddrv \
+	mididrv \
+	socketdrv \
+	hwsiddrv \
+	iodrv \
 	drive \
 	vdrive \
 	fsdevice \
@@ -51,14 +55,19 @@ SUBDIRS = \
 	pet \
 	plus4 \
 	cbm2 \
+	arch/shared \
 	arch \
 	lib \
-	platform
+	hvsc
 
 endif
 
 DIST_SUBDIRS = \
 	sounddrv \
+	mididrv \
+	socketdrv \
+	hwsiddrv \
+	iodrv \
 	samplerdrv \
 	joyport \
 	drive \
@@ -100,8 +109,8 @@ DIST_SUBDIRS = \
 	@RESIDSUB@ \
 	@RESIDDTVSUB@ \
 	lib \
-	platform \
-	buildtools
+	buildtools \
+	hvsc
 
 AM_CPPFLAGS = \
 	@ARCH_INCLUDES@ \
@@ -119,11 +128,12 @@ AM_CPPFLAGS = \
 	-I$(top_srcdir)/src/diag \
 	-I$(top_srcdir)/src/userport \
 	-I$(top_srcdir)/src/lib/p64 \
-	-I$(top_srcdir)/src/platform \
 	-I$(top_srcdir)/src/joyport \
 	-I$(top_srcdir)/src/rtc \
 	-I$(top_srcdir)/src/tapeport \
-	-I$(top_srcdir)/src/tape
+	-I$(top_srcdir)/src/tape \
+	-I$(top_srcdir)/src/socketdrv \
+	-I$(top_srcdir)/src/hvsc
 
 noinst_HEADERS = \
 	6510core.h \
@@ -237,10 +247,8 @@ noinst_HEADERS = \
 	tap.h \
 	tape.h \
 	tpi.h \
-	translate_funcs.h \
-	translate_languages.h \
-	translate_text.c \
 	traps.h \
+	types.h \
 	uiapi.h \
 	uicmdline.h \
 	uicolor.h \
@@ -315,7 +323,6 @@ base_sources = \
 	socket.c \
 	sound.c \
 	sysfile.c \
-	translate.c \
 	traps.c \
 	util.c \
 	vicefeatures.c \
@@ -354,7 +361,6 @@ COMMON_EXTRA_DIST = \
 	fixpoint.c \
 	piacore.c \
 	sedinfocontrib_h.sh \
-	translate.txt \
 	vice-version.sh \
 	vice-version.sh.in \
 	wrap-u-ar.sh
@@ -462,7 +468,7 @@ EXTRA_DIST = $(COMMON_EXTRA_DIST) $(RESID_EXTRA_DIST) $(RESIDDTV_EXTRA_DIST)
 endif
 
 if NATIVE_TOOLS
-GENFILES = $(builddir)/geninfocontrib $(builddir)/gentranslate bin2c palette2c
+GENFILES = $(builddir)/geninfocontrib bin2c palette2c
 endif
 
 if EMBEDDED
@@ -542,6 +548,7 @@ EMBEDDED_H_FILES = \
 	vicii_c64hq_vpl.h \
 	vicii_c64s_vpl.h \
 	vicii_ccs64_vpl.h \
+	vicii_colodore_vpl.h \
 	vicii_community_colors_vpl.h \
 	vicii_deekay_vpl.h \
 	vicii_frodo_vpl.h \
@@ -563,6 +570,7 @@ EMBEDDED_H_FILES = \
 	ted_colodore_ted_vpl.h \
 	vic_mike_ntsc_vpl.h \
 	vic_mike_pal_vpl.h \
+	vic_colodore_vic_vpl.h \
 	vic_vice_vpl.h
 
 if NATIVE_TOOLS
@@ -587,17 +595,7 @@ else
 SVN_VERSION_HEADER =
 endif
 
-if HAVE_TRANSLATION
-BUILT_SOURCES = translate.h translate_table.h $(EMBEDDED_H_FILES) $(OWCC_LIBS) $(SVN_VERSION_HEADER) infocontrib.h
-
-if !NATIVE_TOOLS
-translate_table.h:	$(srcdir)/translate.txt $(srcdir)/buildtools/gentranslatetable.sh
-	@echo "generating translate_table.h..."
-	$(SHELL) $(srcdir)/buildtools/gentranslatetable.sh <$(srcdir)/translate.txt >translate_table.h
-endif
-else
-BUILT_SOURCES = translate.h $(EMBEDDED_H_FILES) $(OWCC_LIBS) $(SVN_VERSION_HEADER) infocontrib.h
-endif
+BUILT_SOURCES = $(EMBEDDED_H_FILES) $(OWCC_LIBS) $(SVN_VERSION_HEADER) infocontrib.h
 
 .PHONY: svnversion.h.indirect
 
@@ -612,13 +610,12 @@ $(builddir)/geninfocontrib:	$(top_srcdir)/doc/vice.texi $(srcdir)/buildtools/inf
 
 infocontrib.h:	$(top_srcdir)/doc/vice.texi $(srcdir)/buildtools/infocontrib.sed $(builddir)/geninfocontrib
 	@echo "generating infocontrib.h..."
-	$(builddir)/geninfocontrib $(top_srcdir)/ ../ doc/vice.texi src/infocontrib.h src/buildtools/infocontrib.sed AUTHORS src/arch/unix/macosx/Resources/Credits.html README doc/html/index.html src/arch/os2/dialogs/dialogs.rc man/vice.1
+	$(builddir)/geninfocontrib $(top_srcdir)/ ../ doc/vice.texi src/infocontrib.h src/buildtools/infocontrib.sed AUTHORS README doc/html/index.html man/vice.1
 else
 infocontrib.h:	$(top_srcdir)/doc/vice.texi $(srcdir)/buildtools/infocontrib.sed
 	@echo "generating infocontrib.h..."
 	$(SHELL) $(srcdir)/buildtools/geninfocontrib_h.sh infocontrib.h <$(top_srcdir)/doc/vice.texi | $(srcdir)/sedinfocontrib_h.sh $(srcdir)/buildtools/infocontrib.sed >infocontrib.h
 	$(SHELL) $(srcdir)/buildtools/geninfocontrib_h.sh AUTHORS | $(srcdir)/sedinfocontrib_h.sh $(srcdir)/buildtools/infocontrib.sed >../AUTHORS
-	$(SHELL) $(srcdir)/buildtools/geninfocontrib_h.sh OSXcreditshtml >arch/unix/macosx/Resources/Credits.html
 	sed -e 's/\\/@/g' -e 's/ /%/g' <$(top_srcdir)/README >./README.tmp
 	$(SHELL) $(srcdir)/buildtools/geninfocontrib_h.sh README <README.tmp >README2.tmp
 	sed -e 's/@/\\/g' -e 's/%/ /g' <README2.tmp >../README
@@ -626,27 +623,11 @@ infocontrib.h:	$(top_srcdir)/doc/vice.texi $(srcdir)/buildtools/infocontrib.sed
 	cp $(top_srcdir)/doc/html/index.html ./index.tmp
 	$(SHELL) $(srcdir)/buildtools/geninfocontrib_h.sh indexhtml <index.tmp >../doc/html/index.html
 	rm -f index.tmp
-	cp $(top_srcdir)/src/arch/os2/dialogs/dialogs.rc ./dialogs.tmp
-	$(SHELL) $(srcdir)/buildtools/geninfocontrib_h.sh os2dialogs <dialogs.tmp >arch/os2/dialogs/dialogs.rc
-	rm -f dialogs.tmp
 	cp $(top_srcdir)/man/vice.1 man.tmp
 	$(SHELL) $(srcdir)/buildtools/geninfocontrib_h.sh vice1 <man.tmp >man2.tmp
 	cat man2.tmp | $(srcdir)/sedinfocontrib_h.sh $(srcdir)/buildtools/infocontrib.sed >../man/vice.1
 	rm -f man*.tmp
 	rm -f team.tmp
-endif
-
-if NATIVE_TOOLS
-$(builddir)/gentranslate:	$(srcdir)/translate.txt $(srcdir)/buildtools/gentranslate.c
-	$(NATIVE_TOOLS_COMPILER) -o $(builddir)/gentranslate $(srcdir)/buildtools/gentranslate.c
-
-translate.h translate_table.h:	$(srcdir)/translate.txt $(builddir)/gentranslate
-	@echo "generating translate.h..."
-	$(builddir)/gentranslate $(srcdir)/translate.txt ./translate.h ./translate_table.h
-else
-translate.h:	$(srcdir)/translate.txt $(srcdir)/buildtools/gentranslate_h.sh
-	@echo "generating translate.h..."
-	$(SHELL) $(srcdir)/buildtools/gentranslate_h.sh $(DEBUGBUILD) <$(srcdir)/translate.txt >translate.h
 endif
 
 if OWCC
@@ -892,6 +873,9 @@ vicii_c64s_vpl.h: $(EMBEDDED_DEPENDS) palette2c
 vicii_ccs64_vpl.h: $(EMBEDDED_DEPENDS) palette2c
 	./palette2c $(top_srcdir)/data/C64/ccs64.vpl vicii_ccs64_vpl.h "unsigned char vicii_ccs64_vpl[]"
 
+vicii_colodore_vpl.h: $(EMBEDDED_DEPENDS) palette2c
+	./palette2c $(top_srcdir)/data/C64/colodore.vpl vicii_colodore_vpl.h "unsigned char vicii_colodore_vpl[]"
+
 vicii_community_colors_vpl.h: $(EMBEDDED_DEPENDS) palette2c
 	./palette2c $(top_srcdir)/data/C64/community-colors.vpl vicii_community_colors_vpl.h "unsigned char vicii_community_colors_vpl[]"
 
@@ -954,6 +938,9 @@ vic_mike_ntsc_vpl.h: $(EMBEDDED_DEPENDS) palette2c
 
 vic_mike_pal_vpl.h: $(EMBEDDED_DEPENDS) palette2c
 	./palette2c $(top_srcdir)/data/VIC20/mike-pal.vpl vic_mike_pal_vpl.h "unsigned char vic_mike_pal_vpl[]"
+
+vic_colodore_vic_vpl.h: $(EMBEDDED_DEPENDS) palette2c
+	./palette2c $(top_srcdir)/data/VIC20/colodore_vic.vpl vic_colodore_vic_vpl.h "unsigned char vic_colodore_vic_vpl[]"
 
 vic_vice_vpl.h: $(EMBEDDED_DEPENDS) palette2c
 	./palette2c $(top_srcdir)/data/VIC20/vice.vpl vic_vice_vpl.h "unsigned char vic_vice_vpl[]"
@@ -1191,6 +1178,9 @@ vicii_c64s_vpl.h: $(EMBEDDED_DEPENDS)
 vicii_ccs64_vpl.h: $(EMBEDDED_DEPENDS)
 	$(SHELL) $(srcdir)/buildtools/palette2c.sh <$(top_srcdir)/data/C64/ccs64.vpl vicii_ccs64_vpl.h "unsigned char vicii_ccs64_vpl[]"
 
+vicii_colodore_vpl.h: $(EMBEDDED_DEPENDS)
+	$(SHELL) $(srcdir)/buildtools/palette2c.sh <$(top_srcdir)/data/C64/colodore.vpl vicii_colodore_vpl.h "unsigned char vicii_colodore_vpl[]"
+
 vicii_community_colors_vpl.h: $(EMBEDDED_DEPENDS)
 	$(SHELL) $(srcdir)/buildtools/palette2c.sh <$(top_srcdir)/data/C64/community-colors.vpl vicii_community_colors_vpl.h "unsigned char vicii_community_colors_vpl[]"
 
@@ -1254,10 +1244,14 @@ vic_mike_ntsc_vpl.h: $(EMBEDDED_DEPENDS)
 vic_mike_pal_vpl.h: $(EMBEDDED_DEPENDS)
 	$(SHELL) $(srcdir)/buildtools/palette2c.sh <$(top_srcdir)/data/VIC20/mike-pal.vpl vic_mike_pal_vpl.h "unsigned char vic_mike_pal_vpl[]"
 
+vic_colodore_vic_vpl.h: $(EMBEDDED_DEPENDS) palette2c
+	$(SHELL) $(srcdir)/buildtools/palette2c.sh <$(top_srcdir)/data/VIC20/colodore_vic.vpl vic_colodore_vic_vpl.h "unsigned char vic_colodore_vic_vpl[]"
+
 vic_vice_vpl.h: $(EMBEDDED_DEPENDS)
 	$(SHELL) $(srcdir)/buildtools/palette2c.sh <$(top_srcdir)/data/VIC20/vice.vpl vic_vice_vpl.h "unsigned char vic_vice_vpl[]"
 endif
 
+archdep_lib = $(top_builddir)/src/arch/shared/libarchdep.a
 c128_lib = $(top_builddir)/src/c128/libc128.a
 c64_lib = $(top_builddir)/src/c64/libc64.a
 c64sc_lib = $(top_builddir)/src/c64/libc64sc.a
@@ -1285,15 +1279,18 @@ drivetcbm_lib = $(top_builddir)/src/drive/tcbm/libdrivetcbm.a
 fsdevice_lib = $(top_builddir)/src/fsdevice/libfsdevice.a
 fileio_lib = $(top_builddir)/src/fileio/libfileio.a
 gfxoutputdrv_lib = $(top_builddir)/src/gfxoutputdrv/libgfxoutputdrv.a
+hwsiddrv_lib = $(top_builddir)/src/hwsiddrv/libhwsiddrv.a
+hvsc_lib = $(top_builddir)/src/hvsc/libhvsc.a
 iecbus_lib = $(top_builddir)/src/iecbus/libiecbus.a
 imagecontents_lib = $(top_builddir)/src/imagecontents/libimagecontents.a
+iodrv_lib = $(top_builddir)/src/iodrv/libiodrv.a
 joyport_lib = $(top_builddir)/src/joyport/libjoyport.a
 mascuerade_lib = $(top_builddir)/src/vic20/cart/libmascuerade.a
+mididrv_lib = $(top_builddir)/src/mididrv/libmididrv.a
 monitor_lib = $(top_builddir)/src/monitor/libmonitor.a
 p64_lib = $(top_builddir)/src/lib/p64/libp64.a
 parallel_lib = $(top_builddir)/src/parallel/libparallel.a
 pet_lib = $(top_builddir)/src/pet/libpet.a
-platform_lib = $(top_builddir)/src/platform/libplatform.a
 plus4_lib = $(top_builddir)/src/plus4/libplus4.a
 printerdrv_lib = $(top_builddir)/src/printerdrv/libprinterdrv.a
 rs232drv_lib = $(top_builddir)/src/rs232drv/librs232drv.a
@@ -1302,6 +1299,8 @@ rtc_lib = $(top_builddir)/src/rtc/librtc.a
 samplerdrv_lib = $(top_builddir)/src/samplerdrv/libsamplerdrv.a
 serial_lib = $(top_builddir)/src/serial/libserial.a
 sid_lib = $(top_builddir)/src/sid/libsid.a
+sid_dtv_lib = $(top_builddir)/src/sid/libsid_dtv.a
+socketdrv_lib = $(top_builddir)/src/socketdrv/libsocketdrv.a
 sounddrv_lib = $(top_builddir)/src/sounddrv/libsounddrv.a
 tape_lib = $(top_builddir)/src/tape/libtape.a
 tapeport_lib = $(top_builddir)/src/tapeport/libtapeport.a
@@ -1325,9 +1324,9 @@ resid_dtv_libs = @RESID_DTV_LIBS@
 ffmpeg_libs = @FFMPEG_LIBS@
 
 # external libraries required for all emulators
-emu_extlibs = @X_LIBS@ @UI_LIBS@ @SDL_EXTRA_LIBS@ @INTLLIBS@ @SOUND_LIBS@ @QUICKTIME_LIBS@ @JOY_LIBS@ @GFXOUTPUT_LIBS@ @ZLIB_LIBS@ @DYNLIB_LIBS@ @EDITLINE_LIBS@ @ARCH_LIBS@
+emu_extlibs = @UI_LIBS@ @SDL_EXTRA_LIBS@ @SOUND_LIBS@ @QUICKTIME_LIBS@ @JOY_LIBS@ @GFXOUTPUT_LIBS@ @ZLIB_LIBS@ @DYNLIB_LIBS@ @ARCH_LIBS@ $(archdep_lib)
 
-driver_libs = $(joyport_lib) $(samplerdrv_lib) $(sounddrv_lib) $(gfxoutputdrv_lib) $(printerdrv_lib) $(rs232drv_lib) $(diskimage_lib) $(fsdevice_lib) $(tape_lib) $(fileio_lib) $(serial_lib) $(core_lib)
+driver_libs = $(joyport_lib) $(samplerdrv_lib) $(sounddrv_lib) $(mididrv_lib) $(socketdrv_lib) $(hwsiddrv_lib) $(iodrv_lib) $(gfxoutputdrv_lib) $(printerdrv_lib) $(rs232drv_lib) $(diskimage_lib) $(fsdevice_lib) $(tape_lib) $(fileio_lib) $(serial_lib) $(core_lib)
 
 if HAVE_RAWDRIVE
 blockdev_lib = @ARCH_DIR@/blockdev.o
@@ -1400,11 +1399,15 @@ EXTRA_PROGRAMS =
 
 # vsid
 vsid_libs =  \
-	@VSID_WINRES@ \
+	$(archdep_lib) \
 	$(vsid_lib) \
 	$(sid_lib) \
 	$(monitor_lib) \
 	$(sounddrv_lib) \
+	$(mididrv_lib) \
+	$(socketdrv_lib) \
+	$(hwsiddrv_lib) \
+	$(iodrv_lib) \
 	$(serial_lib) \
 	$(core_lib) \
 	$(viciivsid_lib) \
@@ -1414,7 +1417,7 @@ vsid_libs =  \
 	$(resid_libs) \
 	$(ffmpeg_libs) \
 	$(joyport_lib) \
-	$(platform_lib)
+	$(hvsc_lib)
 
 vsid_SOURCES = $(base_sources) $(midi_sources)
 vsid_LDADD = $(vsid_libs) $(emu_extlibs) @TFE_LIBS@ @NETPLAY_LIBS@ @READLINE_LIBS@
@@ -1430,19 +1433,24 @@ vsid-all: \
 	libraster \
 	libsid \
 	libsounddrv \
+	libmididrv \
+	libsocketdrv \
+	libhvsc \
+	libhwsiddrv \
+	libiodrv \
 	libviciivsid \
 	libvideo \
 	libarch \
+	libarchdep \
 	libmonitor \
 	libserial \
 	libcore \
 	libjoyport \
-	libplatform \
 	vsid$(EXEEXT)
 
 # x64
 x64_libs =  \
-	@X64_WINRES@ \
+	$(archdep_lib) \
 	$(tapeport_lib) \
 	$(c64_lib) \
 	$(tapeport_lib) \
@@ -1472,7 +1480,7 @@ x64_libs =  \
 	$(imagecontents_lib) \
 	$(resid_libs) \
 	$(ffmpeg_libs) \
-	$(platform_lib)
+	$(hvsc_lib)
 
 x64_SOURCES = $(base_sources) $(midi_sources)
 x64_LDADD = $(x64_libs) $(emu_extlibs) @TFE_LIBS@ @NETPLAY_LIBS@ @READLINE_LIBS@
@@ -1503,6 +1511,10 @@ x64-all: \
 	libsamplerdrv \
 	libjoyport \
 	libsounddrv \
+	libmididrv \
+	libsocketdrv \
+	libhwsiddrv \
+	libiodrv \
 	libgfxoutputdrv \
 	libprinterdrv \
 	librs232drv \
@@ -1521,12 +1533,11 @@ x64-all: \
 	librtc \
 	libuserport \
 	libtapeport \
-	libplatform \
 	x64$(EXEEXT)
 
 # x64sc
 x64sc_libs =  \
-	@X64_WINRES@ \
+	$(archdep_lib) \
 	$(tapeport_lib) \
 	$(c64sc_lib) \
 	$(tapeport_lib) \
@@ -1556,7 +1567,7 @@ x64sc_libs =  \
 	$(imagecontents_lib) \
 	$(resid_libs) \
 	$(ffmpeg_libs) \
-	$(platform_lib)
+	$(hvsc_lib)
 
 x64sc_SOURCES = $(base_sources) $(midi_sources)
 x64sc_LDADD = $(x64sc_libs) $(emu_extlibs) @TFE_LIBS@ @NETPLAY_LIBS@ @READLINE_LIBS@
@@ -1587,6 +1598,10 @@ x64sc-all: \
 	libsamplerdrv \
 	libjoyport \
 	libsounddrv \
+	libmididrv \
+	libsocketdrv \
+	libhwsiddrv \
+	libiodrv \
 	libgfxoutputdrv \
 	libprinterdrv \
 	librs232drv \
@@ -1605,12 +1620,11 @@ x64sc-all: \
 	librtc \
 	libuserport \
 	libtapeport \
-	libplatform \
 	x64sc$(EXEEXT)
 
 # x64dtv
 x64dtv_libs =  \
-	@X64DTV_WINRES@ \
+	$(archdep_lib) \
 	$(c64dtv_lib) \
 	$(c64c64dtv_lib) \
 	$(driveiec_lib) \
@@ -1625,7 +1639,7 @@ x64dtv_libs =  \
 	$(userport_lib) \
 	$(diag_lib) \
 	$(vdrive_lib) \
-	$(sid_lib) \
+	$(sid_dtv_lib) \
 	$(monitor_lib) \
 	$(driver_libs) \
 	$(viciidtv_lib) \
@@ -1638,7 +1652,7 @@ x64dtv_libs =  \
 	$(ffmpeg_libs) \
 	$(c64dtvstubs_lib) \
 	$(joyport_lib) \
-	$(platform_lib)
+	$(hvsc_lib)
 
 x64dtv_SOURCES = $(base_sources) $(ps2mouse_sources)
 x64dtv_LDADD = $(x64dtv_libs) $(emu_extlibs) @TFE_LIBS@ @NETPLAY_LIBS@ @READLINE_LIBS@
@@ -1664,10 +1678,14 @@ x64dtv-all: \
 	libparallel \
 	libvdrive \
 	libraster \
-	libsid \
+	libsid_dtv \
 	libsamplerdrv \
 	libjoyport \
 	libsounddrv \
+	libmididrv \
+	libsocketdrv \
+	libhwsiddrv \
+	libiodrv \
 	libgfxoutputdrv \
 	libprinterdrv \
 	librs232drv \
@@ -1685,12 +1703,11 @@ x64dtv-all: \
 	libfileio \
 	libcore \
 	librtc \
-	libplatform \
 	x64dtv$(EXEEXT)
 
 # xscpu64
 xscpu64_libs =  \
-	@XSCPU64_WINRES@ \
+	$(archdep_lib) \
 	$(scpu64_lib) \
 	$(c64cartsystem_lib) \
 	$(c64cart_lib) \
@@ -1719,7 +1736,7 @@ xscpu64_libs =  \
 	$(imagecontents_lib) \
 	$(resid_libs) \
 	$(ffmpeg_libs) \
-	$(platform_lib)
+	$(hvsc_lib)
 
 xscpu64_SOURCES = $(base_sources) $(midi_sources)
 xscpu64_LDADD = $(xscpu64_libs) $(emu_extlibs) @TFE_LIBS@ @NETPLAY_LIBS@ @READLINE_LIBS@
@@ -1737,6 +1754,10 @@ xscpu64-all: \
 	libsamplerdrv \
 	libjoyport \
 	libsounddrv \
+	libmididrv \
+	libsocketdrv \
+	libhwsiddrv \
+	libiodrv \
 	libgfxoutputdrv \
 	libprinterdrv \
 	librs232drv \
@@ -1766,14 +1787,13 @@ xscpu64-all: \
 	libcore \
 	librtc \
 	libuserport \
-	libplatform \
 	@RESID_DEP@ \
 	@FFMPEG_DEP@ \
 	xscpu64$(EXEEXT)
 
 # x128
 x128_libs =  \
-	@X128_WINRES@ \
+	$(archdep_lib) \
 	$(tapeport_lib) \
 	$(c128_lib) \
 	$(tapeport_lib) \
@@ -1806,7 +1826,7 @@ x128_libs =  \
 	$(imagecontents_lib) \
 	$(resid_libs) \
 	$(ffmpeg_libs) \
-	$(platform_lib)
+	$(hvsc_lib)
 
 x128_SOURCES = $(base_sources) $(midi_sources)
 x128_LDADD = $(x128_libs) $(emu_extlibs) @TFE_LIBS@ @NETPLAY_LIBS@ @READLINE_LIBS@
@@ -1824,6 +1844,10 @@ x128-all: \
 	libsamplerdrv \
 	libjoyport \
 	libsounddrv \
+	libmididrv \
+	libsocketdrv \
+	libhwsiddrv \
+	libiodrv \
 	libgfxoutputdrv \
 	libprinterdrv \
 	librs232drv \
@@ -1856,14 +1880,13 @@ x128-all: \
 	librtc \
 	libuserport \
 	libtapeport \
-	libplatform \
 	@RESID_DEP@ \
 	@FFMPEG_DEP@ \
 	x128$(EXEEXT)
 
 # xvic
 xvic_libs =  \
-	@XVIC_WINRES@ \
+	$(archdep_lib) \
 	$(tapeport_lib) \
 	$(vic20cart_lib) \
 	$(vic20_lib) \
@@ -1879,18 +1902,18 @@ xvic_libs =  \
 	$(parallel_lib) \
 	$(vdrive_lib) \
 	$(monitor_lib) \
+	$(sid_lib) \
 	$(driver_libs) \
 	$(raster_lib) \
 	$(userport_lib) \
 	$(diag_lib) \
-        $(rtc_lib) \
-	$(sid_lib) \
+	$(rtc_lib) \
 	$(video_lib) \
 	$(common_libs) \
 	$(imagecontents_lib) \
 	$(resid_libs) \
 	$(ffmpeg_libs) \
-	$(platform_lib)
+	$(hvsc_lib)
 
 xvic_SOURCES = $(base_sources) $(midi_sources)
 xvic_LDADD = $(xvic_libs) $(emu_extlibs) $(mascuerade_lib) @TFE_LIBS@ @NETPLAY_LIBS@ @READLINE_LIBS@
@@ -1913,6 +1936,10 @@ xvic-all: \
 	libsamplerdrv \
 	libjoyport \
 	libsounddrv \
+	libmididrv \
+	libsocketdrv \
+	libhwsiddrv \
+	libiodrv \
 	libgfxoutputdrv \
 	libprinterdrv \
 	librs232drv \
@@ -1935,14 +1962,13 @@ xvic-all: \
 	librtc \
 	libuserport \
 	libtapeport \
-	libplatform \
 	@RESID_DEP@ \
 	@FFMPEG_DEP@ \
 	xvic$(EXEEXT)
 
 # xpet
 xpet_libs =  \
-	@XPET_WINRES@ \
+	$(archdep_lib) \
 	$(tapeport_lib) \
 	$(pet_lib) \
 	$(diag_lib) \
@@ -1955,19 +1981,19 @@ xpet_libs =  \
 	$(parallel_lib) \
 	$(vdrive_lib) \
 	$(monitor_lib) \
+	$(sid_lib) \
 	$(driver_libs) \
 	$(crtc_lib) \
 	$(raster_lib) \
 	$(userport_lib) \
 	$(video_lib) \
-	$(sid_lib) \
 	$(common_libs) \
 	$(imagecontents_lib) \
 	$(joyport_lib) \
 	$(resid_libs) \
 	$(ffmpeg_libs) \
-	$(platform_lib) \
-	$(rtc_lib)
+	$(rtc_lib) \
+	$(hvsc_lib)
 
 xpet_SOURCES = $(base_sources)
 xpet_LDADD = $(xpet_libs) $(emu_extlibs) @TFE_LIBS@ @NETPLAY_LIBS@ @READLINE_LIBS@
@@ -1989,6 +2015,10 @@ xpet-all: \
 	libraster \
 	libcrtc \
 	libsounddrv \
+	libmididrv \
+	libsocketdrv \
+	libhwsiddrv \
+	libiodrv \
 	libgfxoutputdrv \
 	libprinterdrv \
 	librs232drv \
@@ -2008,14 +2038,13 @@ xpet-all: \
 	libuserport \
 	libtapeport \
 	libjoyport \
-	libplatform \
 	@RESID_DEP@ \
 	@FFMPEG_DEP@ \
 	xpet$(EXEEXT)
 
 # xplus4
 xplus4_libs =  \
-	@XPLUS4_WINRES@ \
+	$(archdep_lib) \
 	$(tapeport_lib) \
 	$(plus4_lib) \
 	$(diag_lib) \
@@ -2031,8 +2060,8 @@ xplus4_libs =  \
 	$(iecbus_lib) \
 	$(vdrive_lib) \
 	$(monitor_lib) \
-	$(driver_libs) \
 	$(sid_lib) \
+	$(driver_libs) \
 	$(raster_lib) \
 	$(rtc_lib) \
 	$(userport_lib) \
@@ -2042,7 +2071,7 @@ xplus4_libs =  \
 	$(joyport_lib) \
 	$(resid_libs) \
 	$(ffmpeg_libs) \
-	$(platform_lib)
+	$(hvsc_lib)
 
 xplus4_SOURCES = $(base_sources)
 xplus4_LDADD = $(xplus4_libs) $(emu_extlibs) @TFE_LIBS@ @NETPLAY_LIBS@ @READLINE_LIBS@
@@ -2066,6 +2095,10 @@ xplus4-all: \
 	libsamplerdrv \
 	libjoyport \
 	libsounddrv \
+	libmididrv \
+	libsocketdrv \
+	libhwsiddrv \
+	libiodrv \
 	libgfxoutputdrv \
 	libprinterdrv \
 	librs232drv \
@@ -2085,14 +2118,13 @@ xplus4-all: \
 	librtc \
 	libuserport \
 	libtapeport \
-	libplatform \
 	@RESID_DEP@ \
 	@FFMPEG_DEP@ \
 	xplus4$(EXEEXT)
 
 # xcbm2
 xcbm2_libs = \
-	@XCBM2_WINRES@ \
+	$(archdep_lib) \
 	$(tapeport_lib) \
 	$(xcbm2_lib) \
 	$(diag_lib) \
@@ -2105,8 +2137,8 @@ xcbm2_libs = \
 	$(parallel_lib) \
 	$(vdrive_lib) \
 	$(monitor_lib) \
-	$(driver_libs) \
 	$(sid_lib) \
+	$(driver_libs) \
 	$(crtc_lib) \
 	$(raster_lib) \
 	$(video_lib) \
@@ -2116,8 +2148,8 @@ xcbm2_libs = \
 	$(joyport_lib) \
 	$(resid_libs) \
 	$(ffmpeg_libs) \
-	$(platform_lib) \
-	$(rtc_lib)
+	$(rtc_lib) \
+	$(hvsc_lib)
 
 xcbm2_SOURCES = $(base_sources)
 xcbm2_LDADD = $(xcbm2_libs) $(emu_extlibs) @TFE_LIBS@ @NETPLAY_LIBS@ @READLINE_LIBS@
@@ -2129,6 +2161,10 @@ xcbm2-all: \
 	$(BUILT_SOURCES) \
 	libcbm2 \
 	libsounddrv \
+	libmididrv \
+	libsocketdrv \
+	libhwsiddrv \
+	libiodrv \
 	libgfxoutputdrv \
 	libprinterdrv \
 	librs232drv \
@@ -2160,12 +2196,11 @@ xcbm2-all: \
 	libuserport \
 	libtapeport \
 	libjoyport \
-	libplatform \
 	xcbm2$(EXEEXT)
 
 # xcbm5x0
 xcbm5x0_libs = \
-	@XCBM5X0_WINRES@ \
+	$(archdep_lib) \
 	$(tapeport_lib) \
 	$(xcbm5x0_lib) \
 	$(diag_lib) \
@@ -2178,8 +2213,8 @@ xcbm5x0_libs = \
 	$(parallel_lib) \
 	$(vdrive_lib) \
 	$(monitor_lib) \
-	$(driver_libs) \
 	$(sid_lib) \
+	$(driver_libs) \
 	$(vicii_lib) \
 	$(raster_lib) \
 	$(rtc_lib) \
@@ -2190,7 +2225,7 @@ xcbm5x0_libs = \
 	$(joyport_lib) \
 	$(resid_libs) \
 	$(ffmpeg_libs) \
-	$(platform_lib)
+	$(hvsc_lib)
 
 xcbm5x0_SOURCES = $(base_sources)
 xcbm5x0_LDADD = $(xcbm5x0_libs) $(emu_extlibs) @TFE_LIBS@ @NETPLAY_LIBS@ @READLINE_LIBS@
@@ -2204,6 +2239,10 @@ xcbm5x0-all: \
 	libsamplerdrv \
 	libjoyport \
 	libsounddrv \
+	libmididrv \
+	libsocketdrv \
+	libhwsiddrv \
+	libiodrv \
 	libgfxoutputdrv \
 	libprinterdrv \
 	librs232drv \
@@ -2233,7 +2272,6 @@ xcbm5x0-all: \
 	libcore \
 	librtc \
 	libtapeport \
-	libplatform \
 	xcbm5x0$(EXEEXT)
 
 # c1541
@@ -2265,6 +2303,7 @@ endif
 # libs too then.
 c1541_LDADD = \
 	$(ARCH_EXTRA_OBJECTS) \
+	$(archdep_lib) \
 	$(p64_lib) \
 	$(blockdev_lib) \
 	$(realdevice_lib) \
@@ -2274,8 +2313,8 @@ c1541_LDADD = \
 	$(diskimage_lib) \
 	$(tape_lib) \
 	$(serial_lib) \
-	$(platform_lib) \
-	@INTLLIBS@ @SDL_EXTRA_LIBS@ \
+	$(socketdrv_lib) \
+	@SDL_EXTRA_LIBS@ \
 	@READLINE@ @READLINE_LIBS@ \
 	@ZLIB_LIBS@ @DYNLIB_LIBS@
 
@@ -2290,7 +2329,7 @@ c1541-all: \
 	libtape \
 	libimagecontents \
 	libfileio \
-	libplatform \
+	libsocketdrv \
 	c1541$(EXEEXT)
 
 # petcat
@@ -2309,9 +2348,10 @@ petcat_SOURCES = \
 
 petcat_LDADD = \
 	$(ARCH_EXTRA_OBJECTS) \
+	$(archdep_lib) \
 	$(fileio_lib) \
-	$(platform_lib) \
-	@INTLLIBS@ @SDL_EXTRA_LIBS@ \
+	$(socketdrv_lib) \
+	@SDL_EXTRA_LIBS@ \
 	@ZLIB_LIBS@
 
 .PHONY: petcat-all
@@ -2319,12 +2359,11 @@ petcat-all: \
 	$(BUILT_SOURCES) \
 	libarch \
 	libfileio \
-	libplatform \
+	libsocketdrv \
 	petcat$(EXEEXT)
 
 # cartconv
 cartconv_SOURCES = cartconv.c
-cartconv_LDADD = @INTLLIBS@
 
 # distclean
 DISTCLEANFILES = $(BUILT_SOURCES) $(GENFILES)
@@ -2334,13 +2373,18 @@ DISTCLEANFILES = $(BUILT_SOURCES) $(GENFILES)
 .PHONY: libvsid libc64 libc64sc libc128 libc64dtv libc64dtvstubs libvic20 \
 	libpet libplus4 libcbm2 libcbm5x0 libdrive libvdrive libprinterdrv \
 	librs232drv libgfxoutputdrv libsamplerdrv libjoyport libsounddrv \
-	libdiskimage libfsdevice libtape libarch libvicii libviciisc \
-	libviciidtv libviciivsid libvdc libsid libcrtc libvideo libserial \
-	libparallel libcore libiecbus libfileio librtc libuserport libtapeport \
-	libp64 libscpu64 libdiag @RESID_DEP@ @RESID_DTV_DEP@ @FFMPEG_DEP@
+	libmididrv libsocketdrv libhwsiddrv libiodrv libdiskimage libfsdevice \
+	libtape libarch libarchdep libvicii libviciisc libviciidtv \
+	libviciivsid libvdc libsid libcrtc libvideo libserial libparallel \
+	libcore libiecbus libfileio librtc libuserport libtapeport libp64 \
+	libscpu64 libdiag \
+	@RESID_DEP@ @RESID_DTV_DEP@ @FFMPEG_DEP@
 
 libarch:
 	@(cd arch && $(MAKE))
+libarchdep:
+	@(echo "making libarchdep.a")
+	@(cd arch/shared && $(MAKE))
 libc128:
 	@echo "making all in c128"
 	@(cd c128 && $(MAKE))
@@ -2426,27 +2470,36 @@ libfsdevice:
 libgfxoutputdrv:
 	@echo "making all in gfxoutputdrv"
 	@(cd gfxoutputdrv && $(MAKE))
+libhvsc:
+	@echo "making all in hvsc"
+	@(cd hvsc && $(MAKE))
+libhwsiddrv:
+	@echo "making all in hwsiddrv"
+	@(cd hwsiddrv && $(MAKE))
 libiecbus:
 	@echo "making all in iecbus"
 	@(cd iecbus && $(MAKE))
 libimagecontents:
 	@echo "making all in imagecontents"
 	@(cd imagecontents && $(MAKE))
+libiodrv:
+	@echo "making all in iodrv"
+	@(cd iodrv && $(MAKE))
 libmascuerade:
 	@echo "making libmascuerade.a in vic20/cart"
 	@(cd vic20/cart && $(MAKE) libmascuerade.a)
+libmididrv:
+	@echo "making libmididrv.a in mididrv"
+	@(cd mididrv && $(MAKE) libmididrv.a)
 libmonitor:
-	@echo "making libmonitor.a in monitor"
-	@(cd monitor && $(MAKE) libmonitor.a)
+	@echo "making all in monitor"
+	@(cd monitor && $(MAKE))
 libparallel:
 	@echo "making all in parallel"
 	@(cd parallel && $(MAKE))
 libpet:
 	@echo "making all in pet"
 	@(cd pet && $(MAKE))
-libplatform:
-	@echo "making all in platform"
-	@(cd platform && $(MAKE))
 libplus4:
 	@echo "making all in plus4"
 	@(cd plus4 && $(MAKE))
@@ -2463,8 +2516,8 @@ librtc:
 	@echo "making librtc.a in rtc"
 	@(cd rtc && $(MAKE) librtc.a)
 libresid:
-	@echo "making libresid.a in resid"
-	@(cd resid && $(MAKE) libresid.a)
+	@echo "making all in resid"
+	@(cd resid && $(MAKE))
 libresiddtv:
 	@echo "making libresiddtv.a in resid-dtv"
 	@(cd resid-dtv && $(MAKE) libresiddtv.a)
@@ -2480,6 +2533,12 @@ libserial:
 libsid:
 	@echo "making libsid.a in sid"
 	@(cd sid && $(MAKE) libsid.a)
+libsid_dtv:
+	@echo "making libsid_dtv.a in sid"
+	@(cd sid && $(MAKE) libsid_dtv.a)
+libsocketdrv:
+	@echo "making libsocketdrv.a in socketdrv"
+	@(cd socketdrv && $(MAKE) libsocketdrv.a)
 libsounddrv:
 	@echo "making all in sounddrv"
 	@(cd sounddrv && $(MAKE))
@@ -2521,7 +2580,7 @@ libvideo:
 	@(cd video && $(MAKE))
 libvsid:
 	@echo "making libvsid.a in c64"
-	@(cd c64 && $(MAKE) libvsid.a)
+	@(cd c64 && $(MAKE) psiddrv.h libvsid.a)
 
 x64ow$(EXEEXT): x64$(EXEEXT)
 	wrc -fe=x64ow$(EXEEXT) arch/win32/resc64.res x64$(EXEEXT)

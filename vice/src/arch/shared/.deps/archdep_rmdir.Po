@@ -1,0 +1,73 @@
+archdep_rmdir.o: archdep_rmdir.c ../../../src/vice.h \
+ ../../../src/config.h archdep_defs.h \
+ C:/msys64/mingw32/i686-w64-mingw32/include/stdio.h \
+ C:/msys64/mingw32/i686-w64-mingw32/include/crtdefs.h \
+ C:/msys64/mingw32/i686-w64-mingw32/include/_mingw.h \
+ C:/msys64/mingw32/i686-w64-mingw32/include/_mingw_mac.h \
+ C:/msys64/mingw32/i686-w64-mingw32/include/_mingw_secapi.h \
+ C:/msys64/mingw32/i686-w64-mingw32/include/vadefs.h \
+ C:/msys64/mingw32/i686-w64-mingw32/include/sdks/_mingw_directx.h \
+ C:/msys64/mingw32/i686-w64-mingw32/include/sdks/_mingw_ddk.h \
+ C:/msys64/mingw32/i686-w64-mingw32/include/_mingw_off_t.h \
+ C:/msys64/mingw32/i686-w64-mingw32/include/swprintf.inl \
+ C:/msys64/mingw32/i686-w64-mingw32/include/sec_api/stdio_s.h \
+ C:/msys64/mingw32/i686-w64-mingw32/include/stdlib.h \
+ C:/msys64/mingw32/lib/gcc/i686-w64-mingw32/7.3.0/include-fixed/limits.h \
+ C:/msys64/mingw32/lib/gcc/i686-w64-mingw32/7.3.0/include-fixed/syslimits.h \
+ C:/msys64/mingw32/i686-w64-mingw32/include/limits.h \
+ C:/msys64/mingw32/i686-w64-mingw32/include/sec_api/stdlib_s.h \
+ C:/msys64/mingw32/i686-w64-mingw32/include/malloc.h \
+ C:/msys64/mingw32/i686-w64-mingw32/include/string.h \
+ C:/msys64/mingw32/i686-w64-mingw32/include/sec_api/string_s.h \
+ C:/msys64/mingw32/i686-w64-mingw32/include/direct.h \
+ C:/msys64/mingw32/i686-w64-mingw32/include/io.h archdep_rmdir.h
+
+../../../src/vice.h:
+
+../../../src/config.h:
+
+archdep_defs.h:
+
+C:/msys64/mingw32/i686-w64-mingw32/include/stdio.h:
+
+C:/msys64/mingw32/i686-w64-mingw32/include/crtdefs.h:
+
+C:/msys64/mingw32/i686-w64-mingw32/include/_mingw.h:
+
+C:/msys64/mingw32/i686-w64-mingw32/include/_mingw_mac.h:
+
+C:/msys64/mingw32/i686-w64-mingw32/include/_mingw_secapi.h:
+
+C:/msys64/mingw32/i686-w64-mingw32/include/vadefs.h:
+
+C:/msys64/mingw32/i686-w64-mingw32/include/sdks/_mingw_directx.h:
+
+C:/msys64/mingw32/i686-w64-mingw32/include/sdks/_mingw_ddk.h:
+
+C:/msys64/mingw32/i686-w64-mingw32/include/_mingw_off_t.h:
+
+C:/msys64/mingw32/i686-w64-mingw32/include/swprintf.inl:
+
+C:/msys64/mingw32/i686-w64-mingw32/include/sec_api/stdio_s.h:
+
+C:/msys64/mingw32/i686-w64-mingw32/include/stdlib.h:
+
+C:/msys64/mingw32/lib/gcc/i686-w64-mingw32/7.3.0/include-fixed/limits.h:
+
+C:/msys64/mingw32/lib/gcc/i686-w64-mingw32/7.3.0/include-fixed/syslimits.h:
+
+C:/msys64/mingw32/i686-w64-mingw32/include/limits.h:
+
+C:/msys64/mingw32/i686-w64-mingw32/include/sec_api/stdlib_s.h:
+
+C:/msys64/mingw32/i686-w64-mingw32/include/malloc.h:
+
+C:/msys64/mingw32/i686-w64-mingw32/include/string.h:
+
+C:/msys64/mingw32/i686-w64-mingw32/include/sec_api/string_s.h:
+
+C:/msys64/mingw32/i686-w64-mingw32/include/direct.h:
+
+C:/msys64/mingw32/i686-w64-mingw32/include/io.h:
+
+archdep_rmdir.h:

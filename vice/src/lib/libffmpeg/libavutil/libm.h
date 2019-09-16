@@ -26,12 +26,7 @@
 
 #include <math.h>
 
-#ifdef IDE_COMPILE
-#include "ffmpeg-config.h"
-#include "ide-config.h"
-#else
 #include "config.h"
-#endif
 
 #include "attributes.h"
 #include "intfloat.h"
@@ -99,8 +94,16 @@ static av_always_inline av_const float fminf(float x, float y)
 }
 #endif
 
+#define ISINF_FUNC isinf
+
 #if !HAVE_ISINF
+#ifndef __AROS__
 static av_always_inline av_const int isinf(float x)
+#else
+#undef ISINF_FUNC
+#define ISINF_FUNC vice_ffmpeg_isinf
+static av_always_inline av_const int vice_ffmpeg_isinf(float x)
+#endif
 {
     uint32_t v = av_float2int(x);
     if ((v & 0x7f800000) != 0x7f800000)
@@ -126,20 +129,12 @@ static av_always_inline av_const int isnan(float x)
 
 #if !HAVE_LLRINT
 #undef llrint
-#if !defined(IDE_COMPILE) || (defined(IDE_COMPILE) && (_MSC_VER >= 1310))
 #define llrint(x) ((long long)rint(x))
-#else
-#define llrint(x) ((__int64)rint(x))
-#endif
 #endif /* HAVE_LLRINT */
 
 #if !HAVE_LLRINTF
 #undef llrintf
-#if !defined(IDE_COMPILE) || (defined(IDE_COMPILE) && (_MSC_VER >= 1310))
 #define llrintf(x) ((long long)rint(x))
-#else
-#define llrintf(x) ((__int64)rint(x))
-#endif
 #endif /* HAVE_LLRINT */
 
 #if !HAVE_LOG2
@@ -160,11 +155,6 @@ static av_always_inline av_const int isnan(float x)
 #if !HAVE_SINF
 #undef sinf
 #define sinf(x) ((float)sin(x))
-#endif
-
-#if defined(IDE_COMPILE) && (_MSC_VER < 1400)
-#define fabsf(x) ((float)fabs(x))
-#define sqrtf(x) ((float)sqrt(x))
 #endif
 
 #if !HAVE_RINT

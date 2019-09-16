@@ -1,0 +1,5 @@
+cw-unix-device.o: cw-unix-device.c ../../src/vice.h ../../src/config.h
+
+../../src/vice.h:
+
+../../src/config.h:

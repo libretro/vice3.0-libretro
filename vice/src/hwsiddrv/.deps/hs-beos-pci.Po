@@ -1,0 +1,5 @@
+hs-beos-pci.o: hs-beos-pci.c ../../src/vice.h ../../src/config.h
+
+../../src/vice.h:
+
+../../src/config.h:

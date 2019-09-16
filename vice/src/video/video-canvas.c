@@ -34,6 +34,8 @@
 
 #include "vice.h"
 
+#include "videoarch.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -45,9 +47,11 @@
 #include "video-color.h"
 #include "video-render.h"
 #include "video.h"
-#include "videoarch.h"
 #include "viewport.h"
 
+#ifdef __LIBRETRO__
+extern int retroXS,retroYS,retroH,retroW;
+#endif
 
 /* Temporary! */
 #ifndef MIN
@@ -111,8 +115,6 @@ void video_canvas_render(video_canvas_t *canvas, BYTE *trg, int width,
                       viewport);
 }
 
-extern int retroXS,retroYS,retroH,retroW;
-
 void video_canvas_refresh_all(video_canvas_t *canvas)
 {
     viewport_t *viewport;
@@ -140,7 +142,7 @@ void video_canvas_refresh_all(video_canvas_t *canvas)
 #endif
 	retroXS=viewport->first_x
                          + geometry->extra_offscreen_border_left;
-	retroYS= viewport->first_line;
+	retroYS=viewport->first_line;
 	retroH=MIN(canvas->draw_buffer->canvas_height,
                              viewport->last_line - viewport->first_line + 1);
 	retroW=MIN(canvas->draw_buffer->canvas_width,

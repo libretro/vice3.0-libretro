@@ -45,6 +45,13 @@
 #include <io.h>
 #endif
 
+
+#include "version.h"
+
+#ifdef USE_SVN_REVISION
+# include "svnversion.h"
+#endif
+
 #include "cartridge.h"
 
 static FILE *infile, *outfile;
@@ -143,9 +150,9 @@ static const cart_t cart_info[] = {
     {0, 0, CARTRIDGE_SIZE_16KB, 0x4000, 0x8000, 1, 0, CARTRIDGE_NAME_WARPSPEED, "ws", save_regular_crt},
     {0, 1, CARTRIDGE_SIZE_128KB, 0x2000, 0x8000, 16, 0, CARTRIDGE_NAME_DINAMIC, "din", save_regular_crt},
     {0, 0, CARTRIDGE_SIZE_20KB, 0, 0, 3, 0, CARTRIDGE_NAME_ZAXXON, "zaxxon", save_zaxxon_crt},
-    {0, 1, CARTRIDGE_SIZE_32KB | CARTRIDGE_SIZE_64KB | CARTRIDGE_SIZE_128KB, 0x2000, 0x8000, 0, 0, CARTRIDGE_NAME_MAGIC_DESK, "md", save_regular_crt},
+    {0, 1, CARTRIDGE_SIZE_32KB | CARTRIDGE_SIZE_64KB | CARTRIDGE_SIZE_128KB | CARTRIDGE_SIZE_256KB | CARTRIDGE_SIZE_512KB | CARTRIDGE_SIZE_1024KB, 0x2000, 0x8000, 0, 0, CARTRIDGE_NAME_MAGIC_DESK, "md", save_regular_crt},
     {0, 0, CARTRIDGE_SIZE_64KB, 0x4000, 0x8000, 4, 0, CARTRIDGE_NAME_SUPER_SNAPSHOT_V5, "ss5", save_regular_crt},
-    {0, 0, CARTRIDGE_SIZE_64KB, 0x4000, 0x8000, 4, 0, CARTRIDGE_NAME_COMAL80, "comal", save_regular_crt},
+    {0, 0, CARTRIDGE_SIZE_64KB | CARTRIDGE_SIZE_128KB, 0x4000, 0x8000, 0, 0, CARTRIDGE_NAME_COMAL80, "comal", save_regular_crt},
     {1, 0, CARTRIDGE_SIZE_16KB, 0x2000, 0x8000, 2, 0, CARTRIDGE_NAME_STRUCTURED_BASIC, "sb", save_regular_crt},
     {0, 0, CARTRIDGE_SIZE_16KB | CARTRIDGE_SIZE_32KB, 0x4000, 0x8000, 0, 0, CARTRIDGE_NAME_ROSS, "ross", save_regular_crt},
     {0, 1, CARTRIDGE_SIZE_8KB, 0, 0x8000, 0, 0, CARTRIDGE_NAME_DELA_EP64, "dep64", save_delaep64_crt},
@@ -368,8 +375,24 @@ static void usage(void)
     printf("-l <addr>    load address\n");
     printf("-q           quiet\n");
     printf("--types      show the supported cart types\n");
+    printf("--version    print cartconv version\n");
     exit(1);
 }
+
+
+/** \brief  Dump cartconv version string on stdout
+ *
+ * Dumps the SVN revision as well, if compiled from SVN
+ */
+static void dump_version(void)
+{
+#ifdef USE_SVN_REVISION
+    printf("cartconv (VICE %s SVN r%d)\n", VERSION, VICE_SVN_REV_NUMBER);
+#else
+    printf("cartconv (VICE %s)\n", VERSION);
+#endif
+}
+
 
 static void printbanks(char *name)
 {
@@ -972,7 +995,7 @@ static void save_funplay_crt(unsigned int p1, unsigned int p2, unsigned int p3, 
 {
     unsigned int i = 0;
 
-    if (write_crt_header(0, 0) < 0) {
+    if (write_crt_header(1, 0) < 0) {
         cleanup();
         exit(1);
     }
@@ -1664,13 +1687,18 @@ int main(int argc, char *argv[])
     char *flag, *argument;
 
     if (argc > 1) {
-        if(!strcmp(argv[1], "--types")) {
+        if(strcmp(argv[1], "--types") == 0) {
             usage_types();
+            return EXIT_SUCCESS;
+        } else if (strcmp(argv[1], "--version") == 0) {
+            dump_version();
+            return EXIT_SUCCESS;
         }
     }
 
     if (argc < 3) {
         usage();
+        return EXIT_FAILURE;
     }
 
     for (i = 0; i < 33; i++) {

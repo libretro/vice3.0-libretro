@@ -41,7 +41,6 @@
 #include "palette.h"
 #include "resources.h"
 #include "screenshot.h"
-#include "translate.h"
 #include "types.h"
 #include "uiapi.h"
 #include "util.h"
@@ -80,7 +79,7 @@ static int undersize_handling;
 static int multicolor_handling;
 static int ted_lum_handling;
 static int crtc_text_color;
-static BYTE crtc_fgcolor;
+static uint8_t crtc_fgcolor;
 
 static int set_oversize_handling(int val, void *param)
 {
@@ -213,40 +212,33 @@ static int doodledrv_resources_init(void)
     return resources_register_int(resources_int);
 }
 
-static const cmdline_option_t cmdline_options[] = {
-    { "-doodleoversize", SET_RESOURCE, 1,
+static const cmdline_option_t cmdline_options[] =
+{
+    { "-doodleoversize", SET_RESOURCE, CMDLINE_ATTRIB_NEED_ARGS,
       NULL, NULL, "DoodleOversizeHandling", NULL,
-      USE_PARAM_ID, USE_DESCRIPTION_ID,
-      IDCLS_P_METHOD, IDCLS_OVERSIZED_HANDLING,
-      NULL, NULL },
-    { "-doodleundersize", SET_RESOURCE, 1,
+      "<method>", "Select the way the oversized input should be handled, (0: scale down, 1: crop left top, 2: crop center top,  3: crop right top, 4: crop left center, 5: crop center, 6: crop right center, 7: crop left bottom, 8: crop center bottom, 9:  crop right bottom)" },
+    { "-doodleundersize", SET_RESOURCE, CMDLINE_ATTRIB_NEED_ARGS,
       NULL, NULL, "DoodleUndersizeHandling", NULL,
-      USE_PARAM_ID, USE_DESCRIPTION_ID,
-      IDCLS_P_METHOD, IDCLS_UNDERSIZED_HANDLING,
-      NULL, NULL },
-    { "-doodlemc", SET_RESOURCE, 1,
+      "<method>", "Select the way the undersized input should be handled, (0: scale up, 1: borderize)" },
+    { "-doodlemc", SET_RESOURCE, CMDLINE_ATTRIB_NEED_ARGS,
       NULL, NULL, "DoodleMultiColorHandling", NULL,
-      USE_PARAM_ID, USE_DESCRIPTION_ID,
-      IDCLS_P_METHOD, IDCLS_MULTICOLOR_HANDLING,
-      NULL, NULL },
+      "<method>", "Select the way the multicolor to hires should be handled, (0: b&w, 1: 2 colors, 2: 4 colors, 3: gray scale,  4: best cell colors)" },
     CMDLINE_LIST_END
 };
 
-static const cmdline_option_t cmdline_options_plus4[] = {
-    { "-doodletedlum", SET_RESOURCE, 1,
+static const cmdline_option_t cmdline_options_plus4[] =
+{
+    { "-doodletedlum", SET_RESOURCE, CMDLINE_ATTRIB_NEED_ARGS,
       NULL, NULL, "DoodleTEDLumHandling", NULL,
-      USE_PARAM_ID, USE_DESCRIPTION_ID,
-      IDCLS_P_METHOD, IDCLS_TED_LUM_HANDLING,
-      NULL, NULL },
+      "<method>", "Select the way the TED luminosity should be handled, (0: ignore, 1: dither)" },
     CMDLINE_LIST_END
 };
 
-static const cmdline_option_t cmdline_options_crtc[] = {
-    { "-doodlecrtctextcolor", SET_RESOURCE, 1,
+static const cmdline_option_t cmdline_options_crtc[] =
+{
+    { "-doodlecrtctextcolor", SET_RESOURCE, CMDLINE_ATTRIB_NEED_ARGS,
       NULL, NULL, "DoodleCRTCTextColor", NULL,
-      USE_PARAM_ID, USE_DESCRIPTION_ID,
-      IDCLS_P_COLOR, IDCLS_CRTC_TEXT_COLOR,
-      NULL, NULL },
+      "<color>", "Select the CRTC text color (0: white, 1: amber, 2: green)" },
     CMDLINE_LIST_END
 };
 
@@ -307,15 +299,15 @@ static int doodle_render_and_save(native_data_t *source, int compress)
 {
     FILE *fd;
     char *filename_ext = NULL;
-    BYTE *filebuffer = NULL;
-    BYTE *result = NULL;
+    uint8_t *filebuffer = NULL;
+    uint8_t *result = NULL;
     int i, j, k, l;
     int m = 0;
     int n = 0;
     int retval = 0;
-    BYTE fgcolor = 0;
-    BYTE bgcolor;
-    BYTE colorbyte;
+    uint8_t fgcolor = 0;
+    uint8_t bgcolor;
+    uint8_t colorbyte;
 
     /* allocate file buffer */
     filebuffer = lib_malloc(9218);
@@ -461,11 +453,11 @@ static int doodle_multicolor_render(native_data_t *data)
 
 static int doodle_vicii_save(screenshot_t *screenshot, const char *filename, int compress)
 {
-    BYTE *regs = screenshot->video_regs;
-    BYTE mc;
-    BYTE eb;
-    BYTE bm;
-    BYTE blank;
+    uint8_t *regs = screenshot->video_regs;
+    uint8_t mc;
+    uint8_t eb;
+    uint8_t bm;
+    uint8_t blank;
     native_data_t *data = NULL;
 
     mc = (regs[0x16] & 0x10) >> 4;
@@ -520,10 +512,10 @@ static int doodle_vicii_save(screenshot_t *screenshot, const char *filename, int
 
 static int doodle_ted_save(screenshot_t *screenshot, const char *filename, int compress)
 {
-    BYTE *regs = screenshot->video_regs;
-    BYTE mc;
-    BYTE eb;
-    BYTE bm;
+    uint8_t *regs = screenshot->video_regs;
+    uint8_t mc;
+    uint8_t eb;
+    uint8_t bm;
     native_data_t *data = NULL;
 
     mc = (regs[0x07] & 0x10) >> 4;
@@ -570,7 +562,7 @@ static int doodle_ted_save(screenshot_t *screenshot, const char *filename, int c
 
 static int doodle_vic_save(screenshot_t *screenshot, const char *filename, int compress)
 {
-    BYTE *regs = screenshot->video_regs;
+    uint8_t *regs = screenshot->video_regs;
     native_data_t *data = native_vic_render(screenshot, filename);
     native_color_sort_t *color_order = NULL;
 
@@ -581,7 +573,7 @@ static int doodle_vic_save(screenshot_t *screenshot, const char *filename, int c
     vic_color_to_vicii_color_colormap(data);
 
     if (data->xsize != DOODLE_SCREEN_PIXEL_WIDTH || data->ysize != DOODLE_SCREEN_PIXEL_HEIGHT) {
-        data = native_resize_colormap(data, DOODLE_SCREEN_PIXEL_WIDTH, DOODLE_SCREEN_PIXEL_HEIGHT, (BYTE)(regs[0xf] & 7), oversize_handling, undersize_handling);
+        data = native_resize_colormap(data, DOODLE_SCREEN_PIXEL_WIDTH, DOODLE_SCREEN_PIXEL_HEIGHT, (uint8_t)(regs[0xf] & 7), oversize_handling, undersize_handling);
     }
 
     if (data->mc_data_present) {
@@ -641,7 +633,7 @@ static int doodle_crtc_save(screenshot_t *screenshot, const char *filename, int 
 
 static int doodle_vdc_save(screenshot_t *screenshot, const char *filename, int compress)
 {
-    BYTE *regs = screenshot->video_regs;
+    uint8_t *regs = screenshot->video_regs;
     native_data_t *data = NULL;
 
     if (regs[25] & 0x80) {

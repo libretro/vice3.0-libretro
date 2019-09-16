@@ -37,24 +37,34 @@
 #include "sound.h"
 #include "types.h"
 
-static BYTE machine_sid2_read(WORD addr)
+static uint8_t machine_sid2_read(uint16_t addr)
 {
     return sid2_read(addr);
 }
 
-static void machine_sid2_store(WORD addr, BYTE byte)
+static void machine_sid2_store(uint16_t addr, uint8_t byte)
 {
     sid2_store(addr, byte);
 }
 
-static BYTE machine_sid3_read(WORD addr)
+static uint8_t machine_sid3_read(uint16_t addr)
 {
     return sid3_read(addr);
 }
 
-static void machine_sid3_store(WORD addr, BYTE byte)
+static void machine_sid3_store(uint16_t addr, uint8_t byte)
 {
     sid3_store(addr, byte);
+}
+
+static uint8_t machine_sid4_read(uint16_t addr)
+{
+    return sid4_read(addr);
+}
+
+static void machine_sid4_store(uint16_t addr, uint8_t byte)
+{
+    sid4_store(addr, byte);
 }
 
 /* ---------------------------------------------------------------------*/
@@ -89,8 +99,24 @@ static io_source_t triple_sid_device = {
     0
 };
 
+static io_source_t quad_sid_device = {
+    "Quad SID",
+    IO_DETACH_RESOURCE,
+    "SidStereo",
+    0xdf80, 0xdf9f, 0x1f,
+    1, /* read is always valid */
+    machine_sid4_store,
+    machine_sid4_read,
+    NULL, /* TODO: peek */
+    sid4_dump,
+    0,
+    0,
+    0
+};
+
 static io_source_list_t *stereo_sid_list_item = NULL;
 static io_source_list_t *triple_sid_list_item = NULL;
+static io_source_list_t *quad_sid_list_item = NULL;
 
 /* ---------------------------------------------------------------------*/
 
@@ -107,7 +133,7 @@ static sound_chip_t sid_sound_chip = {
     1 /* chip enabled */
 };
 
-static WORD sid_sound_chip_offset = 0;
+static uint16_t sid_sound_chip_offset = 0;
 
 void sid_sound_chip_init(void)
 {
@@ -192,6 +218,44 @@ int machine_sid3_check_range(unsigned int sid3_adr)
     return -1;
 }
 
+int machine_sid4_check_range(unsigned int sid4_adr)
+{
+    if (machine_class == VICE_MACHINE_C128) {
+        if ((sid4_adr >= 0xd400 && sid4_adr <= 0xd4e0) || (sid4_adr >= 0xd700 && sid4_adr <= 0xdfe0)) {
+            sid_quad_address_start = sid4_adr;
+            quad_sid_device.start_address = sid4_adr;
+            sid_quad_address_end = sid4_adr + 0x1f;
+            quad_sid_device.end_address = sid4_adr + 0x1f;
+            if (quad_sid_list_item != NULL) {
+                io_source_unregister(quad_sid_list_item);
+                quad_sid_list_item = io_source_register(&quad_sid_device);
+            } else {
+                if (sid_stereo >= 3) {
+                    quad_sid_list_item = io_source_register(&quad_sid_device);
+                }
+            }
+            return 0;
+        }
+    } else {
+        if (sid4_adr >= 0xd400 && sid4_adr <= 0xdfe0) {
+            sid_quad_address_start = sid4_adr;
+            quad_sid_device.start_address = sid4_adr;
+            sid_quad_address_end = sid4_adr + 0x1f;
+            quad_sid_device.end_address = sid4_adr + 0x1f;
+            if (quad_sid_list_item != NULL) {
+                io_source_unregister(quad_sid_list_item);
+                quad_sid_list_item = io_source_register(&quad_sid_device);
+            } else {
+                if (sid_stereo >= 3) {
+                    quad_sid_list_item = io_source_register(&quad_sid_device);
+                }
+            }
+            return 0;
+        }
+    }
+    return -1;
+}
+
 void machine_sid2_enable(int val)
 {
     if (stereo_sid_list_item != NULL) {
@@ -202,12 +266,19 @@ void machine_sid2_enable(int val)
         io_source_unregister(triple_sid_list_item);
         triple_sid_list_item = NULL;
     }
+    if (quad_sid_list_item != NULL) {
+        io_source_unregister(quad_sid_list_item);
+        quad_sid_list_item = NULL;
+    }
 
     if (val >= 1) {
         stereo_sid_list_item = io_source_register(&stereo_sid_device);
     }
     if (val >= 2) {
         triple_sid_list_item = io_source_register(&triple_sid_device);
+    }
+    if (val >= 3) {
+        quad_sid_list_item = io_source_register(&quad_sid_device);
     }
 }
 

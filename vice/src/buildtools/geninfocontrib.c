@@ -26,27 +26,22 @@
 
 #define _CRT_SECURE_NO_DEPRECATE
 
-#ifdef _minix_vmd
-#define _MINIX_SOURCE
-#endif
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#ifdef IDE_COMPILE
-#  ifdef _MSC_VER
-#    if (_MSC_VER >= 1400)
-#      define unlink _unlink
-#    endif
-#  else
-#    include <io.h>
-#  endif
-#else
 #include <unistd.h>
+
+#ifdef NEXT
+#define NEED_STRDUP
 #endif
 
-#ifdef NeXT
+/* really? */
+#ifdef ultrix
+#define NEED_STRDUP
+#endif
+
+#ifdef NEED_STRDUP
 static char *strdup(const char *string)
 {
     char *new;
@@ -67,13 +62,13 @@ static char *emailname[256];
 
 int get_line(FILE *file)
 {
-    char c = 0;
+    int c = 0;
     int counter = 0;
 
     while (c != '\n' && !feof(file) && counter < 511) {
         c = fgetc(file);
         if (c != 0xd) {
-            line_buffer[counter++] = c;
+            line_buffer[counter++] = (char)c;
         }
     }
     if (counter > 1) {
@@ -676,58 +671,6 @@ static void generate_authors(char *out_path, char *filename)
     fclose(outfile);
 }
 
-static void generate_osx_credits_html(char *out_path, char *filename)
-{
-    FILE *outfile = NULL;
-    int i = 0;
-
-    sprintf(line_buffer, "%s%s", out_path, filename);
-    outfile = fopen(line_buffer, "wb");
-
-    if (outfile == NULL) {
-        printf("cannot open %s for writing\n", line_buffer);
-        return;
-    }
-    fprintf(outfile, "<html>\n");
-    fprintf(outfile, "<head><title>VICE Credits</title></head>\n");
-    fprintf(outfile, "<body>\n");
-    fprintf(outfile, "<div align=\"center\">VICE Core Team Members:</div>\n");
-    fprintf(outfile, "<ul>\n");
-
-    while (core_team[i] != NULL) {
-        sprintf(line_buffer, "@b{%s}", core_team[i + 1]);
-        replacetags();
-        fprintf(outfile, "<li>%s</li>\n", core_team[i + 1]);
-        i += 2;
-    }
-
-    fprintf(outfile, "</ul>\n");
-    fprintf(outfile, "<div align=\"center\">Ex/Inactive Team Members:</div>\n");
-    fprintf(outfile, "<ul>\n");
-
-    i = 0;
-    while (ex_team[i] != NULL) {
-        fprintf(outfile, "<li>%s</li>\n", ex_team[i + 1]);
-        i += 2;
-    }
-
-    fprintf(outfile, "</ul>\n");
-    fprintf(outfile, "<div align=\"center\">The VICE Translation Team:</div>\n");
-    fprintf(outfile, "<ul>\n");
-
-    i = 0;
-    while (trans_team[i] != NULL) {
-        fprintf(outfile, "<li>%s</li>\n", trans_team[i]);
-        i += 3;
-    }
-
-    fprintf(outfile, "</ul>\n");
-    fprintf(outfile, "</body>\n");
-    fprintf(outfile, "</html>\n");
-
-    fclose(outfile);
-}
-
 static void generate_readme(char *in_path, char *out_path, char *filename)
 {
     FILE *infile = NULL;
@@ -921,91 +864,6 @@ static void generate_index_html(char *in_path, char *out_path, char *filename)
     free(tmpname);
 }
 
-static void generate_os2_dialog_rc(char *in_path, char *out_path, char *filename)
-{
-    FILE *infile = NULL;
-    FILE *outfile = NULL;
-    int i = 0;
-    int found_start = 0;
-    int found_end = 0;
-    int found_eof = 0;
-    int line_size;
-    int number = 76;
-    char *tmpname;
-
-    sprintf(line_buffer, "%s%s", in_path, filename);
-    infile = fopen(line_buffer, "rb");
-    if (infile == NULL) {
-        printf("cannot open %s for reading\n", line_buffer);
-        return;
-    }
-
-    sprintf(line_buffer, "%s%s.tmp", out_path, filename);
-    outfile = fopen(line_buffer, "wb");
-    if (outfile == NULL) {
-        printf("cannot open %s for writing\n", line_buffer);
-        fclose(infile);
-        return;
-    }
-
-    while (found_start == 0) {
-        line_size = get_line(infile);
-        if (!strcmp(line_buffer, "        /* start core members */")) { 
-            found_start = 1;
-        }
-        if (line_size == 0) {
-            fprintf(outfile, "\n");
-        } else {
-            fprintf(outfile, "%s\n", line_buffer);
-        }
-    }
-
-    while (core_team[i] != NULL) {
-        number += 7;
-        i += 2;
-    }
-
-    i -= 2;
-
-    while (i >= 0) {
-        fprintf(outfile, "        TEXT(\"Copyright (c) %s %s\", 15, %d, 180, 7)\n", core_team[i], core_team[i + 1], number);
-        i -= 2;
-        number -= 7;
-    }
-
-    fprintf(outfile, "        /* end core members */\n");
-
-    while (found_end == 0) {
-        line_size = get_line(infile);
-        if (!strcmp(line_buffer, "        /* end core members */")) { 
-            found_end = 1;
-        }
-    }
-
-    while (found_eof == 0) {
-        line_size = get_line(infile);
-        if (line_size == -1) {
-            found_eof = 1;
-        } else {
-            if (line_size == 0) {
-                fprintf(outfile, "\n");
-            } else {
-                fprintf(outfile, "%s\n", line_buffer);
-            }
-        }
-    }
-
-    fclose(outfile);
-    fclose(infile);
-
-    sprintf(line_buffer, "%s%s", out_path, filename);
-    tmpname = vice_stralloc(line_buffer);
-    sprintf(line_buffer, "%s%s.tmp", out_path, filename);
-    unlink(tmpname);
-    rename(line_buffer, tmpname);
-    free(tmpname);
-}
-
 static void generate_vice_1(char *in_path, char *out_path, char *filename)
 {
     FILE *infile = NULL;
@@ -1066,7 +924,7 @@ static void generate_vice_1(char *in_path, char *out_path, char *filename)
 int main(int argc, char *argv[])
 {
     int i;
-    if (argc < 11) {
+    if (argc < 10) {
         printf("too few arguments\n");
         exit(1);
     }
@@ -1087,15 +945,11 @@ int main(int argc, char *argv[])
 
     generate_authors(argv[2], argv[6]);
 
-    generate_osx_credits_html(argv[2], argv[7]);
+    generate_readme(argv[1], argv[2], argv[7]);
 
-    generate_readme(argv[1], argv[2], argv[8]);
+    generate_index_html(argv[1], argv[2], argv[8]);
 
-    generate_index_html(argv[1], argv[2], argv[9]);
-
-    generate_os2_dialog_rc(argv[1], argv[2], argv[10]);
-
-    generate_vice_1(argv[1], argv[2], argv[11]);
+    generate_vice_1(argv[1], argv[2], argv[9]);
 
     for (i = 0; core_team[i] != NULL; i++) {
         free(core_team[i++]);

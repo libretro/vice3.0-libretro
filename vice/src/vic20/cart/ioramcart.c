@@ -35,33 +35,32 @@
 #include "ioramcart.h"
 #include "resources.h"
 #include "snapshot.h"
-#include "translate.h"
 #include "types.h"
 
-static BYTE ram_io2[0x400];
-static BYTE ram_io3[0x400];
+static uint8_t ram_io2[0x400];
+static uint8_t ram_io3[0x400];
 
 static int ram_io2_enabled = 0;
 static int ram_io3_enabled = 0;
 
 /* ---------------------------------------------------------------------*/
 
-static BYTE ram_io2_read(WORD addr)
+static uint8_t ram_io2_read(uint16_t addr)
 {
     return ram_io2[addr & 0x3ff];
 }
 
-static BYTE ram_io3_read(WORD addr)
+static uint8_t ram_io3_read(uint16_t addr)
 {
     return ram_io3[addr & 0x3ff];
 }
 
-static void ram_io2_store(WORD addr, BYTE val)
+static void ram_io2_store(uint16_t addr, uint8_t val)
 {
     ram_io2[addr & 0x3ff] = val;
 }
 
-static void ram_io3_store(WORD addr, BYTE val)
+static void ram_io3_store(uint16_t addr, uint8_t val)
 {
     ram_io3[addr & 0x3ff] = val;
 }
@@ -162,26 +161,18 @@ int ioramcart_resources_init(void)
 
 static const cmdline_option_t cmdline_options[] =
 {
-    { "-io2ram", SET_RESOURCE, 0,
+    { "-io2ram", SET_RESOURCE, CMDLINE_ATTRIB_NONE,
       NULL, NULL, "IO2RAM", (resource_value_t)1,
-      USE_PARAM_STRING, USE_DESCRIPTION_ID,
-      IDCLS_UNUSED, IDCLS_ENABLE_IO2_RAM,
-      NULL, NULL },
-    { "+io2ram", SET_RESOURCE, 0,
+      NULL, "Enable I/O-2 RAM" },
+    { "+io2ram", SET_RESOURCE, CMDLINE_ATTRIB_NONE,
       NULL, NULL, "IO2RAM", (resource_value_t)0,
-      USE_PARAM_STRING, USE_DESCRIPTION_ID,
-      IDCLS_UNUSED, IDCLS_DISABLE_IO2_RAM,
-      NULL, NULL },
-    { "-io3ram", SET_RESOURCE, 0,
+      NULL, "Disable I/O-2 RAM" },
+    { "-io3ram", SET_RESOURCE, CMDLINE_ATTRIB_NONE,
       NULL, NULL, "IO3RAM", (resource_value_t)1,
-      USE_PARAM_STRING, USE_DESCRIPTION_ID,
-      IDCLS_UNUSED, IDCLS_ENABLE_IO3_RAM,
-      NULL, NULL },
-    { "+io3ram", SET_RESOURCE, 0,
+      NULL, "Enable I/O-3 RAM" },
+    { "+io3ram", SET_RESOURCE, CMDLINE_ATTRIB_NONE,
       NULL, NULL, "IO3RAM", (resource_value_t)0,
-      USE_PARAM_STRING, USE_DESCRIPTION_ID,
-      IDCLS_UNUSED, IDCLS_DISABLE_IO3_RAM,
-      NULL, NULL },
+      NULL, "Disable I/O-3 RAM" },
     CMDLINE_LIST_END
 };
 
@@ -243,7 +234,7 @@ int ioramcart_io2_snapshot_write_module(snapshot_t *s)
 
 int ioramcart_io2_snapshot_read_module(snapshot_t *s)
 {
-    BYTE vmajor, vminor;
+    uint8_t vmajor, vminor;
     snapshot_module_t *m;
 
     m = snapshot_module_open(s, snap_io2_module_name, &vmajor, &vminor);
@@ -291,7 +282,7 @@ int ioramcart_io3_snapshot_write_module(snapshot_t *s)
 
 int ioramcart_io3_snapshot_read_module(snapshot_t *s)
 {
-    BYTE vmajor, vminor;
+    uint8_t vmajor, vminor;
     snapshot_module_t *m;
 
     m = snapshot_module_open(s, snap_io3_module_name, &vmajor, &vminor);

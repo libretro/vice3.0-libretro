@@ -35,9 +35,7 @@
  * http://wiki.multimedia.cx/index.php?title=Nellymoser
  */
 
-#ifdef IDE_COMPILE
 #include "libavutil/libm.h"
-#endif
 
 #include "libavutil/common.h"
 #include "libavutil/float_dsp.h"
@@ -253,7 +251,7 @@ static void get_exponent_dynamic(NellyMoserEncodeContext *s, float *cand, int *i
             idx_min = FFMAX(0, cand[band] - q);
             idx_max = FFMIN(OPT_SIZE, cand[band - 1] + q);
             for (i = FFMAX(0, cand[band - 1] - q); i < FFMIN(OPT_SIZE, cand[band - 1] + q); i++) {
-                if ( isinf(opt[band - 1][i]) )
+                if ( ISINF_FUNC(opt[band - 1][i]) )
                     continue;
                 for (j = 0; j < 32; j++) {
                     idx = i + ff_nelly_delta_table[j];
@@ -408,24 +406,7 @@ static int encode_frame(AVCodecContext *avctx, AVPacket *avpkt,
     return 0;
 }
 
-#ifdef IDE_COMPILE
-static const enum AVSampleFormat tmp1[] = { AV_SAMPLE_FMT_FLT,
-                                                     AV_SAMPLE_FMT_NONE };
-#endif
-
 AVCodec ff_nellymoser_encoder = {
-#ifdef IDE_COMPILE
-    "nellymoser",
-    "Nellymoser Asao",
-    AVMEDIA_TYPE_AUDIO,
-    AV_CODEC_ID_NELLYMOSER,
-    CODEC_CAP_SMALL_LAST_FRAME | CODEC_CAP_DELAY,
-    0, 0, 0, tmp1,
-    0, 0, 0, 0, sizeof(NellyMoserEncodeContext),
-    0, 0, 0, 0, 0, encode_init,
-    0, encode_frame,
-    0, encode_end,
-#else
 	.name           = "nellymoser",
     .long_name      = NULL_IF_CONFIG_SMALL("Nellymoser Asao"),
     .type           = AVMEDIA_TYPE_AUDIO,
@@ -437,5 +418,4 @@ AVCodec ff_nellymoser_encoder = {
     .capabilities   = CODEC_CAP_SMALL_LAST_FRAME | CODEC_CAP_DELAY,
     .sample_fmts    = (const enum AVSampleFormat[]){ AV_SAMPLE_FMT_FLT,
                                                      AV_SAMPLE_FMT_NONE },
-#endif
 };
