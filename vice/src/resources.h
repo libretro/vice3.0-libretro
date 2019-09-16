@@ -53,7 +53,12 @@ struct resource_callback_desc_s;
 struct event_list_state_s;
 
 struct resource_int_s {
-    /* Resource name.  */
+    /* Resource name
+     *
+     * This cannot be `const`, since some code uses this field to store, and
+     * later free, dynamically allocated strings. See for example
+     * video-resources.c
+     */
     char *name;
 
     /* Factory default value.  */
@@ -80,7 +85,12 @@ typedef struct resource_int_s resource_int_t;
 #define RESOURCE_INT_LIST_END { NULL, 0, (resource_event_relevant_t)0, NULL, NULL, NULL, NULL }
 
 struct resource_string_s {
-    /* Resource name.  */
+    /* Resource name
+     *
+     * This cannot be `const`, since some code uses this field to store, and
+     * later free, dynamically allocated strings. See for example
+     * video-resources.c
+     */
     char *name;
 
     /* Factory default value.  */

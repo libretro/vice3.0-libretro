@@ -42,10 +42,10 @@ extern int rs232dev_open(int device);
 extern void rs232dev_close(int fd);
 
 /* Sends a byte to the RS232 line */
-extern int rs232dev_putc(int fd, BYTE b);
+extern int rs232dev_putc(int fd, uint8_t b);
 
 /* Gets a byte to the RS232 line, returns !=1 if byte received, byte in *b. */
-extern int rs232dev_getc(int fd, BYTE *b);
+extern int rs232dev_getc(int fd, uint8_t *b);
 
 /* write the output handshake lines */
 extern int rs232dev_set_status(int fd, enum rs232handshake_out status);

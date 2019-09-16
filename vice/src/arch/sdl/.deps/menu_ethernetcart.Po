@@ -1,0 +1,6 @@
+menu_ethernetcart.o: menu_ethernetcart.c ../../../src/vice.h \
+ ../../../src/config.h
+
+../../../src/vice.h:
+
+../../../src/config.h:

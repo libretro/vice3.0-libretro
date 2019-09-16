@@ -86,10 +86,6 @@ extern int archdep_require_vkbd(void);
 /* define if the platform supports the monitor in a seperate window */
 /* #define ARCHDEP_SEPERATE_MONITOR_WINDOW */
 
-#ifdef USE_SDLUI2
-extern char *archdep_sdl2_default_renderers[];
-#endif
-
 #ifdef AMIGA_SUPPORT
 #include "archdep_amiga.h"
 #endif
@@ -98,20 +94,16 @@ extern char *archdep_sdl2_default_renderers[];
 #include "archdep_beos.h"
 #endif
 
+#ifdef __OS2__
+#include "archdep_os2.h"
+#endif
+
 #if defined(UNIX_COMPILE) && !defined(CEGCC_COMPILE)
 #include "archdep_unix.h"
 #endif
 
-#if defined(WIN32_COMPILE) && !defined(__XBOX__)
+#ifdef WIN32_COMPILE
 #include "archdep_win32.h"
-#endif
-
-#ifdef __XBOX__
-#include "archdep_xbox.h"
-#endif
-
-#ifdef CEGCC_COMPILE
-#include "archdep_cegcc.h"
 #endif
 
 #endif

@@ -1,0 +1,9 @@
+wave.o: wave.cc wave.h residdtv-config.h siddtvdefs.h bittrain.h
+
+wave.h:
+
+residdtv-config.h:
+
+siddtvdefs.h:
+
+bittrain.h:

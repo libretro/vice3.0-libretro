@@ -1,0 +1,5 @@
+hs-amiga-gg2isa.o: hs-amiga-gg2isa.c ../../src/vice.h ../../src/config.h
+
+../../src/vice.h:
+
+../../src/config.h:

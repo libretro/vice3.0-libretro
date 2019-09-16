@@ -32,7 +32,8 @@
 
 #include "joyport.h"
 #include "sampler.h"
-#include "translate.h"
+
+#include "sampler2bit.h"
 
 /* Control port <--> 2bit sampler connections:
 
@@ -64,21 +65,20 @@ static int joyport_sampler_enable(int port, int value)
     return 0;
 }
 
-static BYTE joyport_sampler_read(int port)
+static uint8_t joyport_sampler_read(int port)
 {
-    BYTE retval = 0;
+    uint8_t retval = 0;
 
     if (sampler_enabled) {
         retval = sampler_get_sample(SAMPLER_CHANNEL_DEFAULT) >> 6;
         joyport_display_joyport(JOYPORT_ID_SAMPLER_2BIT, retval);
-        return (BYTE)(~retval);
+        return (uint8_t)(~retval);
     }
     return 0xff;
 }
 
 static joyport_t joyport_sampler_device = {
     "Sampler (2bit)",
-    IDGS_SAMPLER_2BIT,
     JOYPORT_RES_ID_SAMPLER,
     JOYPORT_IS_NOT_LIGHTPEN,
     JOYPORT_POT_OPTIONAL,

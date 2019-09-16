@@ -163,15 +163,22 @@ fi
 
 cd ../liblame
 cur=`pwd`
+extra_lame_enables=""
+if test x"$hostprefix" != "x"; then
+  if test x"$host" = "xi686-w64-mingw32"; then
+    extra_lame_enables="ac_cv_header_xmmintrin_h=no"
+  fi
+fi
+
 if test x"$shared" = "xyes"; then
   if test x"$hostprefix" != "x"; then
-    config_line="$srcdir/../liblame/configure -v --enable-shared --disable-frontend --prefix=$prefix $extra_generic_enables --host=$host"
+    config_line="$srcdir/../liblame/configure -v --enable-shared --disable-frontend --prefix=$prefix $extra_generic_enables $extra_lame_enables --host=$host"
   else
     config_line="$srcdir/../liblame/configure -v --enable-shared --disable-frontend --prefix=$prefix $extra_generic_enables"
   fi
 else
   if test x"$hostprefix" != "x"; then
-    config_line="$srcdir/../liblame/configure -v --disable-shared --enable-static --disable-frontend --prefix=$prefix $extra_generic_enables --host=$host"
+    config_line="$srcdir/../liblame/configure -v --disable-shared --enable-static --disable-frontend --prefix=$prefix $extra_generic_enables $extra_lame_enables --host=$host"
   else
     config_line="$srcdir/../liblame/configure -v --disable-shared --enable-static --disable-frontend --prefix=$prefix $extra_generic_enables"
   fi
@@ -180,7 +187,7 @@ cat <<__END
 Running configure in liblame with $config_line
 __END
 
-${NEW_SHELL} $config_line
+CONFIG_SHELL=/bin/sh $config_line
 
 if test x"$shared" = "xyes"; then
     $makecommand install-stuff
@@ -204,6 +211,28 @@ fi
 
 cd ../libx264
 cur=`pwd`
+
+case "$host" in
+  *-*-linux*)
+    pic_option="--enable-pic"
+    ;;
+  *)
+    pic_option=""
+    ;;
+esac
+
+case "$host" in
+  *-*-amigaos*)
+    asm_option="--disable-asm"
+    ;;
+  *-*-msdosdjgpp*)
+    asm_option="--disable-asm"
+    ;;
+  *)
+    asm_option=""
+    ;;
+esac
+
 if test x"$shared" = "xyes"; then
   if test x"$hostprefix" != "x"; then
     config_line="$srcdir/../libx264/configure --enable-shared --enable-static --yasm-prog=${yasmcommand} --prefix=$prefix $extra_generic_enables $extra_x264_enables --host=$host --cross-prefix=$hostprefix-"
@@ -212,9 +241,9 @@ if test x"$shared" = "xyes"; then
   fi
 else
   if test x"$hostprefix" != "x"; then
-    config_line="$srcdir/../libx264/configure --enable-static --yasm-prog=${yasmcommand} --prefix=$prefix --host=$host --cross-prefix=$hostprefix-"
+    config_line="$srcdir/../libx264/configure --enable-static $pic_option $asm_option --yasm-prog=${yasmcommand} --prefix=$prefix --host=$host --cross-prefix=$hostprefix-"
   else
-    config_line="$srcdir/../libx264/configure --enable-static --yasm-prog=${yasmcommand} --prefix=$prefix --compiler=${compiler}"
+    config_line="$srcdir/../libx264/configure --enable-static $pic_option $asm_option --yasm-prog=${yasmcommand} --prefix=$prefix --compiler=${compiler}"
   fi
 fi
 
@@ -242,17 +271,28 @@ fi
 
 cd ../libffmpeg
 cur=`pwd`
+
+case "$host" in
+  *-amigaos*)
+    asm_option="--disable-asm"
+    ;;
+  *)
+    asm_option=""
+    ;;
+esac
+
+
 if test x"$shared" = "xyes"; then
   if test x"$hostprefix" != "x"; then
-    config_line="$srcdir/../libffmpeg/configure --yasmexe=${yasmcommand} --enable-libmp3lame --enable-libx264 --enable-shared --disable-static --disable-programs --enable-gpl $extra_ffmpeg_enables $extra_generic_enables --arch=$cpu --target-os=$os --cross-prefix=$hostprefix- --prefix=$prefix"
+    config_line="$srcdir/../libffmpeg/configure --yasmexe=${yasmcommand} $asm_option --enable-libmp3lame --enable-libx264 --enable-shared --disable-static --disable-programs --enable-gpl $extra_ffmpeg_enables $extra_generic_enables --arch=$cpu --target-os=$os --cross-prefix=$hostprefix- --prefix=$prefix"
   else
-    config_line="$srcdir/../libffmpeg/configure --yasmexe=${yasmcommand} --enable-libmp3lame --enable-libx264 --enable-shared --disable-static --disable-programs --enable-gpl $extra_ffmpeg_enables $extra_generic_enables --cc=${compiler} --prefix=$prefix"
+    config_line="$srcdir/../libffmpeg/configure --yasmexe=${yasmcommand} $asm_option --enable-libmp3lame --enable-libx264 --enable-shared --disable-static --disable-programs --enable-gpl $extra_ffmpeg_enables $extra_generic_enables --cc=${compiler} --prefix=$prefix"
   fi
 else
   if test x"$hostprefix" != "x"; then
-    config_line="$srcdir/../libffmpeg/configure --yasmexe=${yasmcommand} --enable-libmp3lame --enable-libx264 --enable-static --disable-programs --enable-gpl $extra_ffmpeg_enables $extra_generic_enables --arch=$cpu --target-os=$os --cross-prefix=$hostprefix-"
+    config_line="$srcdir/../libffmpeg/configure --yasmexe=${yasmcommand} $asm_option --enable-libmp3lame --enable-libx264 --enable-static --disable-programs --enable-gpl $extra_ffmpeg_enables $extra_generic_enables --arch=$cpu --target-os=$os --cross-prefix=$hostprefix-"
   else
-    config_line="$srcdir/../libffmpeg/configure --yasmexe=${yasmcommand} --enable-libmp3lame --enable-libx264 --enable-static --disable-programs --enable-gpl $extra_ffmpeg_enables $extra_generic_enables --cc=${compiler}"
+    config_line="$srcdir/../libffmpeg/configure --yasmexe=${yasmcommand} $asm_option --enable-libmp3lame --enable-libx264 --enable-static --disable-programs --enable-gpl $extra_ffmpeg_enables $extra_generic_enables --cc=${compiler}"
   fi
 fi
 

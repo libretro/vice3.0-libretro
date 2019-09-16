@@ -52,7 +52,7 @@ static sound_chip_t sid_sound_chip = {
     1 /* chip enabled */
 };
 
-static WORD sid_sound_chip_offset = 0;
+static uint16_t sid_sound_chip_offset = 0;
 
 void sid_sound_chip_init(void)
 {
@@ -76,6 +76,16 @@ int machine_sid3_check_range(unsigned int sid3_adr)
     if (sid3_adr >= 0xd400 && sid3_adr <= 0xdfe0) {
         sid_triple_address_start = sid3_adr;
         sid_triple_address_end = sid3_adr + 0x1f;
+        return 0;
+    }
+    return -1;
+}
+
+int machine_sid4_check_range(unsigned int sid4_adr)
+{
+    if (sid4_adr >= 0xd400 && sid4_adr <= 0xdfe0) {
+        sid_quad_address_start = sid4_adr;
+        sid_quad_address_end = sid4_adr + 0x1f;
         return 0;
     }
     return -1;

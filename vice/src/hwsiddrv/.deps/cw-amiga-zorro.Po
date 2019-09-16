@@ -1,0 +1,5 @@
+cw-amiga-zorro.o: cw-amiga-zorro.c ../../src/vice.h ../../src/config.h
+
+../../src/vice.h:
+
+../../src/config.h:

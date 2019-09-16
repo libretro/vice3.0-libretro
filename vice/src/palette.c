@@ -81,7 +81,7 @@ void palette_free(palette_t *p)
 }
 
 static int palette_set_entry(palette_t *p, unsigned int number,
-                             BYTE red, BYTE green, BYTE blue, BYTE dither)
+                             uint8_t red, uint8_t green, uint8_t blue, uint8_t dither)
 {
     if (p == NULL || number >= p->num_entries) {
         return -1;
@@ -133,7 +133,7 @@ static int palette_load_core(FILE *f, const char *file_name,
 
     while (1) {
         int i;
-        BYTE values[4];
+        uint8_t values[4];
         const char *p1;
 
         int line_len = util_get_line(buf, 1024, f);
@@ -171,7 +171,7 @@ static int palette_load_core(FILE *f, const char *file_name,
                           file_name, line_num, result);
                 return -1;
             }
-            values[i] = (BYTE)result;
+            values[i] = (uint8_t)result;
             p1 = p2;
         }
 
@@ -237,7 +237,9 @@ int palette_load(const char *file_name, palette_t *palette_return)
         lib_free(tmp);
 
         if (f == NULL) {
+#ifndef __LIBRETRO__
             log_error(palette_log, "Palette not found: `%s'.", file_name);
+#endif
             return -1;
         }
     }
@@ -300,6 +302,7 @@ static palette_info_t palettelist[] = {
     { "VICII", "Pepto (NTSC, Sony)", "pepto-ntsc-sony"},
     { "VICII", "Pepto (NTSC)",       "pepto-ntsc"},
     { "VICII", "Colodore (PAL)",     "colodore"},
+    { "VICII", "ChristopherJam",     "cjam"},
     { "VICII", "VICE",               "vice"},
     { "VICII", "C64HQ",              "c64hq"},
     { "VICII", "C64S",               "c64s"},

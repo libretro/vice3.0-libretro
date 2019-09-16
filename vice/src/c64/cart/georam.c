@@ -43,7 +43,6 @@
 #include "resources.h"
 #include "georam.h"
 #include "snapshot.h"
-#include "translate.h"
 #include "types.h"
 #include "util.h"
 
@@ -105,10 +104,10 @@
 #define GEORAM_REG_PAGE_HIGH 0xff
 
 /* GEORAM registers */
-static BYTE georam[2];
+static uint8_t georam[2];
 
 /* GEORAM image.  */
-static BYTE *georam_ram = NULL;
+static uint8_t *georam_ram = NULL;
 static int old_georam_ram_size = 0;
 
 static log_t georam_log = LOG_ERR;
@@ -136,10 +135,10 @@ static int georam_io_swap = 0;
 
 /* ---------------------------------------------------------------------*/
 
-static BYTE georam_io1_read(WORD addr);
-static void georam_io1_store(WORD addr, BYTE byte);
-static BYTE georam_io2_peek(WORD addr);
-static void georam_io2_store(WORD addr, BYTE byte);
+static uint8_t georam_io1_read(uint16_t addr);
+static void georam_io1_store(uint16_t addr, uint8_t byte);
+static uint8_t georam_io2_peek(uint16_t addr);
+static void georam_io2_store(uint16_t addr, uint8_t byte);
 static int georam_dump(void);
 
 static io_source_t georam_io1_device = {
@@ -186,21 +185,21 @@ int georam_cart_enabled(void)
     return georam_enabled;
 }
 
-static BYTE georam_io1_read(WORD addr)
+static uint8_t georam_io1_read(uint16_t addr)
 {
-    BYTE retval;
+    uint8_t retval;
 
     retval = georam_ram[(georam[1] * 16384) + (georam[0] * 256) + addr];
 
     return retval;
 }
 
-static void georam_io1_store(WORD addr, BYTE byte)
+static void georam_io1_store(uint16_t addr, uint8_t byte)
 {
     georam_ram[(georam[1] * 16384) + (georam[0] * 256) + addr] = byte;
 }
 
-static BYTE georam_io2_peek(WORD addr)
+static uint8_t georam_io2_peek(uint16_t addr)
 {
     if (addr < 2) {
         return georam[addr & 1];
@@ -208,7 +207,7 @@ static BYTE georam_io2_peek(WORD addr)
     return 0;
 }
 
-static void georam_io2_store(WORD addr, BYTE byte)
+static void georam_io2_store(uint16_t addr, uint8_t byte)
 {
     if ((addr & 1) == 1) {
         while (byte > ((georam_size_kb / 16) - 1)) {
@@ -459,51 +458,35 @@ void georam_resources_shutdown(void)
 
 static const cmdline_option_t cmdline_options[] =
 {
-    { "-georam", SET_RESOURCE, 0,
+    { "-georam", SET_RESOURCE, CMDLINE_ATTRIB_NONE,
       NULL, NULL, "GEORAM", (resource_value_t)1,
-      USE_PARAM_STRING, USE_DESCRIPTION_ID,
-      IDCLS_UNUSED, IDCLS_ENABLE_GEORAM,
-      NULL, NULL },
-    { "+georam", SET_RESOURCE, 0,
+      NULL, "Enable the GEO-RAM expansion unit" },
+    { "+georam", SET_RESOURCE, CMDLINE_ATTRIB_NONE,
       NULL, NULL, "GEORAM", (resource_value_t)0,
-      USE_PARAM_STRING, USE_DESCRIPTION_ID,
-      IDCLS_UNUSED, IDCLS_DISABLE_GEORAM,
-      NULL, NULL },
-    { "-georamsize", SET_RESOURCE, 1,
+      NULL, "Disable the GEO-RAM expansion unit" },
+    { "-georamsize", SET_RESOURCE, CMDLINE_ATTRIB_NEED_ARGS,
       NULL, NULL, "GEORAMsize", NULL,
-      USE_PARAM_ID, USE_DESCRIPTION_ID,
-      IDCLS_P_SIZE_IN_KB, IDCLS_GEORAM_SIZE,
-      NULL, NULL },
-    { "-georamimage", SET_RESOURCE, 1,
+      "<size in KB>", "Size of the GEORAM expansion unit" },
+    { "-georamimage", SET_RESOURCE, CMDLINE_ATTRIB_NEED_ARGS,
       NULL, NULL, "GEORAMfilename", NULL,
-      USE_PARAM_ID, USE_DESCRIPTION_ID,
-      IDCLS_P_NAME, IDCLS_SPECIFY_GEORAM_NAME,
-      NULL, NULL },
-    { "-georamimagerw", SET_RESOURCE, 0,
+      "<Name>", "Specify name of GEORAM image" },
+    { "-georamimagerw", SET_RESOURCE, CMDLINE_ATTRIB_NONE,
       NULL, NULL, "GEORAMImageWrite", (resource_value_t)1,
-      USE_PARAM_STRING, USE_DESCRIPTION_ID,
-      IDCLS_UNUSED, IDCLS_ALLOW_WRITING_TO_GEORAM_IMAGE,
-      NULL, NULL },
-    { "+georamimagerw", SET_RESOURCE, 0,
+      NULL, "Allow writing to GEORAM image" },
+    { "+georamimagerw", SET_RESOURCE, CMDLINE_ATTRIB_NONE,
       NULL, NULL, "GEORAMImageWrite", (resource_value_t)0,
-      USE_PARAM_STRING, USE_DESCRIPTION_ID,
-      IDCLS_UNUSED, IDCLS_DO_NOT_WRITE_TO_GEORAM_IMAGE,
-      NULL, NULL },
+      NULL, "Do not write to GEORAM image" },
     CMDLINE_LIST_END
 };
 
 static const cmdline_option_t cmdline_mascuerade_options[] =
 {
-    { "-georamioswap", SET_RESOURCE, 0,
+    { "-georamioswap", SET_RESOURCE, CMDLINE_ATTRIB_NONE,
       NULL, NULL, "GEORAMIOSwap", (resource_value_t)1,
-      USE_PARAM_STRING, USE_DESCRIPTION_ID,
-      IDCLS_UNUSED, IDCLS_SWAP_CART_IO,
-      NULL, NULL },
-    { "+georamioswap", SET_RESOURCE, 0,
+      NULL, "Swap io mapping (map cart I/O-1 to VIC20 I/O-3 and cart I/O-2 to VIC20 I/O-2)" },
+    { "+georamioswap", SET_RESOURCE, CMDLINE_ATTRIB_NONE,
       NULL, NULL, "GEORAMIOSwap", (resource_value_t)0,
-      USE_PARAM_STRING, USE_DESCRIPTION_ID,
-      IDCLS_UNUSED, IDCLS_DONT_SWAP_CART_IO,
-      NULL, NULL },
+      NULL, "Don't swap io mapping (map cart I/O-1 to VIC20 I/O-2 and cart I/O-2 to VIC20 I/O-3)" },
     CMDLINE_LIST_END
 };
 
@@ -549,14 +532,21 @@ int georam_enable(void)
     return 0;
 }
 
-void georam_config_setup(BYTE *rawcart)
+
+int georam_disable(void)
+{
+    return resources_set_int("GEORAM", 0);
+}
+
+
+void georam_config_setup(uint8_t *rawcart)
 {
     if (georam_size > 0) {
         memcpy(georam_ram, rawcart, georam_size);
     }
 }
 
-int georam_bin_attach(const char *filename, BYTE *rawcart)
+int georam_bin_attach(const char *filename, uint8_t *rawcart)
 {
     FILE *fd;
     int size;
@@ -632,7 +622,7 @@ int georam_write_snapshot_module(snapshot_t *s)
     }
 
     if (0
-        || SMW_B(m, (BYTE)georam_io_swap) < 0
+        || SMW_B(m, (uint8_t)georam_io_swap) < 0
         || SMW_DW(m, (georam_size >> 10)) < 0
         || SMW_BA(m, georam, sizeof(georam)) < 0
         || SMW_BA(m, georam_ram, georam_size) < 0) {
@@ -645,9 +635,9 @@ int georam_write_snapshot_module(snapshot_t *s)
 
 int georam_read_snapshot_module(snapshot_t *s)
 {
-    BYTE vmajor, vminor;
+    uint8_t vmajor, vminor;
     snapshot_module_t *m;
-    DWORD size;
+    uint32_t size;
 
     m = snapshot_module_open(s, snap_module_name, &vmajor, &vminor);
 

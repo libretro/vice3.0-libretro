@@ -16,16 +16,12 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-#ifdef IDE_COMPILE
-#include "ffmpeg-config.h"
-#include "ide-config.h"
-#else
 #include "config.h"
-#endif
 
 #include "img_format.h"
 #include "stdio.h"
 #include "libavutil/bswap.h"
+#include "libavutil/common.h"
 
 const char *ff_vo_format_name(int format)
 {

@@ -1,0 +1,6 @@
+shortbus_etfe.o: shortbus_etfe.c ../../../src/vice.h \
+ ../../../src/config.h
+
+../../../src/vice.h:
+
+../../../src/config.h:

@@ -4,7 +4,7 @@ endif
 
 # Process this file with automake to produce Makefile.in
 
-SUBDIRS = $(POSUB) src build data man doc
+SUBDIRS = src build data man doc
 
 # COMMON_EXTRA_DIST is what used to be the EXTRA_DIST, when adding dist
 # files, please add them to the COMMON_EXTRA_DIST list.
@@ -13,7 +13,6 @@ COMMON_EXTRA_DIST = \
 	.descr \
 	AUTHORS \
 	autogen.sh \
-	build.minix \
 	config.rpath \
 	configure.proto \
 	ChangeLog \
@@ -27,60 +26,10 @@ COMMON_EXTRA_DIST = \
 	NEWS \
 	gcccpu.sh \
 	tixbuildinfo \
-	vice.spec \
-	vice.spec.in \
-	vice-gtk.spec \
-	vice-gtk.spec.in \
-	vice-mint.spec \
-	vice-mint.spec.in \
 	vice-mint-sdl.spec \
 	vice-mint-sdl.spec.in
 
-# PO_EXTRA_DIST is a list of files in the po directory that need to be
-# included in the source archive, this list was added to fix the fact that
-# 'make dist' only produced a proper/workable source archive when done on a
-# *nix platform with nls.
-
-PO_EXTRA_DIST = \
-	po/ChangeLog \
-	po/ChangeLog.1 \
-	po/Makefile.in.in \
-	po/POTFILES.in \
-	po/check_obsolete.sh \
-	po/da.po \
-	po/de.po \
-	po/es.po \
-	po/fr.po \
-	po/gen_amiga_intl_c.c \
-	po/gen_translate_c.c \
-	po/gen_win32_files.sh \
-	po/gen_win32_rc.c \
-	po/hu.po \
-	po/intl2po.c \
-	po/it.po \
-	po/ko.po \
-	po/nl.po \
-	po/pl.po \
-	po/po2table.c \
-	po/po2tbl.sed \
-	po/ru.po \
-	po/sv.po \
-	po/tr.po \
-	po/translations-status.txt
-
-if PO_SUBDIR_USED
-
 EXTRA_DIST = $(COMMON_EXTRA_DIST)
-
-else
-
-EXTRA_DIST = $(COMMON_EXTRA_DIST) $(PO_EXTRA_DIST)
-
-endif
-
-# make src directory depend on the po directory, else parallel make-ing may
-# fail (see bug #551)
-src: $(POSUB)
 
 if SUPPORT_X64SC
   X64SC_INCLUDED = yes
@@ -163,49 +112,37 @@ ChangeLog:
 if AMIGA_COMPILE
 if SDL_COMPILE
 bindist:
-	$(SHELL) @ARCH_SRC_DIR@/make-bindist_amiga.sh $(STRIP) $(VICE_VERSION) $(host_cpu) $(host_os) @ENABLE_ARCH@ nozip $(X64SC_INCLUDED) $(top_srcdir) $(EXEEXT)
+	$(SHELL) @ARCH_SRC_DIR@/make-bindist_amiga.sh $(STRIP) $(VICE_VERSION) $(host_cpu) $(host_os) @ENABLE_ARCH@ nozip $(X64SC_INCLUDED) $(top_srcdir) $(SDL_VERSION) $(EXEEXT)
 
 bindistzip:
-	$(SHELL) @ARCH_SRC_DIR@/make-bindist_amiga.sh $(STRIP) $(VICE_VERSION) $(host_cpu) $(host_os) @ENABLE_ARCH@ zip $(X64SC_INCLUDED) $(top_srcdir) $(EXEEXT)
-else
-bindist:
-	$(SHELL) @ARCH_SRC_DIR@/make-bindist.sh $(STRIP) $(VICE_VERSION) $(host_cpu) $(host_os) @ENABLE_ARCH@ nozip $(X64SC_INCLUDED) $(top_srcdir) $(EXEEXT)
-
-bindistzip:
-	$(SHELL) @ARCH_SRC_DIR@/make-bindist.sh $(STRIP) $(VICE_VERSION) $(host_cpu) $(host_os) @ENABLE_ARCH@ zip $(X64SC_INCLUDED) $(top_srcdir) $(EXEEXT)
+	$(SHELL) @ARCH_SRC_DIR@/make-bindist_amiga.sh $(STRIP) $(VICE_VERSION) $(host_cpu) $(host_os) @ENABLE_ARCH@ zip $(X64SC_INCLUDED) $(top_srcdir) $(SDL_VERSION) $(EXEEXT)
 endif
 endif
 
 if BEOS_COMPILE
 if SDL_COMPILE
 bindist:
-	$(SHELL) @ARCH_SRC_DIR@/make-bindist_beos.sh $(STRIP) $(VICE_VERSION) $(host_cpu) @ENABLE_ARCH@ nozip $(X64SC_INCLUDED) $(XSCPU64_INCLUDED) $(top_srcdir)
+	$(SHELL) @ARCH_SRC_DIR@/make-bindist_beos.sh $(STRIP) $(VICE_VERSION) $(host_cpu) $(host_os) @ENABLE_ARCH@ nozip $(XSCPU64_INCLUDED) $(top_srcdir) $(SDL_VERSION)
 
 bindistzip:
-	$(SHELL) @ARCH_SRC_DIR@/make-bindist_beos.sh $(STRIP) $(VICE_VERSION) $(host_cpu) @ENABLE_ARCH@ zip $(X64SC_INCLUDED) $(XSCPU64_INCLUDED) $(top_srcdir)
-else
-bindist:
-	$(SHELL) @ARCH_SRC_DIR@/make-bindist.sh $(STRIP) $(VICE_VERSION) $(host_cpu) @ENABLE_ARCH@ nozip $(X64SC_INCLUDED) $(XSCPU64_INCLUDED) $(top_srcdir)
-
-bindistzip:
-	$(SHELL) @ARCH_SRC_DIR@/make-bindist.sh $(STRIP) $(VICE_VERSION) $(host_cpu) @ENABLE_ARCH@ zip $(X64SC_INCLUDED) $(XSCPU64_INCLUDED) $(top_srcdir)
+	$(SHELL) @ARCH_SRC_DIR@/make-bindist_beos.sh $(STRIP) $(VICE_VERSION) $(host_cpu) $(host_os) @ENABLE_ARCH@ zip $(XSCPU64_INCLUDED) $(top_srcdir) $(SDL_VERSION)
 endif
-endif
-
-if MSDOS_COMPILE
-bindist:
-	$(SHELL) @ARCH_SRC_DIR@/make-bindist.sh $(STRIP) $(VICE_VERSION_MAJOR) $(VICE_VERSION_MINOR) @ENABLE_ARCH@ nozip $(X64SC_INCLUDED) $(top_srcdir)
-
-bindistzip:
-	$(SHELL) @ARCH_SRC_DIR@/make-bindist.sh $(STRIP) $(VICE_VERSION_MAJOR) $(VICE_VERSION_MINOR) @ENABLE_ARCH@ zip $(X64SC_INCLUDED) $(top_srcdir)
 endif
 
 if UNIX_MACOSX_COMPILE
+if NATIVE_GTK3_COMPILE
 bindist:
-	/bin/bash @ARCH_SRC_DIR@/../unix/macosx/make-bindist.sh $(top_srcdir) $(STRIP) $(VICE_VERSION) @ENABLE_ARCH@ nozip $(X64SC_INCLUDED) @UNIX_MACOSX_UITYPE@
+	/bin/bash @ARCH_SRC_DIR@/../gtk3/make-bindist_osx.sh $(top_srcdir) $(STRIP) $(VICE_VERSION) @ENABLE_ARCH@ nozip
 
 bindistzip:
-	/bin/bash @ARCH_SRC_DIR@/../unix/macosx/make-bindist.sh $(top_srcdir) $(STRIP) $(VICE_VERSION) @ENABLE_ARCH@ zip $(X64SC_INCLUDED) @UNIX_MACOSX_UITYPE@
+	/bin/bash @ARCH_SRC_DIR@/../gtk3/make-bindist_osx.sh $(top_srcdir) $(STRIP) $(VICE_VERSION) @ENABLE_ARCH@ zip
+else
+bindist:
+	FW_DIR=@FW_DIR@ /bin/bash @ARCH_SRC_DIR@/../sdl/make-bindist_osx.sh $(top_srcdir) $(STRIP) $(VICE_VERSION) @ENABLE_ARCH@ nozip $(SDL_VERSION)
+
+bindistzip:
+	FW_DIR=@FW_DIR@ /bin/bash @ARCH_SRC_DIR@/../sdl/make-bindist_osx.sh $(top_srcdir) $(STRIP) $(VICE_VERSION) @ENABLE_ARCH@ zip $(SDL_VERSION)
+endif
 endif
 
 if UNIX_SKYOS_COMPILE
@@ -255,20 +192,6 @@ bindist:
 
 bindistzip:
 	$(SHELL) @ARCH_SRC_DIR@/make-bindist_scosol.sh $(STRIP) $(VICE_VERSION) $(prefix) $(CROSS) @ENABLE_ARCH@ zip $(X64SC_INCLUDED) sol $(infodir) $(mandir) $(top_srcdir) $(MAKE) $(host_cpu) $(host_os)
-else
-if GNOMEUI
-bindist:
-	$(SHELL) @ARCH_SRC_DIR@/sco_sol/make-bindist.sh $(STRIP) $(VICE_VERSION) $(prefix) $(CROSS) @ENABLE_ARCH@ nozip $(X64SC_INCLUDED) sol gtk $(infodir) $(mandir) $(top_srcdir) $(MAKE) $(host_cpu) $(host_os)
-
-bindistzip:
-	$(SHELL) @ARCH_SRC_DIR@/sco_sol/make-bindist.sh $(STRIP) $(VICE_VERSION) $(prefix) $(CROSS) @ENABLE_ARCH@ zip $(X64SC_INCLUDED) sol gtk $(infodir) $(mandir) $(top_srcdir) $(MAKE) $(host_cpu) $(host_os)
-else
-bindist:
-	$(SHELL) @ARCH_SRC_DIR@/sco_sol/make-bindist.sh $(STRIP) $(VICE_VERSION) $(prefix) $(CROSS) @ENABLE_ARCH@ nozip $(X64SC_INCLUDED) sol xaw $(infodir) $(mandir) $(top_srcdir) $(MAKE) $(host_cpu) $(host_os)
-
-bindistzip:
-	$(SHELL) @ARCH_SRC_DIR@/sco_sol/make-bindist.sh $(STRIP) $(VICE_VERSION) $(prefix) $(CROSS) @ENABLE_ARCH@ zip $(X64SC_INCLUDED) sol xaw $(infodir) $(mandir) $(top_srcdir) $(MAKE) $(host_cpu) $(host_os)
-endif
 endif
 endif
 
@@ -303,20 +226,6 @@ bindist:
 
 bindistzip:
 	$(SHELL) @ARCH_SRC_DIR@/make-bindist_scosol.sh $(STRIP) $(VICE_VERSION) $(prefix) $(CROSS) @ENABLE_ARCH@ zip $(X64SC_INCLUDED) sco5 $(infodir) $(mandir) $(top_srcdir) $(MAKE)
-else
-if GNOMEUI
-bindist:
-	$(SHELL) @ARCH_SRC_DIR@/sco_sol/make-bindist.sh $(STRIP) $(VICE_VERSION) $(prefix) $(CROSS) @ENABLE_ARCH@ nozip $(X64SC_INCLUDED) sco5 gtk $(infodir) $(mandir) $(top_srcdir) $(MAKE) $(host_cpu) $(host_os)
-
-bindistzip:
-	$(SHELL) @ARCH_SRC_DIR@/sco_sol/make-bindist.sh $(STRIP) $(VICE_VERSION) $(prefix) $(CROSS) @ENABLE_ARCH@ zip $(X64SC_INCLUDED) sco5 gtk $(infodir) $(mandir) $(top_srcdir) $(MAKE) $(host_cpu) $(host_os)
-else
-bindist:
-	$(SHELL) @ARCH_SRC_DIR@/sco_sol/make-bindist.sh $(STRIP) $(VICE_VERSION) $(prefix) $(CROSS) @ENABLE_ARCH@ nozip $(X64SC_INCLUDED) sco5 xaw $(infodir) $(mandir) $(top_srcdir) $(MAKE) $(host_cpu) $(host_os)
-
-bindistzip:
-	$(SHELL) @ARCH_SRC_DIR@/sco_sol/make-bindist.sh $(STRIP) $(VICE_VERSION) $(prefix) $(CROSS) @ENABLE_ARCH@ zip $(X64SC_INCLUDED) sco5 xaw $(infodir) $(mandir) $(top_srcdir) $(MAKE) $(host_cpu) $(host_os)
-endif
 endif
 endif
 
@@ -327,20 +236,6 @@ bindist:
 
 bindistzip:
 	$(SHELL) @ARCH_SRC_DIR@/make-bindist_scosol.sh $(STRIP) $(VICE_VERSION) $(prefix) $(CROSS) @ENABLE_ARCH@ zip $(X64SC_INCLUDED) sco6 $(infodir) $(mandir) $(top_srcdir) $(MAKE)
-else
-if GNOMEUI
-bindist:
-	$(SHELL) @ARCH_SRC_DIR@/sco_sol/make-bindist.sh $(STRIP) $(VICE_VERSION) $(prefix) $(CROSS) @ENABLE_ARCH@ nozip $(X64SC_INCLUDED) sco6 gtk $(infodir) $(mandir) $(top_srcdir) $(MAKE) $(host_cpu) $(host_os)
-
-bindistzip:
-	$(SHELL) @ARCH_SRC_DIR@/sco_sol/make-bindist.sh $(STRIP) $(VICE_VERSION) $(prefix) $(CROSS) @ENABLE_ARCH@ zip $(X64SC_INCLUDED) sco6 gtk $(infodir) $(mandir) $(top_srcdir) $(MAKE) $(host_cpu) $(host_os)
-else
-bindist:
-	$(SHELL) @ARCH_SRC_DIR@/sco_sol/make-bindist.sh $(STRIP) $(VICE_VERSION) $(prefix) $(CROSS) @ENABLE_ARCH@ nozip $(X64SC_INCLUDED) sco6 xaw $(infodir) $(mandir) $(top_srcdir) $(MAKE) $(host_cpu) $(host_os)
-
-bindistzip:
-	$(SHELL) @ARCH_SRC_DIR@/sco_sol/make-bindist.sh $(STRIP) $(VICE_VERSION) $(prefix) $(CROSS) @ENABLE_ARCH@ zip $(X64SC_INCLUDED) sco6 xaw $(infodir) $(mandir) $(top_srcdir) $(MAKE) $(host_cpu) $(host_os)
-endif
 endif
 endif
 
@@ -351,43 +246,23 @@ bindist:
 
 bindistzip:
 	$(SHELL) @ARCH_SRC_DIR@/make-bindist_scosol.sh $(STRIP) $(VICE_VERSION) $(prefix) $(CROSS) @ENABLE_ARCH@ zip $(X64SC_INCLUDED) sco7 $(infodir) $(mandir) $(top_srcdir) $(MAKE)
-else
-if GNOMEUI
-bindist:
-	$(SHELL) @ARCH_SRC_DIR@/sco_sol/make-bindist.sh $(STRIP) $(VICE_VERSION) $(prefix) $(CROSS) @ENABLE_ARCH@ nozip $(X64SC_INCLUDED) sco7 gtk $(infodir) $(mandir) $(top_srcdir) $(MAKE) $(host_cpu) $(host_os)
-
-bindistzip:
-	$(SHELL) @ARCH_SRC_DIR@/sco_sol/make-bindist.sh $(STRIP) $(VICE_VERSION) $(prefix) $(CROSS) @ENABLE_ARCH@ zip $(X64SC_INCLUDED) sco7 gtk $(infodir) $(mandir) $(top_srcdir) $(MAKE) $(host_cpu) $(host_os)
-else
-bindist:
-	$(SHELL) @ARCH_SRC_DIR@/sco_sol/make-bindist.sh $(STRIP) $(VICE_VERSION) $(prefix) $(CROSS) @ENABLE_ARCH@ nozip $(X64SC_INCLUDED) sco7 xaw $(infodir) $(mandir) $(top_srcdir) $(MAKE) $(host_cpu) $(host_os)
-
-bindistzip:
-	$(SHELL) @ARCH_SRC_DIR@/sco_sol/make-bindist.sh $(STRIP) $(VICE_VERSION) $(prefix) $(CROSS) @ENABLE_ARCH@ zip $(X64SC_INCLUDED) sco7 xaw $(infodir) $(mandir) $(top_srcdir) $(MAKE) $(host_cpu) $(host_os)
-endif
 endif
 endif
 
 if WIN32_COMPILE
+if NATIVE_GTK3_COMPILE
+bindist:
+	$(SHELL) @ARCH_SRC_DIR@/make-bindist_win32.sh $(STRIP) $(VICE_VERSION) @ENABLE_ARCH@ nozip $(X64SC_INCLUDED) $(top_srcdir) $(host_cpu) $(abs_top_builddir) $(CROSS) $(objdump) $(CC)
+
+bindistzip:
+	$(SHELL) @ARCH_SRC_DIR@/make-bindist_win32.sh $(STRIP) $(VICE_VERSION) @ENABLE_ARCH@ zip $(X64SC_INCLUDED) $(top_srcdir) $(host_cpu) $(abs_top_builddir) $(CROSS) $(objdump) $(CC)
+else
 if SDL_COMPILE
 bindist:
 	$(SHELL) @ARCH_SRC_DIR@/make-bindist_win32.sh $(STRIP) $(VICE_VERSION) @ENABLE_ARCH@ nozip $(X64SC_INCLUDED) $(top_srcdir) $(host_cpu) $(SDL_VERSION)
 
 bindistzip:
 	$(SHELL) @ARCH_SRC_DIR@/make-bindist_win32.sh $(STRIP) $(VICE_VERSION) @ENABLE_ARCH@ zip $(X64SC_INCLUDED) $(top_srcdir) $(host_cpu) $(SDL_VERSION)
-else
-if OWCC
-bindist:
-	$(SHELL) @ARCH_SRC_DIR@/make-bindist.sh $(STRIP) $(VICE_VERSION) @ENABLE_ARCH@ nozip $(X64SC_INCLUDED) $(top_srcdir) $(host_cpu) yes
-
-bindistzip:
-	$(SHELL) @ARCH_SRC_DIR@/make-bindist.sh $(STRIP) $(VICE_VERSION) @ENABLE_ARCH@ zip $(X64SC_INCLUDED) $(top_srcdir) $(host_cpu) yes
-else
-bindist:
-	$(SHELL) @ARCH_SRC_DIR@/make-bindist.sh $(STRIP) $(VICE_VERSION) @ENABLE_ARCH@ nozip $(X64SC_INCLUDED) $(top_srcdir) $(host_cpu) no
-
-bindistzip:
-	$(SHELL) @ARCH_SRC_DIR@/make-bindist.sh $(STRIP) $(VICE_VERSION) @ENABLE_ARCH@ zip $(X64SC_INCLUDED) $(top_srcdir) $(host_cpu) no
 endif
 endif
 endif
@@ -420,24 +295,17 @@ else
 installvice: install-recursive $(EXTRA_INSTALLS)
 endif
 
-clean-trans:
-	rm `find $(top_srcdir) -name "*.po.c"`
-
 # Manually define the dist targets so the correct tar usage will be used.
 dist-gzip:
 	$(DOS2UNIX) `find $(top_srcdir) -name "*.sh"`
-	$(DOS2UNIX) $(top_srcdir)/src/translate.txt
 	$(DOS2UNIX) $(top_srcdir)/doc/vice.texi
-	$(DOS2UNIX) $(top_srcdir)/po/POTFILES.in
 	$(MAKE) distdir
 	$(AMTAR) chf - $(distdir) | GZIP=$(GZIP_ENV) gzip -c >$(distdir).tar.gz
 	$(am__remove_distdir)
 
 dist dist-all:
 	$(DOS2UNIX) `find $(top_srcdir) -name "*.sh"`
-	$(DOS2UNIX) $(top_srcdir)/src/translate.txt
 	$(DOS2UNIX) $(top_srcdir)/doc/vice.texi
-	$(DOS2UNIX) $(top_srcdir)/po/POTFILES.in
 	$(MAKE) distdir
 	$(AMTAR) chf - $(distdir) | GZIP=$(GZIP_ENV) gzip -c >$(distdir).tar.gz
 	$(am__remove_distdir)

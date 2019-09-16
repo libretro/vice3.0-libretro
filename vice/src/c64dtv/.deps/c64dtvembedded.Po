@@ -1,0 +1,5 @@
+c64dtvembedded.o: c64dtvembedded.c ../../src/vice.h ../../src/config.h
+
+../../src/vice.h:
+
+../../src/config.h:

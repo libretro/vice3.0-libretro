@@ -176,6 +176,8 @@ s/@b{Michael Steil}/Michael Steil <mist64@mac.com>/g
 s/@b{Hans Deragon}/Hans Deragon <hans@deragon.biz>/g
 s/@b{TMLPiper}/TMLPiper <icolquhoun@users.sourceforge.net>/g
 s/@b{Christopher Phillips}/Christopher Phillips <shrydar@users.sourceforge.net>/g
+s/@b{Michael C. Martin}/Michael C. Martin <mcmartin@gmail.com>/g
+s/@b{Bjoern Odendahl}/Bjoern Odendahl/g
 s/@code{\([^}]*\)}/`\1'/g
 s/@t{\([^}]*\)}/\1/g
 s/@dots{}/..../g

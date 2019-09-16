@@ -65,14 +65,36 @@
 #include "types.h"
 #include "uiapi.h"
 
+/* FIXME: each of the following should probably get moved to archdep */
 #if defined(USE_SDLUI) || defined(USE_SDLUI2)
-HWND ui_get_main_hwnd(void)
+static HWND ui_get_main_hwnd(void)
 {
     SDL_SysWMinfo info;
 
     SDL_GetWMInfo(&info);
 
     return info.window;
+}
+#else
+
+#include <gtk/gtk.h>
+#include <gdk/gdk.h>
+#include <gdk/gdkwin32.h>
+
+static HWND ui_get_main_hwnd(void)
+{
+#if 0
+    GdkWindow *gdk_window = gdk_screen_get_active_window (NULL);
+    HWND hWnd = NULL;
+    printf("gdk_window = %p\n", gdk_window); /* always NULL/0 */
+
+    if (gdk_window) {
+        if (gdk_window_ensure_native(gdk_window)) {
+            hWnd = gdk_win32_window_get_impl_hwnd(gdk_window);
+        }
+    }
+#endif
+    return GetActiveWindow();
 }
 #endif
 
@@ -99,6 +121,7 @@ static void sound_debug(const char *format, ...)
 
 static char *ds_error(HRESULT result)
 {
+    static char tmp[0x20];
     switch (result) {
         case DSERR_ALLOCATED:
             return "Already allocated resource";
@@ -133,8 +156,10 @@ static char *ds_error(HRESULT result)
         case DSERR_NOINTERFACE:
             return "Requested COM interface is not available";
         default:
-            return "Whadda hell?!";
+            break;
     }
+    sprintf(tmp, "Error 0x%x", (unsigned int)result);
+    return tmp;
 }
 
 /* ------------------------------------------------------------------------ */
@@ -199,14 +224,14 @@ static LPVOID fragment_pointer;
 #endif
 
 /*  Last played sample. This will be played in underflow condition */
-static SWORD last_buffered_sample[2];
+static int16_t last_buffered_sample[2];
 
 /*  Flag: is soundcard a 16bit or 8bit card? */
 static int is16bit;
 
 #if 0
 /*  Streaming buffer */
-static SWORD                *stream_buffer;
+static int16_t                *stream_buffer;
 
 /*  Offset of first buffered sample */
 static volatile int stream_buffer_first;
@@ -456,7 +481,7 @@ static int dx_bufferspace(void)
     return free_samples;
 }
 
-static int dx_write(SWORD *pbuf, size_t nr)
+static int dx_write(int16_t *pbuf, size_t nr)
 {
     LPVOID lpvPtr1;
     DWORD dwBytes1;
@@ -525,7 +550,7 @@ static int dx_write(SWORD *pbuf, size_t nr)
 static int dx_suspend(void)
 {
     int i;
-    SWORD *p = lib_malloc(stream_buffer_size * sizeof(SWORD));
+    int16_t *p = lib_malloc(stream_buffer_size * sizeof(int16_t));
 
     if (!p) {
         return 0;

@@ -34,41 +34,18 @@
 #define _FILE_OFFSET_BITS 64
 #include <stdio.h>
 #include <sys/stat.h>
+
 #include <inttypes.h>
+
 #include <stdarg.h>
 
 #include "x264.h"
-
-#ifdef IDE_COMPILE
-#include "x264-config.h"
-#else
 #include "config.h"
-#endif
 
 #ifdef __INTEL_COMPILER
 #include <mathimf.h>
 #else
 #include <math.h>
-#endif
-
-#if defined(IDE_COMPILE) && defined(_MSC_VER) && (_MSC_VER >= 1400)
-#define fileno _fileno
-#endif
-
-#ifdef IDE_COMPILE
-#if (_MSC_VER < 1500)
-static double log2(double x)
-{
-	return log(x) / log(2);
-}
-
-static float log2f(float x)
-{
-	return (float)(log2((double)x));
-}
-#define LOG2_DEFINED
-
-#endif
 #endif
 
 #if !HAVE_LOG2F && !defined(LOG2_DEFINED)
@@ -81,17 +58,19 @@ static float log2f(float x)
 #define strcasecmp _stricmp
 #define strncasecmp _strnicmp
 #define snprintf _snprintf
-#if !defined(IDE_COMPILE) || (defined(IDE_COMPILE) && (_MSC_VER >= 1400))
 #define strtok_r strtok_s
-#endif
 #define S_ISREG(x) (((x) & S_IFMT) == S_IFREG)
 #endif
 
-#if !defined(isfinite) && (SYS_OPENBSD || SYS_SunOS)
+#if !defined(isfinite) && (SYS_OPENBSD || SYS_SunOS || SYS_DOS)
 #define isfinite finite
 #endif
 
-#if defined(_WIN32) || (defined(IDE_COMPILE) && (_MSC_VER < 1400))
+#if defined(__AROS__) && (defined(__amd64__) || defined(__powerpc__))
+#define strtok_r(a, b, c) strtok(a, b)
+#endif
+
+#ifdef _WIN32
 #ifndef strtok_r
 #define strtok_r(str,delim,save) strtok(str,delim)
 #endif
@@ -132,7 +111,6 @@ int x264_is_pipe( const char *path );
 // - Apple gcc only maintains 4 byte alignment
 // - llvm can align the stack, but only in svn and (unrelated) it exposes bugs in all released GNU binutils...
 
-#if !defined(IDE_COMPILE) || (defined(IDE_COMPILE) && (_MSC_VER >= 1400))
 #define ALIGNED_ARRAY_EMU( mask, type, name, sub1, ... )\
     uint8_t name##_u [sizeof(type sub1 __VA_ARGS__) + mask]; \
     type (*name) __VA_ARGS__ = (void*)((intptr_t)(name##_u+mask) & ~mask)
@@ -161,7 +139,6 @@ int x264_is_pipe( const char *path );
 #endif
 
 #define ALIGNED_ARRAY_64( ... ) EXPAND( ALIGNED_ARRAY_EMU( 63, __VA_ARGS__ ) )
-#endif
 
 /* For AVX2 */
 #if ARCH_X86 || ARCH_X86_64
@@ -398,6 +375,14 @@ static ALWAYS_INLINE void x264_prefetch( void *p )
     sp.sched_priority -= p;\
     pthread_setschedparam( handle, policy, &sp );\
 }
+#elif SYS_HAIKU
+#include <OS.h>
+#define x264_lower_thread_priority(p)\
+    { UNUSED status_t nice_ret = set_thread_priority( find_thread( NULL ), B_LOW_PRIORITY ); }
+#elif SYS_AmigaOS
+#define x264_lower_thread_priority(p) 
+#elif SYS_AROS
+#define x264_lower_thread_priority(p)
 #else
 #include <unistd.h>
 #define x264_lower_thread_priority(p) { UNUSED int nice_ret = nice(p); }

@@ -1,0 +1,5 @@
+cw-amiga-device.o: cw-amiga-device.c ../../src/vice.h ../../src/config.h
+
+../../src/vice.h:
+
+../../src/config.h:

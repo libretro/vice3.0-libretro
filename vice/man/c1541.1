@@ -1,4 +1,4 @@
-.TH C1541 1 "November 2016" "VICE"
+.TH C1541 1 "May 2018" "VICE"
 .SH NAME
 c1541 \- a stand alone disk image maintenance program
 .SH SYNOPSIS
@@ -30,11 +30,14 @@ refer to this image.
 .B \-bam [\fIunit\fR] | \fItrack-min\fR \fItrack_max\fR [\fIunit\fR] (bam [\fIunit\fR] | \fItrack-min\fR \fItrack_max\fR [\fIunit\fR])
 show bam bitmap of an imagem optionally specifying unit and/or a slice of the tracks using \fItrack-min\fR and \fItrack-max\fR.
 .TP
-.B \-bcopy \fIsrc_trk\fR \fIsrc_sec\fR \fIdst_trk\fR [\fIsrc_unit\fR [\fIdst_unit\fR]] (bcopy \fIsrc_trk\fR \fIsrc_sec\fR \fIdst_trk\fR [\fIsrc_unit\fR [\fIdst_unit\fR]])
+.B \-bcopy \fIsrc_trk\fR \fIsrc_sec\fR \fIdst_trk\fR \fIdst_sec\fR [\fIsrc_unit\fR [\fIdst_unit\fR]] (bcopy \fIsrc_trk\fR \fIsrc_sec\fR \fIdst_trk\fR \fIdst_sec\fR [\fIsrc_unit\fR [\fIdst_unit\fR]])
 copy a block to another block. When not using the optional unit numbers, the block is copied among the current unit. If one unit (\fIsrc_unit\fR) is specified that unit is used for both source and destination. Using both unit number allows copying blocks between different units.
 .TP
+.B \-bfill \fItrack\fR \fIsector\fR \fIvalue\fR \fI[unit]\fR (bfill \fItrack\fR \fIsector\fR \fIvalue\fR \fI[unit]\fR)
+fill a block with a single value.
+.TP
 .B \-block \fItrack\fR \fIsector\fR \fI[offset]\fR \fI[unit]\fR (block \fItrack\fR \fIsector\fR \fI[offset]\fR \fI[unit]\fR)
-show disk blocks in hex format.B
+show disk blocks in hex format.
 .TP
 .B \-bpoke [\fI[@unit:]\fR \fItrack\fR \fIsector\fR \fIoffset\fR \fIdata\fR (bpoke [\fI[@unit:]\fR \fItrack\fR \fIsector\fR \fIoffset\fR \fIdata\fR)
 poke data into a block. The \fIdata\fR list should be at least a single byte. Multiple prefixes for the data are supported: 0x/$ for hex, 0b/% for binary, & for octal and unadorned for plain decimal.
@@ -72,6 +75,8 @@ extract all the files to the file system and GEOS Convert them.
 read GEOS \fIsource\fR from the disk image and copy it as a Convert file into
 \fIdestination\fR in the file system. If \fIdestination\fR is not specified,
 copy it into a file with the same name as \fIsource\fR.
+Please note that since GEOS files are stored in ASCII, violating CBMDOS
+conventions, the filename should be given in inverted case.
 .TP
 .B \-geoswrite \fIsource\fR (geoswrite \fIsource\fR)
 write GEOS Convert file \fIsource\fR from the file system on a disk image.
@@ -119,6 +124,10 @@ set verbose mode. Output extra logging information, disable with \fBverbose off\
 .B \-write \fIimage\fR \fIfsname\fR \fI[1541name]\fR (write \fIfsname\fR \fI[1541name]\fR)
 write \fIfsname\fR to \fIimage\fR as \fI1541name\fR (\fIfsname\fR by default).
 (works with \fIP00\fR files as well).
+.TP
+.B \-zcreate \fIx64name\fR \fIzipname\fR [\fIlabel,id\fR] (zcreate \fIx64name\fR \fIzipname\fR [\fIlabel,id\fR]
+create an X64 disk image from four Zipcoded files named \fI1!zipname\fR through
+\fI4!zipname\fR.
 .P
 When more than one command is specified in batch mode, all of them are
 executed in the same order they have on the command line.
@@ -129,9 +138,9 @@ as a file name, it stands for \fIstdin\fR or \fIstdout\fR.
 .P
 Exit interactive mode with either \fBexit\fR or \fBquit\fR.
 .SH SEE ALSO
-.BR VICE (1),
-.BR cartconv (1),
-.BR petcat (1)
+.BR vice(1),
+.BR cartconv(1),
+.BR petcat(1)
 .SH AUTHORS
 Teemu Rantanen <tvr@cs.hut.fi>
 .br
@@ -147,3 +156,5 @@ with improvements by
 Olaf Seibert <rhialto@mbfys.kun.nl>
 .br
 Gerhard Wesp <gwesp@cosy.sbg.ac.at>
+.br
+Bas Wassink <b.wassink@ziggo.nl>

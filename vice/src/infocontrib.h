@@ -37,18 +37,6 @@ const char info_contrib_text[] =
 "\n"
 "  The VICE core team:\n"
 "\n"
-"  Andreas Matthies <andreas.matthies@gmx.net>\n"
-"  Improved the datasette support, the VIC20 video emulation and\n"
-"  some UI stuff in the Win32 and DOS ports. He also wrote the\n"
-"  BeOS port and implemented video/audio capture support. Improved\n"
-"  history recording/playback and implemented support for video\n"
-"  recording and the netlink feature. Made the Win32 user\n"
-"  changable keyboard shortcut system. Improved CIA and VIA\n"
-"  emulation. Worked on x64sc, especially interrupt timing.\n"
-"  Improved the FFMPEG support and started the 'in-source'\n"
-"  FFMPEG support/merge. Wrote test programs. Various\n"
-"  bug(fixe)s. ;-)\n"
-"\n"
 "  Martin Pottendorfer <pottendo@gmx.net>\n"
 "  Implemented the Gnome Port based on Oliver Schaertels GTK+\n"
 "  port. Added support code for internationalization based on\n"
@@ -102,7 +90,7 @@ const char info_contrib_text[] =
 "  work on AmigaOS, BeOS, DOS, SDL, *nix and windows with and\n"
 "  without device drivers. Added clockport system for mmc64,\n"
 "  mmcreplay, retroreplay and ide64. Added rrnet clockport device.\n"
-"  Added mp3(C)rt device. And lots of other fixes and\n"
+"  Added mp3@@64 clockport device. And lots of other fixes and\n"
 "  improvements.\n"
 "\n"
 "  Fabrizio Gennari <fabrizio.ge@tiscalinet.it>\n"
@@ -112,21 +100,11 @@ const char info_contrib_text[] =
 "  using VTE to the GTK+ GUI. Made some monitor fixes. Fixed some\n"
 "  tape code issues.\n"
 "\n"
-"  Daniel Kahlin <daniel@kahlin.net>\n"
-"  Worked on DTV VIC emulation, palette, DTV SID support in resid,\n"
-"  better DMA/Blitter support and did lots of refactoring. Added\n"
-"  new monitor commands and features. Improved the VIC emulation\n"
-"  for xvic. Made MIDI driver code for Win32. Rewrote the xvic\n"
-"  cartridge system. Added Mega-Cart and Final Expansion V3.2\n"
-"  support to xvic. Wrote large parts of the new VIC-II emulation\n"
-"  used in x64sc, especially the dot clock domain emulation. Wrote\n"
-"  many test programs for hardware analysis.\n"
-"\n"
 "  Groepaz <groepaz@gmx.net>\n"
 "  Added new more precise CRT emulation. Added support for the new\n"
 "  cartridge system and many new cartridges. Fixed up parts of\n"
 "  cartconv, c1541 and petcat. Added video to audio leak sound support.\n"
-"  Improved the GTK3 GUI. Added x64(sc)/x128/x64dtv/xplus4/xvic model\n"
+"  Improved the GTK3 GUI. Added x64(sc), x128, x64dtv, xplus4, xvic model\n"
 "  selection system. Added KoalaPad emulation. Added keyrah keymaps.\n"
 "  Added joystick keys mapping to the keymap system. CIA emulation\n"
 "  improvements. Added basic support for compute gazette sidplayer\n"
@@ -139,9 +117,6 @@ const char info_contrib_text[] =
 "  cartridge emulation. Added VICII VSP-bug emulation. Wrote alot of\n"
 "  test programs. Updated this document after a long period of\n"
 "  outdated mess. And various fixes and improvements.\n"
-"\n"
-"  Errol Smith <strobey@users.sourceforge.net>\n"
-"  Improved VDC emulation. Improved MPS803 printer emulation.\n"
 "\n"
 "  Olaf Seibert <rhialto@falu.nl>\n"
 "  Contributed some PET, including PET DWW hires, Xaw, lightpen,\n"
@@ -166,10 +141,6 @@ const char info_contrib_text[] =
 "  1540 drive emulation. Improved monitor support. Improved vdrive\n"
 "  compatibility. Added godot screenshot support. And fixed various issues.\n"
 "\n"
-"  BSzili <col.lawrence@gmail.com>\n"
-"  Provided many amigaos4 fixes. Maintains the amigaos based and derived\n"
-"  ports.\n"
-"\n"
 "  AreaScout <areascout@gmx.at>\n"
 "  Fixed the SDL2 port. Revived the Android port. Maintains the SDL1,\n"
 "  SDL2 and Android ports.\n"
@@ -179,11 +150,44 @@ const char info_contrib_text[] =
 "  leaks. Added more doxygen documentation. Fixed c1541 issues.\n"
 "  Updated the Linux-Native-Howto.txt file. Added autoconf, automake and\n"
 "  yasm version checking. Fixed runtime linker path issues with *BSD. Fixed\n"
-"  out-of-tree building.\n"
+"  out-of-tree building. One of the driving forces behind the 'native' GTK3\n"
+"  port.\n"
+"\n"
+"  Michael C. Martin <mcmartin@gmail.com>\n"
+"  One of the driving forces behind the 'native' GTK3 port.\n"
 "\n"
 "\n"
 "  Former/inactive team members:\n"
 "\n"
+"\n"
+"  BSzili <col.lawrence@gmail.com>\n"
+"  Provided many amigaos4 fixes. Maintained the amigaos based and derived\n"
+"  ports.\n"
+"\n"
+"  Errol Smith <strobey@users.sourceforge.net>\n"
+"  Improved VDC emulation. Improved MPS803 printer emulation.\n"
+"\n"
+"  Daniel Kahlin <daniel@kahlin.net>\n"
+"  Worked on DTV VIC emulation, palette, DTV SID support in resid,\n"
+"  better DMA/Blitter support and did lots of refactoring. Added\n"
+"  new monitor commands and features. Improved the VIC emulation\n"
+"  for xvic. Made MIDI driver code for Win32. Rewrote the xvic\n"
+"  cartridge system. Added Mega-Cart and Final Expansion V3.2\n"
+"  support to xvic. Wrote large parts of the new VIC-II emulation\n"
+"  used in x64sc, especially the dot clock domain emulation. Wrote\n"
+"  many test programs for hardware analysis.\n"
+"\n"
+"  Andreas Matthies <andreas.matthies@gmx.net>\n"
+"  Improved the datasette support, the VIC20 video emulation and\n"
+"  some UI stuff in the Win32 and DOS ports. He also wrote the\n"
+"  BeOS port and implemented video/audio capture support. Improved\n"
+"  history recording/playback and implemented support for video\n"
+"  recording and the netlink feature. Made the Win32 user\n"
+"  changable keyboard shortcut system. Improved CIA and VIA\n"
+"  emulation. Worked on x64sc, especially interrupt timing.\n"
+"  Improved the FFMPEG support and started the 'in-source'\n"
+"  FFMPEG support/merge. Wrote test programs. Various\n"
+"  bug(fixe)s. ;-)\n"
 "\n"
 "  Ulrich Schulz <peiselulli@t-online.de>\n"
 "  Maintains the Dingoo port(s).\n"
@@ -325,31 +329,31 @@ const char info_contrib_text[] =
 "\n"
 "\n"
 "  Mikkel Holm Olsen <vice-dk@symlink.dk>\n"
-"  Copyright (C) 2009-2016\n"
+"  Copyright (C) 2009-2017\n"
 "  Provided the Danish user interface translations and fixed a few monitor bugs.\n"
 "\n"
 "  Martin Pottendorfer <pottendo@gmx.net>\n"
-"  Copyright (C) 2000-2016\n"
+"  Copyright (C) 2000-2017\n"
 "  Provided the German user interface translations.\n"
 "\n"
 "  Manuel Antonio Rodriguez Bas <formater@winuaespanol.com>\n"
-"  Copyright (C) 2011-2016\n"
+"  Copyright (C) 2011-2017\n"
 "  Provided the Spanish user interface translations.\n"
 "\n"
 "  Paul Dubé \n"
-"  Copyright (C) 2004-2016\n"
+"  Copyright (C) 2004-2017\n"
 "  Provided the French user interface translations.\n"
 "\n"
 "  Czirkos Zoltan <cirix@fw.hu>\n"
-"  Copyright (C) 2006-2016\n"
+"  Copyright (C) 2006-2017\n"
 "  Provided the Hungarian user interface translations.\n"
 "\n"
 "  Karai Csaba <cskarai@freemail.hu>\n"
-"  Copyright (C) 2006-2016\n"
+"  Copyright (C) 2006-2017\n"
 "  Provided the Hungarian user interface translations.\n"
 "\n"
 "  Andrea Musuruane <musuruan@bmm.it>\n"
-"  Copyright (C) 2001-2016\n"
+"  Copyright (C) 2001-2017\n"
 "  Provided the Italian user interface translations.\n"
 "\n"
 "  Jesse Lee <interpreters.jesse@gmail.com>\n"
@@ -357,23 +361,23 @@ const char info_contrib_text[] =
 "  Provided the Korean user interface translations.\n"
 "\n"
 "  Marco van den Heuvel <blackystardust68@yahoo.com>\n"
-"  Copyright (C) 2005-2016\n"
+"  Copyright (C) 2005-2017\n"
 "  Provided the Dutch user interface translations.\n"
 "\n"
 "  Jarek Sobolewski <r@sledinmay.com>\n"
-"  Copyright (C) 2011-2016\n"
+"  Copyright (C) 2011-2017\n"
 "  Provided the Polish user interface translations.\n"
 "\n"
 "  Michael Litvinov <litvinov.m@i.ua>\n"
-"  Copyright (C) 2010-2016\n"
+"  Copyright (C) 2010-2017\n"
 "  Provided the Russian user interface translations.\n"
 "\n"
 "  Peter Krefting <peter@softwolves.pp.se>\n"
-"  Copyright (C) 2000-2016\n"
+"  Copyright (C) 2000-2017\n"
 "  Provided the Swedish user interface translations.\n"
 "\n"
 "  Emir Akaydin (aka: Skate) <emir@akaydin.com>\n"
-"  Copyright (C) 2008-2016\n"
+"  Copyright (C) 2008-2017\n"
 "  Provided the Turkish user interface translations.\n"
 "\n"
 "\n"
@@ -421,7 +425,7 @@ const char info_contrib_text[] =
 "  iAN CooG <iancoog@email.it>\n"
 "  Added win32 vsid GUI and contributed various patches.\n"
 "\n"
-"  Mike Dawson <mike@gp2x.org>Mike\n"
+"  Mike Dawson <mike@gp2x.org>\n"
 "  Provided the GP2X port.\n"
 "\n"
 "  Hans Deragon <hans@deragon.biz>\n"
@@ -573,8 +577,8 @@ const char info_contrib_text[] =
 "  Fixed some resource handling issues.\n"
 "\n"
 "  Robert McIntyre\n"
-"  Bugged people enough to get the improved g64 support rolling, \n"
-"  updated g64 support to allow variable-length tracks, and \n"
+"  Bugged people enough to get the improved g64 support rolling,\n"
+"  updated g64 support to allow variable-length tracks, and\n"
 "  performed initial development of half-track support.\n"
 "\n"
 "  Robert W. McMullen <rwmcm@orion.ae.utexas.edu>\n"
@@ -751,9 +755,12 @@ const char info_contrib_text[] =
 "  Count Zero <count0@pokefinder.org>\n"
 "  Fixed some monitor issues.\n"
 "\n"
+"  Bjoern Odendahl\n"
+"  Created the new VICE logo and volunteered to create new icons.\n"
+"\n"
 "\n"
 "  (We hope we have not forgotten anybody; if you think we have,\n"
-"   please tell us.)\n"
+"  please tell us.)\n"
 "\n"
 "  The people around the world providing results from running our\n"
 "  test programs on various machines deserve a special mention:\n"
@@ -792,30 +799,31 @@ const char info_contrib_text[] =
 "\n"
 "  Last but not least, a very special thank to Andreas Arens, Lutz\n"
 "  Sammer, Edgar Tornig, Christian Bauer, Wolfgang Lorenz, Miha\n"
-"  Peternel, Per Håkan Sundell and David Horrocks for writing\n"
-"  cool emulators to compete with.  :-)\n"
+"  Peternel, Per Håkan Sundell, David Horrocks, Benjamin Rosseaux and William McCabe\n"
+"  for writing cool emulators to compete with.  :-)\n"
 "\n"
 "\n";
 
 vice_team_t core_team[] = {
-    { "1999-2016", "Andreas Matthies", "Andreas Matthies <andreas.matthies@gmx.net>" },
-    { "1999-2016", "Martin Pottendorfer", "Martin Pottendorfer <pottendo@gmx.net>" },
-    { "2005-2016", "Marco van den Heuvel", "Marco van den Heuvel <blackystardust68@yahoo.com>" },
-    { "2007-2016", "Fabrizio Gennari", "Fabrizio Gennari <fabrizio.ge@tiscalinet.it>" },
-    { "2009-2016", "Groepaz", "Groepaz <groepaz@gmx.net>" },
-    { "2011-2016", "Marcus Sutton", "Marcus Sutton <loggedoubt@gmail.com>" },
-    { "2011-2016", "Kajtar Zsolt", "Kajtar Zsolt <soci@c64.rulez.org>" },
-    { "2011-2016", "Stefan Haubenthal", "Stefan Haubenthal <polluks@users.sourceforge.net>" },
-    { "2015-2016", "BSzili", "BSzili <col.lawrence@gmail.com>" },
-    { "2016-2016", "AreaScout", "AreaScout <areascout@gmx.at>" },
-    { "2016-2016", "Bas Wassink", "Bas Wassink <b.wassink@ziggo.nl>" },
+    { "2005-2018", "Marco van den Heuvel", "Marco van den Heuvel <blackystardust68@yahoo.com>" },
+    { "2007-2018", "Fabrizio Gennari", "Fabrizio Gennari <fabrizio.ge@tiscalinet.it>" },
+    { "2009-2018", "Groepaz", "Groepaz <groepaz@gmx.net>" },
+    { "2010-2018", "Olaf Seibert", "Olaf Seibert <rhialto@falu.nl>" },
+    { "2011-2018", "Marcus Sutton", "Marcus Sutton <loggedoubt@gmail.com>" },
+    { "2011-2018", "Kajtar Zsolt", "Kajtar Zsolt <soci@c64.rulez.org>" },
+    { "2016-2018", "AreaScout", "AreaScout <areascout@gmx.at>" },
+    { "2016-2018", "Bas Wassink", "Bas Wassink <b.wassink@ziggo.nl>" },
+    { "2017-2018", "Michael C. Martin", "Michael C. Martin <mcmartin@gmail.com>" },
     { NULL, NULL, NULL }
 };
 
 vice_team_t ex_team[] = {
+    { "1999-2017", "Martin Pottendorfer", "Martin Pottendorfer <pottendo@gmx.net>" },
+    { "2011-2016", "Stefan Haubenthal", "Stefan Haubenthal <polluks@users.sourceforge.net>" },
+    { "2015-2016", "BSzili", "BSzili <col.lawrence@gmail.com>" },
+    { "1999-2016", "Andreas Matthies", "Andreas Matthies <andreas.matthies@gmx.net>" },
     { "2007-2015", "Daniel Kahlin", "Daniel Kahlin <daniel@kahlin.net>" },
     { "2009-2015", "Errol Smith", "Errol Smith <strobey@users.sourceforge.net>" },
-    { "2010-2015", "Olaf Seibert", "Olaf Seibert <rhialto@falu.nl>" },
     { "2012-2014", "Benjamin 'BeRo' Rosseaux", "Benjamin 'BeRo' Rosseaux <benjamin@rosseaux.com>" },
     { "2011-2014", "Ulrich Schulz", "Ulrich Schulz <peiselulli@t-online.de>" },
     { "2011-2014", "Thomas Giesel", "Thomas Giesel <skoe@directbox.com>" },
@@ -841,23 +849,6 @@ vice_team_t ex_team[] = {
     { NULL, NULL, NULL }
 };
 
-vice_trans_t trans_team[] = {
-    { "2009-2016", "Mikkel Holm Olsen", "Danish", "Mikkel Holm Olsen <vice-dk@symlink.dk>" },
-    { "2000-2016", "Martin Pottendorfer", "German", "Martin Pottendorfer <pottendo@gmx.net>" },
-    { "2011-2016", "Manuel Antonio Rodriguez Bas", "Spanish", "Manuel Antonio Rodriguez Bas <formater@winuaespanol.com>" },
-    { "2004-2016", "Paul Dubé", "French", "Paul Dubé " },
-    { "2006-2016", "Czirkos Zoltan", "Hungarian", "Czirkos Zoltan <cirix@fw.hu>" },
-    { "2006-2016", "Karai Csaba", "Hungarian", "Karai Csaba <cskarai@freemail.hu>" },
-    { "2001-2016", "Andrea Musuruane", "Italian", "Andrea Musuruane <musuruan@bmm.it>" },
-    { "2011-2016", "Jesse Lee", "Korean", "Jesse Lee <interpreters.jesse@gmail.com>" },
-    { "2005-2016", "Marco van den Heuvel", "Dutch", "Marco van den Heuvel <blackystardust68@yahoo.com>" },
-    { "2011-2016", "Jarek Sobolewski", "Polish", "Jarek Sobolewski <r@sledinmay.com>" },
-    { "2010-2016", "Michael Litvinov", "Russian", "Michael Litvinov <litvinov.m@i.ua>" },
-    { "2000-2016", "Peter Krefting", "Swedish", "Peter Krefting <peter@softwolves.pp.se>" },
-    { "2008-2016", "Emir Akaydin", "Turkish", "Emir Akaydin (aka: Skate) <emir@akaydin.com>" },
-    { NULL, NULL, NULL, NULL }
-};
-
 char *doc_team[] = {
     "Daniel Kahlin",
     "Groepaz",
@@ -867,4 +858,20 @@ char *doc_team[] = {
     NULL
 };
 
+vice_trans_t trans_team[] = {
+    { "2009-2017", "Mikkel Holm Olsen", "Danish", "Mikkel Holm Olsen <vice-dk@symlink.dk>" },
+    { "2000-2017", "Martin Pottendorfer", "German", "Martin Pottendorfer <pottendo@gmx.net>" },
+    { "2011-2017", "Manuel Antonio Rodriguez Bas", "Spanish", "Manuel Antonio Rodriguez Bas <formater@winuaespanol.com>" },
+    { "2004-2017", "Paul Dubé", "French", "Paul Dubé " },
+    { "2006-2017", "Czirkos Zoltan", "Hungarian", "Czirkos Zoltan <cirix@fw.hu>" },
+    { "2006-2017", "Karai Csaba", "Hungarian", "Karai Csaba <cskarai@freemail.hu>" },
+    { "2001-2017", "Andrea Musuruane", "Italian", "Andrea Musuruane <musuruan@bmm.it>" },
+    { "2011-2016", "Jesse Lee", "Korean", "Jesse Lee <interpreters.jesse@gmail.com>" },
+    { "2005-2017", "Marco van den Heuvel", "Dutch", "Marco van den Heuvel <blackystardust68@yahoo.com>" },
+    { "2011-2017", "Jarek Sobolewski", "Polish", "Jarek Sobolewski <r@sledinmay.com>" },
+    { "2010-2017", "Michael Litvinov", "Russian", "Michael Litvinov <litvinov.m@i.ua>" },
+    { "2000-2017", "Peter Krefting", "Swedish", "Peter Krefting <peter@softwolves.pp.se>" },
+    { "2008-2017", "Emir Akaydin", "Turkish", "Emir Akaydin (aka: Skate) <emir@akaydin.com>" },
+    { NULL, NULL, NULL, NULL }
+};
 #endif

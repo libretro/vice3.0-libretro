@@ -31,6 +31,7 @@
 
 #include <stdio.h>
 
+#include "kbd.h"
 #include "resources.h"
 #include "types.h"
 #include "ui.h"
@@ -52,22 +53,23 @@
 #define STATUSBAR_DRIVE_POS         12
 #define STATUSBAR_DRIVE8_TRACK_POS  14
 #define STATUSBAR_DRIVE9_TRACK_POS  19
-#define STATUSBAR_DRIVE10_TRACK_POS 24
-#define STATUSBAR_DRIVE11_TRACK_POS 29
-#define STATUSBAR_TAPE_POS          33
+#define STATUSBAR_DRIVE10_TRACK_POS 25
+#define STATUSBAR_DRIVE11_TRACK_POS 31
+#define STATUSBAR_TAPE_POS          37
 
 static char statusbar_text[MAX_STATUSBAR_LEN] = "                                       ";
+static char kbdstatusbar_text[MAX_STATUSBAR_LEN] = "                                       ";
 
 static menufont_t *menufont = NULL;
 static int pitch;
 static int draw_offset;
 
-static inline void uistatusbar_putchar(BYTE c, int pos_x, int pos_y, BYTE color_f, BYTE color_b)
+static inline void uistatusbar_putchar(uint8_t c, int pos_x, int pos_y, uint8_t color_f, uint8_t color_b)
 {
     int x, y;
-    BYTE fontchar;
-    BYTE *font_pos;
-    BYTE *draw_pos;
+    uint8_t fontchar;
+    uint8_t *font_pos;
+    uint8_t *draw_pos;
 
     font_pos = &(menufont->font[menufont->translate[(int)c]]);
     draw_pos = &(sdl_active_canvas->draw_buffer->draw_buffer[pos_x * menufont->w + pos_y * menufont->h * pitch]);
@@ -113,7 +115,7 @@ static int paused = 0;
 static void display_speed(void)
 {
     int len;
-    char sep = paused ? ('P' | 0x80) : warp ? ('W' | 0x80) : '/';
+    unsigned char sep = paused ? ('P' | 0x80) : warp ? ('W' | 0x80) : '/';
 
     len = sprintf(&(statusbar_text[STATUSBAR_SPEED_POS]), "%3d%%%c%2dfps", per, sep, fps);
     statusbar_text[STATUSBAR_SPEED_POS + len] = ' ';
@@ -166,12 +168,37 @@ void ui_enable_drive_status(ui_drive_enable_t state, int *drive_led_color)
 {
     int drive_number;
     int drive_state = (int)state;
+    size_t offset;  /* offset in status text */
+    size_t size;    /* number of bytes to bleep out */
 
     for (drive_number = 0; drive_number < 4; ++drive_number) {
         if (drive_state & 1) {
             ui_display_drive_led(drive_number, 0, 0);
         } else {
-            statusbar_text[STATUSBAR_DRIVE_POS + drive_number] = ' ';
+            switch (drive_number) {
+                case 0:
+                    offset = STATUSBAR_DRIVE8_TRACK_POS - 2;
+                    size = 4;
+                    break;
+                case 1:
+                    offset = STATUSBAR_DRIVE9_TRACK_POS - 2;
+                    size = 4;
+                    break;
+                case 2:
+                    offset = STATUSBAR_DRIVE10_TRACK_POS - 3;
+                    size = 5;
+                    break;
+                case 3:
+                    offset = STATUSBAR_DRIVE11_TRACK_POS - 3;
+                    size = 5;
+                    break;
+                default:
+                    /* should never get here */
+                    offset = 0;
+                    size = 40;
+                    break;
+            }
+            memset(statusbar_text + offset, 0x20, size);    /* space out man */
         }
         drive_state >>= 1;
     }
@@ -217,15 +244,42 @@ void ui_display_drive_track(unsigned int drive_number, unsigned int drive_base, 
 /* The pwm value will vary between 0 and 1000.  */
 void ui_display_drive_led(int drive_number, unsigned int pwm1, unsigned int led_pwm2)
 {
-    char c;
+    int high;
+    int low;
+    int offset;
 
 #ifdef SDL_DEBUG
     fprintf(stderr, "%s: drive %i, pwm1 = %i, led_pwm2 = %u\n", __func__, drive_number, pwm1, led_pwm2);
 #endif
 
-    c = "8901"[drive_number] | ((pwm1 > 500) ? 0x80 : 0);
-    statusbar_text[STATUSBAR_DRIVE_POS + (drive_number * 5)] = c;
-    statusbar_text[STATUSBAR_DRIVE_POS + (drive_number * 5) + 1] = 'T';
+    low = "8901"[drive_number] | ((pwm1 > 500) ? 0x80 : 0);
+    high = '1' | ((pwm1 > 500) ? 0x80: 0);
+    switch (drive_number) {
+        case 0:
+            offset = STATUSBAR_DRIVE8_TRACK_POS - 2;
+            break;
+        case 1:
+            offset = STATUSBAR_DRIVE9_TRACK_POS - 2;
+            break;
+        case 2:
+            offset = STATUSBAR_DRIVE10_TRACK_POS - 3;
+            break;
+        case 3:
+            offset = STATUSBAR_DRIVE11_TRACK_POS - 3;
+            break;
+        default:
+            offset = 0;
+    }
+
+    if (drive_number < 2) {
+        statusbar_text[offset] = low;
+        statusbar_text[offset + 1] = 'T';
+    } else {
+        statusbar_text[offset] = high;
+        statusbar_text[offset + 1] = low;
+        statusbar_text[offset + 2] = 'T';
+    }
+
 
     if (uistatusbar_state & UISTATUSBAR_ACTIVE) {
         uistatusbar_state |= UISTATUSBAR_REPAINT;
@@ -301,7 +355,7 @@ void ui_display_event_time(unsigned int current, unsigned int total)
 }
 
 /* Joystick UI */
-void ui_display_joyport(BYTE *joyport)
+void ui_display_joyport(uint8_t *joyport)
 {
 #ifdef SDL_DEBUG
     fprintf(stderr, "%s: %02x %02x %02x %02x %02x\n", __func__, joyport[0], joyport[1], joyport[2], joyport[3], joyport[4]);
@@ -319,7 +373,7 @@ void ui_display_volume(int vol)
 /* ----------------------------------------------------------------- */
 /* resources */
 
-static int statusbar_enabled;
+static int statusbar_enabled, kbdstatusbar_enabled;
 
 static int set_statusbar(int val, void *param)
 {
@@ -334,9 +388,18 @@ static int set_statusbar(int val, void *param)
     return 0;
 }
 
+static int set_kbdstatusbar(int val, void *param)
+{
+    kbdstatusbar_enabled = val ? 1 : 0;
+
+    return 0;
+}
+
 static const resource_int_t resources_int[] = {
     { "SDLStatusbar", 0, RES_EVENT_NO, NULL,
       &statusbar_enabled, set_statusbar, NULL },
+    { "SDLKbdStatusbar", 0, RES_EVENT_NO, NULL,
+      &kbdstatusbar_enabled, set_kbdstatusbar, NULL },
     RESOURCE_INT_LIST_END
 };
 
@@ -364,10 +427,12 @@ void uistatusbar_close(void)
     uistatusbar_state = UISTATUSBAR_REPAINT;
 }
 
+#define KBDSTATUSENTRYLEN   15
+
 void uistatusbar_draw(void)
 {
     int i;
-    BYTE c, color_f, color_b;
+    uint8_t c, color_f, color_b;
     unsigned int line;
     menu_draw_t *limits = NULL;
     menufont = sdl_ui_get_menu_font();
@@ -375,8 +440,8 @@ void uistatusbar_draw(void)
     sdl_ui_init_draw_params();
     limits = sdl_ui_get_menu_param();
 
-    color_f = limits->color_front;
-    color_b = limits->color_back;
+    color_f = limits->color_default_front;
+    color_b = limits->color_default_back;
     pitch = limits->pitch;
 
     line = MIN(sdl_active_canvas->viewport->last_line, sdl_active_canvas->geometry->last_displayed_line);
@@ -385,6 +450,21 @@ void uistatusbar_draw(void)
                   + sdl_active_canvas->geometry->extra_offscreen_border_left
                   + sdl_active_canvas->viewport->first_x;
 
+    if (kbdstatusbar_enabled) {
+        for (i = 0; i < MAX_STATUSBAR_LEN; ++i) {
+            c = kbdstatusbar_text[i];
+
+            if (c == 0) {
+                break;
+            }
+
+            if (((i / KBDSTATUSENTRYLEN) & 1) == 1) {
+                uistatusbar_putchar(c, i, -1, color_b, color_f);
+            } else {
+                uistatusbar_putchar(c, i, -1, color_f, color_b);
+            }
+        }
+    }
 
     for (i = 0; i < MAX_STATUSBAR_LEN; ++i) {
         c = statusbar_text[i];
@@ -394,12 +474,28 @@ void uistatusbar_draw(void)
         }
 
         if (c & 0x80) {
-            uistatusbar_putchar((BYTE)(c & 0x7f), i, 0, color_b, color_f);
+            uistatusbar_putchar((uint8_t)(c & 0x7f), i, 0, color_b, color_f);
         } else {
             uistatusbar_putchar(c, i, 0, color_f, color_b);
         }
     }
 }
+
+void ui_display_kbd_status(SDL_Event *e)
+{
+    char *p = &kbdstatusbar_text[KBDSTATUSENTRYLEN * 2];
+
+    if (kbdstatusbar_enabled) {
+        memmove(kbdstatusbar_text, &kbdstatusbar_text[KBDSTATUSENTRYLEN], 40);
+        sprintf(p, "%c%03d>%03d %c%04x    ", 
+                (e->type == SDL_KEYUP) ? 'U' : 'D',
+                e->key.keysym.sym & 0xffff, 
+                SDL2x_to_SDL1x_Keys(e->key.keysym.sym),
+                ((e->key.keysym.sym & 0xffff0000) == 0x40000000) ? 'M' : ((e->key.keysym.sym & 0xffff0000) != 0x00000000) ? 'E' : ' ',
+                e->key.keysym.mod);
+    }
+}
+
 
 #ifdef ANDROID_COMPILE
 void loader_set_statusbar(int val)

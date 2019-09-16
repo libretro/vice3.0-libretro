@@ -1,0 +1,57 @@
+archdep_get_vice_datadir.o: archdep_get_vice_datadir.c \
+ ../../../src/vice.h ../../../src/config.h \
+ C:/msys64/mingw32/i686-w64-mingw32/include/stdlib.h \
+ C:/msys64/mingw32/i686-w64-mingw32/include/crtdefs.h \
+ C:/msys64/mingw32/i686-w64-mingw32/include/_mingw.h \
+ C:/msys64/mingw32/i686-w64-mingw32/include/_mingw_mac.h \
+ C:/msys64/mingw32/i686-w64-mingw32/include/_mingw_secapi.h \
+ C:/msys64/mingw32/i686-w64-mingw32/include/vadefs.h \
+ C:/msys64/mingw32/i686-w64-mingw32/include/sdks/_mingw_directx.h \
+ C:/msys64/mingw32/i686-w64-mingw32/include/sdks/_mingw_ddk.h \
+ C:/msys64/mingw32/lib/gcc/i686-w64-mingw32/7.3.0/include-fixed/limits.h \
+ C:/msys64/mingw32/lib/gcc/i686-w64-mingw32/7.3.0/include-fixed/syslimits.h \
+ C:/msys64/mingw32/i686-w64-mingw32/include/limits.h \
+ C:/msys64/mingw32/i686-w64-mingw32/include/sec_api/stdlib_s.h \
+ C:/msys64/mingw32/i686-w64-mingw32/include/malloc.h archdep_defs.h \
+ archdep_boot_path.h archdep_join_paths.h archdep_user_config_path.h \
+ archdep_get_vice_datadir.h
+
+../../../src/vice.h:
+
+../../../src/config.h:
+
+C:/msys64/mingw32/i686-w64-mingw32/include/stdlib.h:
+
+C:/msys64/mingw32/i686-w64-mingw32/include/crtdefs.h:
+
+C:/msys64/mingw32/i686-w64-mingw32/include/_mingw.h:
+
+C:/msys64/mingw32/i686-w64-mingw32/include/_mingw_mac.h:
+
+C:/msys64/mingw32/i686-w64-mingw32/include/_mingw_secapi.h:
+
+C:/msys64/mingw32/i686-w64-mingw32/include/vadefs.h:
+
+C:/msys64/mingw32/i686-w64-mingw32/include/sdks/_mingw_directx.h:
+
+C:/msys64/mingw32/i686-w64-mingw32/include/sdks/_mingw_ddk.h:
+
+C:/msys64/mingw32/lib/gcc/i686-w64-mingw32/7.3.0/include-fixed/limits.h:
+
+C:/msys64/mingw32/lib/gcc/i686-w64-mingw32/7.3.0/include-fixed/syslimits.h:
+
+C:/msys64/mingw32/i686-w64-mingw32/include/limits.h:
+
+C:/msys64/mingw32/i686-w64-mingw32/include/sec_api/stdlib_s.h:
+
+C:/msys64/mingw32/i686-w64-mingw32/include/malloc.h:
+
+archdep_defs.h:
+
+archdep_boot_path.h:
+
+archdep_join_paths.h:
+
+archdep_user_config_path.h:
+
+archdep_get_vice_datadir.h:

@@ -31,10 +31,6 @@
 
 #include "types.h"
 
-#ifndef COMMON_KBD
-#include "kbd.h"
-#endif
-
 /* Maximum of keyboard array (CBM-II values
  * (8 for C64/VIC20, 10 for PET, 11 for C128; we need max).  */
 #define KBD_ROWS    16
@@ -61,11 +57,12 @@
 #define KBD_MAPPING_UK    1     /* "uk" */
 #define KBD_MAPPING_DE    2     /* "de" */
 #define KBD_MAPPING_DA    3     /* "da" */
-#define KBD_MAPPING_NO    4     /* "no" */
-#define KBD_MAPPING_FI    5     /* "fi" */
-#define KBD_MAPPING_IT    6     /* "it" */
-#define KBD_MAPPING_LAST  6
-#define KBD_MAPPING_NUM   7
+#define KBD_MAPPING_NL    4     /* "nl" */
+#define KBD_MAPPING_NO    5     /* "no" */
+#define KBD_MAPPING_FI    6     /* "fi" */
+#define KBD_MAPPING_IT    7     /* "it" */
+#define KBD_MAPPING_LAST  7
+#define KBD_MAPPING_NUM   8
 extern int keyboard_get_num_mappings(void);
 
 /* mapping info for GUIs */
@@ -114,7 +111,6 @@ extern void keyboard_register_joy_keypad(key_joy_keypad_func_t func);
 typedef void (*keyboard_machine_func_t)(int *);
 extern void keyboard_register_machine(keyboard_machine_func_t func);
 
-extern void keyboard_register_machine(keyboard_machine_func_t func);
 extern void keyboard_alternative_set(int alternative);
 
 /* These ugly externs will go away sooner or later.  */
@@ -122,9 +118,7 @@ extern int keyarr[KBD_ROWS];
 extern int rev_keyarr[KBD_COLS];
 extern int keyboard_shiftlock;
 
-#ifdef COMMON_KBD
 extern int keyboard_resources_init(void);
 extern int keyboard_cmdline_options_init(void);
-#endif
 
 #endif

@@ -32,30 +32,24 @@
 #include "log.h"
 #include "machine.h"
 #include "main.h"
+#include "uimenu.h"
 
 #include "vice_sdl.h"
 
-#ifdef __XBOX__
-void XBoxStartup(void)
-{
-    int argc = 1;
-    char *argv[2];
-
-    argv[0] = "vice";
-    argv[1] = NULL;
-
-    main_program(argc, argv);
-}
-#else
 int main(int argc, char **argv)
 {
     return main_program(argc, argv);
 }
-#endif
 
 void main_exit(void)
 {
     log_message(LOG_DEFAULT, "\nExiting...");
+
+    /*
+     * Clean up dangling resources due to the 'Quit emu' callback not returning
+     * to the calling menu code.
+     */
+    sdl_ui_menu_shutdown();
 
     machine_shutdown();
 

@@ -123,7 +123,7 @@ static const ui_menu_entry_t shift_menu[] = {
 static void sdl_vkbd_key_press(int value, int shift)
 {
     int mr, mc, neg;
-    BYTE b, sb;
+    uint8_t b, sb;
 
     b = vkbd->keytable[vkbd_x + vkbd_y * vkbd_w];
 
@@ -163,7 +163,7 @@ static void sdl_vkbd_key_press(int value, int shift)
 static void sdl_vkbd_key_map(void)
 {
     int mr, mc, neg, i, j;
-    BYTE b;
+    uint8_t b;
     SDL_Event e;
     int unmap = 0;
     char keyname[10];
@@ -301,12 +301,16 @@ void sdl_vkbd_close(void)
 void sdl_vkbd_draw(void)
 {
     int i;
+    sdl_ui_set_active_font(MENU_FONT_MONITOR);
 
     for (i = 0; i < vkbd_h; ++i) {
         sdl_ui_print(vkbd->keyb[i], vkbd_pos_x, vkbd_pos_y + i);
     }
 
     sdl_ui_invert_char(vkbd_pos_x + vkbd_x, vkbd_pos_y + vkbd_y);
+    
+    sdl_ui_set_active_font(MENU_FONT_ASCII);
+    
 }
 
 int sdl_vkbd_process(ui_menu_action_t input)
@@ -374,22 +378,22 @@ int sdl_vkbd_process(ui_menu_action_t input)
 /* virtual keyboards */
 
 static const char *keyb_c64[] = {
-    "X \x1f 1234567890+-\x1ch del  F1",
-    "ctrl QWERTYUIOP@*\x1e rstr F3",
+    "X \x5f 1234567890+-\x5ch del  F1",
+    "ctrl QWERTYUIOP@*\x5e rstr F3",
     "r/s   ASDFGHJKL:;= rtrn F5",
     "c= sh  ZXCVBNM,./v> sh  F7",
     "        space             ",
     NULL
 };
 
-static const BYTE keytable_c64[] =
+static const uint8_t keytable_c64[] =
     "\xfe\xff\x71\xff\x70\x73\x10\x13\x20\x23\x30\x33\x40\x43\x50\x53\x60\x63\xff\x00\x00\x00\xff\xff\x04\x04"
     "\x72\x72\x72\x72\xff\x76\x11\x16\x21\x26\x31\x36\x41\x46\x51\x56\x61\x66\xff\x38\x38\x38\x38\xff\x05\x05"
     "\x77\x77\x77\xff\xff\xff\x12\x15\x22\x25\x32\x35\x42\x45\x52\x55\x62\x65\xff\x01\x01\x01\x01\xff\x06\x06"
     "\x75\x75\xff\x17\x17\xff\xff\x14\x27\x24\x37\x34\x47\x44\x57\x54\x67\x07\x02\xff\x64\x64\xff\xff\x03\x03"
     "\xff\xff\xff\xff\xff\xff\xff\xff\x74\x74\x74\x74\x74\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff";
 
-static const BYTE keytable_vic20[] =
+static const uint8_t keytable_vic20[] =
     "\xfe\xff\x01\xff\x00\x07\x10\x17\x20\x27\x30\x37\x40\x47\x50\x57\x60\x67\xff\x70\x70\x70\xff\xff\x74\x74"
     "\x02\x02\x02\x02\xff\x06\x11\x16\x21\x26\x31\x36\x41\x46\x51\x56\x61\x66\xff\x38\x38\x38\x38\xff\x75\x75"
     "\x03\x03\x03\xff\xff\xff\x12\x15\x22\x25\x32\x35\x42\x45\x52\x55\x62\x65\xff\x71\x71\x71\x71\xff\x76\x76"
@@ -409,15 +413,15 @@ vkbd_t vkbd_vic20 = {
 };
 
 static const char *keyb_c64dtv[] = {
-    "X \x1f 1234567890+-\x1ch del  F1",
-    "ctrl QWERTYUIOP@*\x1e rstr F3",
+    "X \x5f 1234567890+-\x5ch del  F1",
+    "ctrl QWERTYUIOP@*\x5e rstr F3",
     "r/s   ASDFGHJKL:;= rtrn F5",
     "c= sh  ZXCVBNM,./v> sh  F7",
     "        space      ABCD R ",
     NULL
 };
 
-static const BYTE keytable_c64dtv[] =
+static const uint8_t keytable_c64dtv[] =
     "\xfe\xff\x71\xff\x70\x73\x10\x13\x20\x23\x30\x33\x40\x43\x50\x53\x60\x63\xff\x00\x00\x00\xff\xff\x04\x04"
     "\x72\x72\x72\x72\xff\x76\x11\x16\x21\x26\x31\x36\x41\x46\x51\x56\x61\x66\xff\x38\x38\x38\x38\xff\x05\x05"
     "\x77\x77\x77\xff\xff\xff\x12\x15\x22\x25\x32\x35\x42\x45\x52\x55\x62\x65\xff\x01\x01\x01\x01\xff\x06\x06"
@@ -431,16 +435,16 @@ vkbd_t vkbd_c64dtv = {
 };
 
 static const char *keyb_c128[] = {
-    "X etac hldn \x1ev<> f1 f3 f5 f7",
-    "  \x1f 1234567890+-\x1ch  del 789+",
-    "ctrl QWERTYUIOP@*\x1e rstr 456-",
+    "X etac hldn \x5ev<> f1 f3 f5 f7",
+    "  \x5f 1234567890+-\x5ch  del 789+",
+    "ctrl QWERTYUIOP@*\x5e rstr 456-",
     "r/s   ASDFGHJKL:;= rtrn 123e",
     "c= sh  ZXCVBNM,./v> sh  0 .e",
     "         space              ",
     NULL
 };
 
-static const BYTE keytable_c128[] =
+static const uint8_t keytable_c128[] =
     "\xfe\xff\x90\x83\xa0\x49\xff\x80\x93\x48\xa7\xff\xa3\xa4\xa5\xa6\xff\x04\x04\xff\x05\x05\xff\x06\x06\xff\x03\x03"
     "\xff\xff\x71\xff\x70\x73\x10\x13\x20\x23\x30\x33\x40\x43\x50\x53\x60\x63\xff\xff\x00\x00\x00\xff\x86\x81\x96\x91"
     "\x72\x72\x72\x72\xff\x76\x11\x16\x21\x26\x31\x36\x41\x46\x51\x56\x61\x66\xff\x38\x38\x38\x38\xff\x85\x82\x95\x92"
@@ -457,14 +461,14 @@ vkbd_t vkbd_c128 = {
 static const char *keyb_plus4[] = {
     "X  F1 F2 F3 Help       ",
     "esc 1234567890+-=h  del",
-    "ctrl QWERTYUIOP@\x1c* ctrl",
+    "ctrl QWERTYUIOP@\x5c* ctrl",
     "rs sh ASDFGHJKL:; rtrn ",
-    "c=  sh ZXCVBNM,./ sh \x1e ",
-    "         space      \x1fv>",
+    "c=  sh ZXCVBNM,./ sh \x5e ",
+    "         space      \x5fv>",
     NULL
 };
 
-static const BYTE keytable_plus4[] =
+static const uint8_t keytable_plus4[] =
     "\xfe\xff\xff\x04\x04\xff\x05\x05\xff\x06\x06\xff\x03\x03\x03\x03\xff\xff\xff\xff\xff\xff\xff"
     "\x64\x64\x64\xff\x70\x73\x10\x13\x20\x23\x30\x33\x40\x43\x66\x56\x65\x71\xff\xff\x00\x00\x00"
     "\x72\x72\x72\x72\xff\x76\x11\x16\x21\x26\x31\x36\x41\x46\x51\x07\x02\x61\xff\x72\x72\x72\x72"
@@ -479,8 +483,8 @@ vkbd_t vkbd_plus4 = {
 };
 
 static const char *keyb_cbm2[] = {
-    "X f1234567890 v\x1e<> conr/s",
-    "esc 1234567890-=\x1ci/d ?c*/",
+    "X f1234567890 v\x5e<> conr/s",
+    "esc 1234567890-=\x5ci/d ?c*/",
     "tab  QWERTYUIOP()rtn 789-",
     "shift ASDFGHJKL;'_rt 456+",
     " shift ZXCVBNM,./sc= 123e",
@@ -488,7 +492,7 @@ static const char *keyb_cbm2[] = {
     NULL
 };
 
-static const BYTE keytable_cbm2[] =
+static const uint8_t keytable_cbm2[] =
     "\xfe\xff\x80\x80\x90\xa0\xb0\xc0\xd0\xe0\xf0\x00\x10\xff\x20\x30\x31\x32\xff\x40\x50\x60\x70\x70\x70"
     "\x70\x70\x70\xff\x91\xa1\xb1\xc1\xd1\xd2\xe1\xf1\x01\x11\x12\x21\x22\x33\x33\x33\xff\x41\x51\x61\x71"
     "\x82\x82\x82\xff\xff\x92\xa2\xb2\xc2\xc3\xd3\xe2\xf2\x02\x13\x14\x23\x24\x24\x24\xff\x42\x52\x62\x72"
@@ -505,15 +509,15 @@ vkbd_t vkbd_cbm2 = {
 /* FIXME: support all PET keyboards (see pet-resources.h) */
 
 static const char *keyb_pet_uk[] = {
-    "X \x1f 1234567890:-\x1e> r/s  789",
-    "tab QWERTYUIOP\x1b\\v del   456",
-    "esc ASDFGHJKL;@\x1d  rtrn  123",
+    "X \x5f 1234567890:-\x5e> r/s  789",
+    "tab QWERTYUIOP\x5b\\v del   456",
+    "esc ASDFGHJKL;@\x5d  rtrn  123",
     "rvs sh ZXCVBNM,./ sh rh 0 .",
     "        space              ",
     NULL
 };
 
-static const BYTE keytable_pet_uk[] =
+static const uint8_t keytable_pet_uk[] =
     "\xfe\xff\x90\xff\x10\x00\x91\x11\x01\x92\x12\x02\x93\x13\x95\x03\x15\x05\xff\x20\x20\x20\xff\xff\x14\x04\x17"
     "\x40\x40\x40\xff\x50\x41\x51\x42\x52\x43\x53\x45\x55\x46\x56\x44\x54\xff\x47\x47\x47\xff\xff\xff\x57\x27\x37"
     "\x20\x20\x20\xff\x30\x21\x31\x22\x32\x23\x33\x25\x35\x26\x36\x24\xff\xff\x34\x34\x34\x34\xff\xff\x87\x77\x67"
@@ -527,15 +531,15 @@ vkbd_t vkbd_pet_uk = {
 };
 
 static const char *keyb_pet_gr[] = {
-    "X   @!\"#$%'&\\()\x1f[]    hv<i",
-    "rvs QWERTYUIOP\x1e<>     789/",
+    "X   @!\"#$%'&\\()\x5f[]    hv<i",
+    "rvs QWERTYUIOP\x5e<>     789/",
     "    ASDFGHJKL: rs rtn 456*",
     " sh ZXCVBNM,;? sh     123+",
     "        space         0.-=",
     NULL
 };
 
-static const BYTE keytable_pet_gr[] =
+static const uint8_t keytable_pet_gr[] =
     "\xfe\xff\xff\xff\x81\x00\x10\x01\x11\x02\x12\x03\x13\x04\x14\x05\x91\x82\xff\xff\xff\xff\x06\x16\x07\x18"
     "\x90\x90\x90\xff\x20\x30\x21\x31\x22\x32\x23\x33\x24\x34\x25\x93\x84\xff\xff\xff\xff\xff\x26\x36\x27\x37"
     "\xff\xff\xff\xff\x40\x50\x41\x51\x42\x52\x43\x53\x44\x54\xff\x94\x94\xff\x65\x65\x65\xff\x46\x56\x47\xff"

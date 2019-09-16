@@ -27,6 +27,8 @@
 
 #include "vice.h"
 
+#include "c64acia.h"
+
 #define mycpu           maincpu
 #define myclk           maincpu_clk
 #define mycpu_rmw_flag  maincpu_rmw_flag
@@ -40,6 +42,17 @@
 #define MyIrq           IK_IRQ
 
 #define myaciadev       acia1dev
+
+#if 0
+void acia1_init(void);
+void acia1_reset(void);
+int acia1_resources_init(void);
+int acia1_cmdline_options_init(void);
+int acia1_snapshot_write_module(struct snapshot_s *);
+int acia1_snapshot_read_module(struct snapshot_s *);
+void acia1_store
+#endif
+
 
 #define myacia_init acia1_init
 #define myacia_init_cmdline_options acia1_cmdline_options_init
@@ -90,9 +103,10 @@ static char *acia_base_list = NULL;
 /* ------------------------------------------------------------------------- */
 
 #if defined(HAVE_RS232DEV) || defined(HAVE_RS232NET)
-/* a prototype is needed */
-static BYTE aciacart_read(WORD addr);
-static BYTE aciacart_peek(WORD addr);
+
+/* a prototype is needed (not anymore) */
+uint8_t aciacart_read(uint16_t addr);
+uint8_t aciacart_peek(uint16_t addr);
 
 static io_source_t acia_device = {
     CARTRIDGE_NAME_ACIA,
@@ -310,7 +324,7 @@ void aciacart_resources_shutdown(void)
 /* ------------------------------------------------------------------------- */
 
 #if defined(HAVE_RS232DEV) || defined(HAVE_RS232NET)
-static BYTE aciacart_read(WORD addr)
+uint8_t aciacart_read(uint16_t addr)
 {
     acia_device.io_source_valid = 0;
     if (acia.mode == ACIA_MODE_TURBO232 && (addr & 7 ) > 3 && (addr & 7) != 7) {
@@ -320,7 +334,7 @@ static BYTE aciacart_read(WORD addr)
     return myacia_read(addr);
 }
 
-static BYTE aciacart_peek(WORD addr)
+uint8_t aciacart_peek(uint16_t addr)
 {
     if (acia.mode == ACIA_MODE_TURBO232 && (addr & 7 ) > 3 && (addr & 7) != 7) {
         return 0;
@@ -346,14 +360,10 @@ static const cmdline_option_t cart_cmdline_options[] =
 {
     { "-acia1irq", SET_RESOURCE, 1,
       NULL, NULL, "Acia1Irq", NULL,
-      USE_PARAM_ID, USE_DESCRIPTION_ID,
-      IDCLS_P_IRQ, IDCLS_SET_ACIA_IRQ,
-      NULL, NULL },
+      "<interrupt>", "Set the ACIA interrupt (0: None, 1: NMI, 2: IRQ)" },
     { "-acia1mode", SET_RESOURCE, 1,
       NULL, NULL, "Acia1Mode", NULL,
-      USE_PARAM_ID, USE_DESCRIPTION_ID,
-      IDCLS_P_MODE, IDCLS_SET_ACIA_MODE,
-      NULL, NULL },
+      "<Mode>", "Set the ACIA mode (0: Normal, 1: Swiftlink, 2: Turbo232)" },
     CMDLINE_LIST_END
 };
 
@@ -361,9 +371,7 @@ static cmdline_option_t base_cmdline_options[] =
 {
     { "-acia1base", SET_RESOURCE, 1,
       NULL, NULL, "Acia1Base", NULL,
-      USE_PARAM_ID, USE_DESCRIPTION_COMBO,
-      IDCLS_P_BASE_ADDRESS, IDCLS_SET_ACIA_BASE,
-      NULL, NULL },
+      "<Base address>", NULL },
     CMDLINE_LIST_END
 };
 #endif
@@ -372,11 +380,11 @@ int aciacart_cmdline_options_init(void)
 {
 #if defined(HAVE_RS232DEV) || defined(HAVE_RS232NET)
     if (machine_class == VICE_MACHINE_C128) {
-        acia_base_list = lib_stralloc(". (0xD700, 0xDE00, 0xDF00)");
+        acia_base_list = lib_stralloc("Set the base address of the ACIA cartridge. (0xD700, 0xDE00, 0xDF00)");
     } else if (machine_class == VICE_MACHINE_VIC20) {
-        acia_base_list = lib_stralloc(". (0x9800, 0x9C00)");
+        acia_base_list = lib_stralloc("Set the base address of the ACIA cartridge. (0x9800, 0x9C00)");
     } else {
-        acia_base_list = lib_stralloc(". (0xDE00, 0xDF00)");
+        acia_base_list = lib_stralloc("Set the base address of the ACIA cartridge. (0xDE00, 0xDF00)");
     }
 
     base_cmdline_options[0].description = acia_base_list;
@@ -410,6 +418,17 @@ int aciacart_enable(void)
     return 0;
 #endif
 }
+
+
+int aciacart_disable(void)
+{
+#if defined(HAVE_RS232DEV) || defined(HAVE_RS232NET)
+    return set_acia_enabled(0, NULL);
+#else
+    return 0;
+#endif
+}
+
 
 /* ------------------------------------------------------------------------- */
 

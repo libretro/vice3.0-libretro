@@ -29,11 +29,11 @@
 #ifdef HAVE_DYNLIB_SUPPORT
 
 #ifdef UNIX_COMPILE
-#include "../unix/dynlib.c"
+#include "dynlib-unix.c"
 #endif
 
-#if defined(WIN32_COMPILE) && !defined(__XBOX__)
-#include "../win32/dynlib.c"
+#ifdef WIN32_COMPILE
+#include "dynlib-win32.c"
 #endif
 
 #endif

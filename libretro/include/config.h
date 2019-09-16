@@ -33,11 +33,6 @@
 
 #endif
 
-#if defined(PSP)
-   #error "This platform is not currently supported."
-
-#endif
-
 #if defined(N3DS)
    #error "This platform is not currently supported."
 

@@ -35,7 +35,7 @@
 #include "vsyncapi.h"
 
 int mouse_x, mouse_y;
-int mouse_accelx = 2, mouse_accely = 2;
+int mouse_accelx = 1, mouse_accely = 1;
 static unsigned long mouse_timestamp = 0;
 
 void mousedrv_mouse_changed(void)

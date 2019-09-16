@@ -1,0 +1,5 @@
+cbm2embedded.o: cbm2embedded.c ../../src/vice.h ../../src/config.h
+
+../../src/vice.h:
+
+../../src/config.h:

@@ -5,17 +5,11 @@ docdir = $(realdocdir)
 
 BUILDING_DOX = \
 	Android-Howto.txt \
-	Linux-Mingw32-Howto.txt \
-	Linux-Native-Howto.txt \
-	MacOSX-Howto.txt \
-	Minix-Howto.txt \
-	MSDOS-Howto.txt \
-	MSDOS-Ethernet-Howto.txt \
-	OpenVMS-Howto.txt \
-	OpenWatcom-Howto.txt \
 	SDL-Howto.txt \
-	Win32-MSVC-Howto.txt \
-	Win32-Cygwin-Howto.txt \
-	Win32-Mingw32-Howto.txt
+	Windows-MinGW-GTK3-Howto.txt \
+	FreeBSD-GTK3-Howto.txt \
+	GTK3-macOS.txt \
+	Linux-GTK3-Howto.txt \
+	NetBSD-howto.txt
 
 dist_doc_DATA = $(BUILDING_DOX)

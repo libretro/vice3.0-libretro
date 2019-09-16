@@ -176,7 +176,7 @@ void uikeyboard_menu_create(void)
     entry = keyboard_mapping_submenu = lib_malloc(sizeof(ui_menu_entry_t) * (num + 1));
     while(num) {
         ui_keyboard_mapping_entry.string = kbdlist->name;
-        ui_keyboard_mapping_entry.data = (ui_callback_data_t)(unsigned long)kbdlist->mapping;
+        ui_keyboard_mapping_entry.data = (ui_callback_data_t)(int_to_void_ptr(kbdlist->mapping));
         memcpy(entry, &ui_keyboard_mapping_entry, sizeof(ui_menu_entry_t));
         entry++;
         kbdlist++;
@@ -196,6 +196,10 @@ void uikeyboard_menu_shutdown(void)
 
 static UI_MENU_CALLBACK(load_sym_keymap_callback)
 {
+    /* temporary fix until I find out what 'keymap' is supposed to be */
+#ifdef SDL_DEBUG
+    int keymap = -1;
+#endif
     if (activated) {
         char *name = NULL;
 
@@ -217,6 +221,11 @@ static UI_MENU_CALLBACK(load_sym_keymap_callback)
 
 static UI_MENU_CALLBACK(load_pos_keymap_callback)
 {
+    /* temporary fix until I find out what 'keymap' is supposed to be */
+#ifdef SDL_DEBUG
+    int keymap = -1;
+#endif
+
     if (activated) {
         char *name = NULL;
 
@@ -405,7 +414,7 @@ static UI_MENU_CALLBACK(custom_ui_keyset_callback)
             resources_set_int((const char *)param, (int)SDL2x_to_SDL1x_Keys(e.key.keysym.sym));
         }
     } else {
-        return SDL_GetKeyName(previous);
+        return SDL_GetKeyName(SDL1x_to_SDL2x_Keys(previous));
     }
     return NULL;
 }
@@ -431,6 +440,22 @@ static const ui_menu_entry_t define_ui_keyset_menu[] = {
       MENU_ENTRY_DIALOG,
       custom_ui_keyset_callback,
       (ui_callback_data_t)"MenuKeyRight" },
+    { "Menu page up",
+      MENU_ENTRY_DIALOG,
+      custom_ui_keyset_callback,
+      (ui_callback_data_t)"MenuKeyPageUp" },
+    { "Menu page down",
+      MENU_ENTRY_DIALOG,
+      custom_ui_keyset_callback,
+      (ui_callback_data_t)"MenuKeyPageDown" },
+    { "Menu home",
+      MENU_ENTRY_DIALOG,
+      custom_ui_keyset_callback,
+      (ui_callback_data_t)"MenuKeyHome" },
+    { "Menu end",
+      MENU_ENTRY_DIALOG,
+      custom_ui_keyset_callback,
+      (ui_callback_data_t)"MenuKeyEnd" },
     { "Menu select",
       MENU_ENTRY_DIALOG,
       custom_ui_keyset_callback,
@@ -449,6 +474,8 @@ static const ui_menu_entry_t define_ui_keyset_menu[] = {
       (ui_callback_data_t)"MenuKeyMap" },
     SDL_MENU_LIST_END
 };
+
+UI_MENU_DEFINE_TOGGLE(SDLKbdStatusbar)
 
 ui_menu_entry_t settings_manager_menu[] = {
     { "Save current settings",
@@ -497,6 +524,10 @@ ui_menu_entry_t settings_manager_menu[] = {
     { "Load positional user keymap",
       MENU_ENTRY_OTHER,
       load_pos_keymap_callback,
+      NULL },
+    { "Show keyboard status in statusbar",
+      MENU_ENTRY_RESOURCE_TOGGLE,
+      toggle_SDLKbdStatusbar_callback,
       NULL },
     { "Save current keymap to",
       MENU_ENTRY_OTHER,

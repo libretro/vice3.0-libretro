@@ -28,6 +28,7 @@
 #include "avio_internal.h"
 #include "url.h"
 #include "rtpdec.h"
+
 #if HAVE_POLL_H
 #include <poll.h>
 #endif
@@ -227,16 +228,6 @@ static int sap_fetch_packet(AVFormatContext *s, AVPacket *pkt)
 }
 
 AVInputFormat ff_sap_demuxer = {
-#ifdef IDE_COMPILE
-    "sap",
-    "SAP input",
-    AVFMT_NOFILE,
-    0, 0, 0, 0, 0, 0, sizeof(struct SAPState),
-    sap_probe,
-    sap_read_header,
-    sap_fetch_packet,
-    sap_read_close,
-#else
 	.name           = "sap",
     .long_name      = NULL_IF_CONFIG_SMALL("SAP input"),
     .priv_data_size = sizeof(struct SAPState),
@@ -245,5 +236,4 @@ AVInputFormat ff_sap_demuxer = {
     .read_packet    = sap_fetch_packet,
     .read_close     = sap_read_close,
     .flags          = AVFMT_NOFILE,
-#endif
 };

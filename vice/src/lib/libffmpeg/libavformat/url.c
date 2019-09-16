@@ -30,6 +30,7 @@
 #endif
 
 #include "url.h"
+
 #if CONFIG_NETWORK
 #include "network.h"
 #endif

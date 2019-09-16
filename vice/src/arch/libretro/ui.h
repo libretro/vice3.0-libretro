@@ -20,5 +20,8 @@ extern void ui_dispatch_next_event(void);
 extern void ui_dispatch_events(void);
 extern void ui_error_string(const char *text);
 extern void ui_check_mouse_cursor(void);
+
+int  ui_emulation_is_paused(void);
+void ui_pause_emulation(int flag);
 #endif
 

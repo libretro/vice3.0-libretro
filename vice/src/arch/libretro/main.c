@@ -7,8 +7,7 @@
 
 int skel_main(int argc, char *argv[])
 {
-   main_program(argc, argv);
-   return(0);
+   return main_program(argc, argv);
 }
 
 void vice_main_exit()

@@ -1,0 +1,5 @@
+embedded.o: embedded.c vice.h config.h
+
+vice.h:
+
+config.h:

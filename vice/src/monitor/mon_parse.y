@@ -30,7 +30,7 @@
 
 #include "vice.h"
 
-#if !defined(__minix_vmd) && !defined(MACOS_COMPILE)
+#if !defined(MACOS_COMPILE) && !(defined(__OS2__) && defined(IDE_COMPILE))
 #ifdef __GNUC__
 #undef alloca
 #ifndef ANDROID_COMPILE
@@ -49,7 +49,7 @@ extern char *alloca();
 #endif /* Not AIX and not WINCE.  */
 #endif /* HAVE_ALLOCA_H.  */
 #endif /* GCC.  */
-#endif /* MINIXVMD */
+#endif /* MACOS OS2 */
 
 /* SunOS 4.x specific stuff */
 #if defined(sun) || defined(__sun)
@@ -83,6 +83,9 @@ extern char *alloca();
 #include "types.h"
 #include "uimon.h"
 
+#ifdef AMIGA_MORPHOS
+#undef REG_PC
+#endif
 
 #define join_ints(x,y) (LO16_TO_HI16(x)|y)
 #define separate_int1(x) (HI16_TO_LO16(x))
@@ -162,7 +165,7 @@ extern int cur_len, last_len;
 %token CMD_ATTACH CMD_DETACH CMD_MON_RESET CMD_TAPECTRL CMD_CARTFREEZE
 %token CMD_CPUHISTORY CMD_MEMMAPZAP CMD_MEMMAPSHOW CMD_MEMMAPSAVE
 %token CMD_COMMENT CMD_LIST CMD_STOPWATCH RESET
-%token CMD_EXPORT CMD_AUTOSTART CMD_AUTOLOAD
+%token CMD_EXPORT CMD_AUTOSTART CMD_AUTOLOAD CMD_MAINCPU_TRACE
 %token<str> CMD_LABEL_ASGN
 %token<i> L_PAREN R_PAREN ARG_IMMEDIATE REG_A REG_X REG_Y COMMA INST_SEP
 %token<i> L_BRACKET R_BRACKET LESS_THAN REG_U REG_S REG_PC REG_PCR
@@ -475,6 +478,8 @@ monitor_state_rules: CMD_SIDEFX TOGGLE end_cmd
                      { mon_quit(); YYACCEPT; }
                    | CMD_EXIT end_cmd
                      { mon_exit(); YYACCEPT; }
+                   | CMD_MAINCPU_TRACE TOGGLE end_cmd
+                     { mon_maincpu_toggle_trace($2); }
                    ;
 
 monitor_misc_rules: CMD_DISK rest_of_line end_cmd
@@ -625,7 +630,7 @@ reg_list: reg_list COMMA reg_asgn
         ;
 
 reg_asgn: register EQUALS number
-          { (monitor_cpu_for_memspace[reg_memspace($1)]->mon_register_set_val)(reg_memspace($1), reg_regid($1), (WORD) $3); }
+          { (monitor_cpu_for_memspace[reg_memspace($1)]->mon_register_set_val)(reg_memspace($1), reg_regid($1), (uint16_t) $3); }
         ;
 
 checkpt_num: d_number { $$ = $1; }
@@ -712,15 +717,21 @@ cond_expr: cond_expr COMPARE_OP cond_expr
 compare_operand: register { $$ = new_cond;
                             $$->operation = e_INV;
                             $$->is_parenthized = FALSE;
-                            $$->reg_num = $1; $$->is_reg = TRUE;
+                            $$->reg_num = $1; $$->is_reg = TRUE; $$->banknum=-1;
                             $$->child1 = NULL; $$->child2 = NULL;
                           }
                | number   { $$ = new_cond;
                             $$->operation = e_INV;
                             $$->is_parenthized = FALSE;
-                            $$->value = $1; $$->is_reg = FALSE;
+                            $$->value = $1; $$->is_reg = FALSE; $$->banknum=-1;
                             $$->child1 = NULL; $$->child2 = NULL;
                           }
+               |  '@' BANKNAME ':' address {$$=new_cond;
+                            $$->operation=e_INV;
+                            $$->is_parenthized = FALSE;
+                            $$->banknum=mon_banknum_from_bank(e_default_space,$2); $$->value = $4; $$->is_reg = FALSE;
+                            $$->child1 = NULL; $$->child2 = NULL;  
+                        }                        
                ;
 
 data_list: data_list opt_sep data_element
@@ -1192,5 +1203,3 @@ static int resolve_range(enum t_memspace memspace, MON_ADDR range[2],
     range[0] = new_addr(memspace, sa);
     return 0;
 }
-
-

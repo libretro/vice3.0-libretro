@@ -53,6 +53,7 @@
 #include "menu_speed.h"
 #include "psid.h"
 #include "ui.h"
+#include "uifonts.h"
 #include "uifilereq.h"
 #include "uimenu.h"
 #include "videoarch.h"
@@ -111,9 +112,10 @@ static UI_MENU_CALLBACK(load_psid_callback)
     return NULL;
 }
 
-#define SDLUI_VSID_CMD_MASK 0x8000
-#define SDLUI_VSID_CMD_NEXT 0x8001
-#define SDLUI_VSID_CMD_PREV 0x8002
+#define SDLUI_VSID_CMD_MASK     0x8000
+#define SDLUI_VSID_CMD_NEXT     0x8001
+#define SDLUI_VSID_CMD_PREV     0x8002
+#define SDLUI_VSID_CMD_DEFAULT  0x8003
 
 static UI_MENU_CALLBACK(vsidui_tune_callback)
 {
@@ -126,6 +128,8 @@ static UI_MENU_CALLBACK(vsidui_tune_callback)
             ++tune;
         } else if (command_or_tune == SDLUI_VSID_CMD_PREV) {
             --tune;
+        } else if (command_or_tune == SDLUI_VSID_CMD_DEFAULT) {
+            tune = sdl_vsid_default_tune;
         } else {
             tune = command_or_tune;
         }
@@ -142,7 +146,7 @@ static UI_MENU_CALLBACK(vsidui_tune_callback)
         if (command_or_tune == sdl_vsid_current_tune) {
             return sdl_menu_text_tick;
         } else if (command_or_tune > sdl_vsid_tunes && !(command_or_tune & SDLUI_VSID_CMD_MASK)) {
-            return "(N/A)";
+            return MENU_NOT_AVAILABLE_STRING;
         }
     }
     return NULL;
@@ -150,97 +154,99 @@ static UI_MENU_CALLBACK(vsidui_tune_callback)
 
 /* This menu is static so hotkeys can be assigned.
    Only 23 tunes are listed, which is hopefully enough for most cases. */
+
+/* FIXME: still generate this menu at runtime, there ARE .sid files with 256 tunes! */
 static const ui_menu_entry_t vsid_tune_menu[] = {
     { "Tune 1",
-      MENU_ENTRY_OTHER,
+      MENU_ENTRY_OTHER_TOGGLE,
       vsidui_tune_callback,
       (ui_callback_data_t)1 },
     { "Tune 2",
-      MENU_ENTRY_OTHER,
+      MENU_ENTRY_OTHER_TOGGLE,
       vsidui_tune_callback,
       (ui_callback_data_t)2 },
     { "Tune 3",
-      MENU_ENTRY_OTHER,
+      MENU_ENTRY_OTHER_TOGGLE,
       vsidui_tune_callback,
       (ui_callback_data_t)3 },
     { "Tune 4",
-      MENU_ENTRY_OTHER,
+      MENU_ENTRY_OTHER_TOGGLE,
       vsidui_tune_callback,
       (ui_callback_data_t)4 },
     { "Tune 5",
-      MENU_ENTRY_OTHER,
+      MENU_ENTRY_OTHER_TOGGLE,
       vsidui_tune_callback,
       (ui_callback_data_t)5 },
     { "Tune 6",
-      MENU_ENTRY_OTHER,
+      MENU_ENTRY_OTHER_TOGGLE,
       vsidui_tune_callback,
       (ui_callback_data_t)6 },
     { "Tune 7",
-      MENU_ENTRY_OTHER,
+      MENU_ENTRY_OTHER_TOGGLE,
       vsidui_tune_callback,
       (ui_callback_data_t)7 },
     { "Tune 8",
-      MENU_ENTRY_OTHER,
+      MENU_ENTRY_OTHER_TOGGLE,
       vsidui_tune_callback,
       (ui_callback_data_t)8 },
     { "Tune 9",
-      MENU_ENTRY_OTHER,
+      MENU_ENTRY_OTHER_TOGGLE,
       vsidui_tune_callback,
       (ui_callback_data_t)9 },
     { "Tune 10",
-      MENU_ENTRY_OTHER,
+      MENU_ENTRY_OTHER_TOGGLE,
       vsidui_tune_callback,
       (ui_callback_data_t)10 },
     { "Tune 11",
-      MENU_ENTRY_OTHER,
+      MENU_ENTRY_OTHER_TOGGLE,
       vsidui_tune_callback,
       (ui_callback_data_t)11 },
     { "Tune 12",
-      MENU_ENTRY_OTHER,
+      MENU_ENTRY_OTHER_TOGGLE,
       vsidui_tune_callback,
       (ui_callback_data_t)12 },
     { "Tune 13",
-      MENU_ENTRY_OTHER,
+      MENU_ENTRY_OTHER_TOGGLE,
       vsidui_tune_callback,
       (ui_callback_data_t)13 },
     { "Tune 14",
-      MENU_ENTRY_OTHER,
+      MENU_ENTRY_OTHER_TOGGLE,
       vsidui_tune_callback,
       (ui_callback_data_t)14 },
     { "Tune 15",
-      MENU_ENTRY_OTHER,
+      MENU_ENTRY_OTHER_TOGGLE,
       vsidui_tune_callback,
       (ui_callback_data_t)15 },
     { "Tune 16",
-      MENU_ENTRY_OTHER,
+      MENU_ENTRY_OTHER_TOGGLE,
       vsidui_tune_callback,
       (ui_callback_data_t)16 },
     { "Tune 17",
-      MENU_ENTRY_OTHER,
+      MENU_ENTRY_OTHER_TOGGLE,
       vsidui_tune_callback,
       (ui_callback_data_t)17 },
     { "Tune 18",
-      MENU_ENTRY_OTHER,
+      MENU_ENTRY_OTHER_TOGGLE,
       vsidui_tune_callback,
       (ui_callback_data_t)18 },
     { "Tune 19",
-      MENU_ENTRY_OTHER,
+      MENU_ENTRY_OTHER_TOGGLE,
       vsidui_tune_callback,
       (ui_callback_data_t)19 },
     { "Tune 20",
-      MENU_ENTRY_OTHER,
+      MENU_ENTRY_OTHER_TOGGLE,
       vsidui_tune_callback,
       (ui_callback_data_t)20 },
     { "Tune 21",
-      MENU_ENTRY_OTHER,
+      MENU_ENTRY_OTHER_TOGGLE,
       vsidui_tune_callback,
       (ui_callback_data_t)21 },
     { "Tune 22",
-      MENU_ENTRY_OTHER,
+      MENU_ENTRY_OTHER_TOGGLE,
       vsidui_tune_callback,
       (ui_callback_data_t)22 },
     { "Tune 23",
-      MENU_ENTRY_OTHER,
+      MENU_ENTRY_OTHER_TOGGLE,
       vsidui_tune_callback,
       (ui_callback_data_t)23 },
     SDL_MENU_LIST_END
@@ -265,6 +271,10 @@ static const ui_menu_entry_t vsid_main_menu[] = {
       MENU_ENTRY_OTHER,
       vsidui_tune_callback,
       (ui_callback_data_t)SDLUI_VSID_CMD_PREV },
+    { "Default tune",
+      MENU_ENTRY_OTHER,
+      vsidui_tune_callback,
+      (ui_callback_data_t)SDLUI_VSID_CMD_DEFAULT },
     { "Override PSID settings",
       MENU_ENTRY_RESOURCE_TOGGLE,
       toggle_PSIDKeepEnv_callback,
@@ -290,7 +300,7 @@ static const ui_menu_entry_t vsid_main_menu[] = {
       submenu_callback,
       (ui_callback_data_t)speed_menu_vsid },
     { "Pause",
-      MENU_ENTRY_OTHER,
+      MENU_ENTRY_OTHER_TOGGLE,
       pause_callback,
       NULL },
     { "Monitor",
@@ -336,18 +346,50 @@ static void draw_func(void)
 
 /* ---------------------------------------------------------------------*/
 /* vsidui.h */
+static void vsid_set_menu_params(int index, menu_draw_t *menu_draw)
+{
+    /* VICII */
+    menu_draw->max_text_x = 40;
+    menu_draw->color_front = menu_draw->color_default_front = 1;
+    menu_draw->color_back = menu_draw->color_default_back = 0;
+    menu_draw->color_cursor_back = 6;
+    menu_draw->color_cursor_revers = 0;
+    menu_draw->color_active_green = 13;
+    menu_draw->color_inactive_red = 2;
+    menu_draw->color_active_grey = 15;
+    menu_draw->color_inactive_grey = 11;
 
+    sdl_ui_set_menu_params = NULL;
+}
+
+/** \brief  Pre-initialize the UI before the canvas window gets created
+ *
+ * \return  0 on success, -1 on failure
+ */
+int vsid_ui_init_early(void)
+{
+    return 0;
+}
+
+/** \brief  Initialize the UI
+ *
+ * \return  0 on success, -1 on failure
+ */
 int vsid_ui_init(void)
 {
     unsigned int width;
     unsigned int height;
-    
-    sdl_ui_set_menu_params = NULL;
+
+    /* set function pointers to handle drag-n-drop of SID files */
+    sdl_vsid_set_init_func(psid_init_driver);
+    sdl_vsid_set_play_func(machine_play_psid);
+
+    sdl_ui_set_menu_params = vsid_set_menu_params;
     uikeyboard_menu_create();
     uisid_menu_create();
 
     sdl_ui_set_main_menu(vsid_main_menu);
-    sdl_ui_set_menu_font(mem_chargen_rom + 0x800, 8, 8);
+    sdl_ui_vicii_font_init();
 
     sdl_vsid_draw_init(draw_func);
     sdl_vsid_activate();
@@ -454,8 +496,55 @@ void vsid_ui_setdrv(char* driver_info_text)
     strncpy(vsidstrings[VSID_S_INFO_INIT_PLAY], &(driver_info_text[33]), 40);
 }
 
+
+/** \brief  Set driver address
+ *
+ * \param[in]   addr    driver address
+ */
+void vsid_ui_set_driver_addr(uint16_t addr)
+{
+}
+
+
+/** \brief  Set load address
+ *
+ * \param[in]   addr    load address
+ */
+void vsid_ui_set_load_addr(uint16_t addr)
+{
+}
+
+
+/** \brief  Set init routine address
+ *
+ * \param[in]   addr    init routine address
+ */
+void vsid_ui_set_init_addr(uint16_t addr)
+{
+}
+
+
+/** \brief  Set play routine address
+ *
+ * \param[in]   addr    play routine address
+ */
+void vsid_ui_set_play_addr(uint16_t addr)
+{
+}
+
+
+/** \brief  Set size of SID on actual machine
+ *
+ * \param[in]   size    size of SID
+ */
+void vsid_ui_set_data_size(uint16_t size)
+{
+}
+
+
 void vsid_ui_close(void)
 {
     uikeyboard_menu_shutdown();
     uisid_menu_shutdown();
+    sdl_ui_vicii_font_shutdown();
 }

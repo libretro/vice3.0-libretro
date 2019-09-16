@@ -38,15 +38,37 @@
 #include "plus60k.h"
 #include "resources.h"
 #include "snapshot.h"
-#include "translate.h"
 #include "types.h"
+#include "ui.h"
 
 static int memory_hack = 0;
 
+
+/** \brief  Pause state before switching memory hack
+ */
+static int old_pause_state;
+
+
+/** \brief  Set memory hack
+ *
+ * Pauses emulation when switching to another memory expansion hack to avoid
+ * having a running CPU access invalid memory. Unpauses emulation if the
+ * emulation wasn't already paused before switching memory expansion.
+ *
+ * \param[in]   value   memory hack ID
+ * \param[in]   param   extra data (unused)
+ *
+ * \return  0 on succes, -1 on failure
+ */
 static int set_memory_hack(int value, void *param)
 {
     if (value == memory_hack) {
         return 0;
+    }
+
+    old_pause_state = ui_emulation_is_paused();
+    if (!old_pause_state) {
+        ui_pause_emulation(1);
     }
 
     switch (value) {
@@ -56,6 +78,9 @@ static int set_memory_hack(int value, void *param)
         case MEMORY_HACK_PLUS256K:
             break;
         default:
+            if (!old_pause_state) {
+                ui_pause_emulation(1);
+            }
             return -1;
     }
 
@@ -87,12 +112,18 @@ static int set_memory_hack(int value, void *param)
         case MEMORY_HACK_NONE:
             break;
         default:
+            if (!old_pause_state) {
+                ui_pause_emulation(1);
+            }
             return -1;
             break;
     }
 
     memory_hack = value;
 
+    if (!old_pause_state) {
+        ui_pause_emulation(1);
+    }
     return 0;
 }
 
@@ -111,11 +142,9 @@ int memory_hacks_resources_init(void)
 
 static const cmdline_option_t cmdline_options[] =
 {
-    { "-memoryexphack", SET_RESOURCE, 1,
+    { "-memoryexphack", SET_RESOURCE, CMDLINE_ATTRIB_NEED_ARGS,
       NULL, NULL, "MemoryHack", NULL,
-      USE_PARAM_ID, USE_DESCRIPTION_ID,
-      IDCLS_P_DEVICE, IDCLS_SET_C64_MEMORY_HACK,
-      NULL, NULL },
+      "<device>", "Set the 'memory expansion hack' device (0: None, 1: C64 256K, 2: +60K, 3: +256K)" },
     CMDLINE_LIST_END
 };
 
@@ -147,7 +176,7 @@ int memhacks_snapshot_write_modules(struct snapshot_s *s)
         return -1;
     }
 
-    if (SMW_B(m, (BYTE)memory_hack) < 0) {
+    if (SMW_B(m, (uint8_t)memory_hack) < 0) {
         snapshot_module_close(m);
         return -1;
     }
@@ -179,7 +208,7 @@ int memhacks_snapshot_write_modules(struct snapshot_s *s)
 int memhacks_snapshot_read_modules(struct snapshot_s *s)
 {
     snapshot_module_t *m;
-    BYTE vmajor, vminor;
+    uint8_t vmajor, vminor;
 
     m = snapshot_module_open(s, snap_module_name, &vmajor, &vminor);
 

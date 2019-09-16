@@ -93,20 +93,6 @@ typedef struct {
 #define D AV_OPT_FLAG_DECODING_PARAM
 #define E AV_OPT_FLAG_ENCODING_PARAM
 static const AVOption options[] = {
-#ifdef IDE_COMPILE
-{"buffer_size", "set packet buffer size in bytes", OFFSET(buffer_size), AV_OPT_TYPE_INT, {0}, 0, INT_MAX, D|E },
-{"localport", "set local port to bind to", OFFSET(local_port), AV_OPT_TYPE_INT, {0}, 0, INT_MAX, D|E },
-{"localaddr", "choose local IP address", OFFSET(local_addr), AV_OPT_TYPE_STRING, {(intptr_t) ""}, 0, 0, D|E },
-{"pkt_size", "set size of UDP packets", OFFSET(packet_size), AV_OPT_TYPE_INT, {1472}, 0, INT_MAX, D|E },
-{"reuse", "explicitly allow or disallow reusing UDP sockets", OFFSET(reuse_socket), AV_OPT_TYPE_INT, {0}, 0, 1, D|E },
-{"broadcast", "explicitly allow or disallow broadcast destination", OFFSET(is_broadcast), AV_OPT_TYPE_INT, {0}, 0, 1, E },
-{"ttl", "set the time to live value (for multicast only)", OFFSET(ttl), AV_OPT_TYPE_INT, {16}, 0, INT_MAX, E },
-{"connect", "set if connect() should be called on socket", OFFSET(is_connected), AV_OPT_TYPE_INT, {0}, 0, 1, D|E },
-/* TODO 'sources', 'block' option */
-{"fifo_size", "set the UDP receiving circular buffer size, expressed as a number of packets with size of 188 bytes", OFFSET(circular_buffer_size), AV_OPT_TYPE_INT, {7*4096}, 0, INT_MAX, D },
-{"overrun_nonfatal", "survive in case of UDP receiving circular buffer overrun", OFFSET(overrun_nonfatal), AV_OPT_TYPE_INT, {0}, 0, 1, D },
-{"timeout", "set raise error timeout (only in read mode)", OFFSET(timeout), AV_OPT_TYPE_INT, {0}, 0, INT_MAX, D },
-#else
 {"buffer_size", "set packet buffer size in bytes", OFFSET(buffer_size), AV_OPT_TYPE_INT, {.i64 = 0}, 0, INT_MAX, D|E },
 {"localport", "set local port to bind to", OFFSET(local_port), AV_OPT_TYPE_INT, {.i64 = 0}, 0, INT_MAX, D|E },
 {"localaddr", "choose local IP address", OFFSET(local_addr), AV_OPT_TYPE_STRING, {.str = ""}, 0, 0, D|E },
@@ -119,22 +105,14 @@ static const AVOption options[] = {
 {"fifo_size", "set the UDP receiving circular buffer size, expressed as a number of packets with size of 188 bytes", OFFSET(circular_buffer_size), AV_OPT_TYPE_INT, {.i64 = 7*4096}, 0, INT_MAX, D },
 {"overrun_nonfatal", "survive in case of UDP receiving circular buffer overrun", OFFSET(overrun_nonfatal), AV_OPT_TYPE_INT, {.i64 = 0}, 0, 1, D },
 {"timeout", "set raise error timeout (only in read mode)", OFFSET(timeout), AV_OPT_TYPE_INT, {.i64 = 0}, 0, INT_MAX, D },
-#endif
 {NULL}
 };
 
 static const AVClass udp_context_class = {
-#ifdef IDE_COMPILE
-    "udp",
-    av_default_item_name,
-    options,
-    LIBAVUTIL_VERSION_INT,
-#else
 	.class_name     = "udp",
     .item_name      = av_default_item_name,
     .option         = options,
     .version        = LIBAVUTIL_VERSION_INT,
-#endif
 };
 
 static void log_net_error(void *ctx, int level, const char* prefix)
@@ -432,7 +410,7 @@ int ff_udp_set_remote_url(URLContext *h, const char *uri)
             int was_connected = s->is_connected;
             s->is_connected = strtol(buf, NULL, 10);
             if (s->is_connected && !was_connected) {
-                if (connect(s->udp_fd, (struct sockaddr *) &s->dest_addr,
+                if (vice_ffmpeg_connect(s->udp_fd, (struct sockaddr *) &s->dest_addr,
                             s->dest_addr_len)) {
                     s->is_connected = 0;
                     log_net_error(h, AV_LOG_ERROR, "connect");
@@ -489,7 +467,7 @@ static void *circular_buffer_task( void *_URLContext)
            see "General Information" / "Thread Cancelation Overview"
            in Single Unix. */
         pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, &old_cancelstate);
-        len = recv(s->udp_fd, s->tmp+4, sizeof(s->tmp)-4, 0);
+        len = vice_ffmpeg_recv(s->udp_fd, s->tmp+4, sizeof(s->tmp)-4, 0);
         pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &old_cancelstate);
         pthread_mutex_lock(&s->mutex);
         if (len < 0) {
@@ -747,7 +725,7 @@ static int udp_open(URLContext *h, const char *uri, int flags)
         ff_socket_nonblock(udp_fd, 1);
     }
     if (s->is_connected) {
-        if (connect(udp_fd, (struct sockaddr *) &s->dest_addr, s->dest_addr_len)) {
+        if (vice_ffmpeg_connect(udp_fd, (struct sockaddr *) &s->dest_addr, s->dest_addr_len)) {
             log_net_error(h, AV_LOG_ERROR, "connect");
             goto fail;
         }
@@ -857,7 +835,7 @@ static int udp_read(URLContext *h, uint8_t *buf, int size)
         if (ret < 0)
             return ret;
     }
-    ret = recv(s->udp_fd, buf, size, 0);
+    ret = vice_ffmpeg_recv(s->udp_fd, buf, size, 0);
 
     return ret < 0 ? ff_neterrno() : ret;
 }
@@ -874,11 +852,11 @@ static int udp_write(URLContext *h, const uint8_t *buf, int size)
     }
 
     if (!s->is_connected) {
-        ret = sendto (s->udp_fd, buf, size, 0,
+        ret = vice_ffmpeg_sendto (s->udp_fd, buf, size, 0,
                       (struct sockaddr *) &s->dest_addr,
                       s->dest_addr_len);
     } else
-        ret = send(s->udp_fd, buf, size, 0);
+        ret = vice_ffmpeg_send(s->udp_fd, buf, size, 0);
 
     return ret < 0 ? ff_neterrno() : ret;
 }
@@ -906,17 +884,6 @@ static int udp_close(URLContext *h)
 }
 
 URLProtocol ff_udp_protocol = {
-#ifdef IDE_COMPILE
-    "udp",
-    udp_open,
-    0, udp_read,
-    udp_write,
-    0, udp_close,
-    0, 0, 0, udp_get_file_handle,
-    0, 0, sizeof(UDPContext),
-    &udp_context_class,
-    URL_PROTOCOL_FLAG_NETWORK,
-#else
 	.name                = "udp",
     .url_open            = udp_open,
     .url_read            = udp_read,
@@ -926,5 +893,4 @@ URLProtocol ff_udp_protocol = {
     .priv_data_size      = sizeof(UDPContext),
     .priv_data_class     = &udp_context_class,
     .flags               = URL_PROTOCOL_FLAG_NETWORK,
-#endif
 };

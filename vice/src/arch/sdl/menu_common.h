@@ -34,7 +34,22 @@
 
 #include "vice.h"
 #include "types.h"
+#include "uifonts.h"
 #include "uimenu.h"
+
+#define MENU_MENUHEADERLEFT_STRING UIFONT_MENUHEADERLEFT_STRING
+#define MENU_MENUHEADERRIGHT_STRING UIFONT_MENUHEADERRIGHT_STRING
+
+#define MENU_SUBMENU_STRING UIFONT_SUBMENU_STRING
+
+#define MENU_CHECKMARK_UNCHECKED_STRING UIFONT_CHECKMARK_UNCHECKED_STRING
+#define MENU_CHECKMARK_UNCHECKED_CHAR UIFONT_CHECKMARK_UNCHECKED_CHAR
+#define MENU_CHECKMARK_CHECKED_STRING UIFONT_CHECKMARK_CHECKED_STRING
+
+#define MENU_NOT_AVAILABLE_STRING "(N/A)"
+
+#define MENU_UNKNOWN_STRING "?"
+#define MENU_EXIT_UI_STRING "\1"
 
 extern const char *sdl_menu_text_tick;
 extern const char *sdl_menu_text_unknown;
@@ -96,6 +111,7 @@ extern const char *sdl_ui_menu_slider_helper(int activated, ui_callback_data_t p
 
 extern UI_MENU_CALLBACK(autostart_callback);
 extern UI_MENU_CALLBACK(pause_callback);
+extern UI_MENU_CALLBACK(advance_frame_callback);
 extern UI_MENU_CALLBACK(vkbd_callback);
 extern UI_MENU_CALLBACK(statusbar_callback);
 extern UI_MENU_CALLBACK(quit_callback);

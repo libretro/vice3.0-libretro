@@ -1,0 +1,10 @@
+envelope.o: envelope.cc envelope.h residdtv-config.h siddtvdefs.h \
+ bittrain.h
+
+envelope.h:
+
+residdtv-config.h:
+
+siddtvdefs.h:
+
+bittrain.h:

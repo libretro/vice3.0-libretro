@@ -35,7 +35,9 @@
 #include "vice_sdl.h"
 #include <stdio.h>
 
+#include "autostart.h"
 #include "cmdline.h"
+#include "archdep.h"
 #include "color.h"
 #include "fullscreenarch.h"
 #include "joy.h"
@@ -47,7 +49,6 @@
 #include "mouse.h"
 #include "mousedrv.h"
 #include "resources.h"
-#include "translate.h"
 #include "types.h"
 #include "ui.h"
 #include "uiapi.h"
@@ -73,10 +74,15 @@
 
 #ifdef ANDROID_COMPILE 
 extern void keyboard_key_pressed(signed long key);
-#endif  
+#endif
 
 
 static int sdl_ui_ready = 0;
+
+
+static void (*psid_init_func)(void) = NULL;
+static void (*psid_play_func)(int) = NULL;
+
 
 /* ----------------------------------------------------------------- */
 /* ui.h */
@@ -123,6 +129,26 @@ void ui_handle_misc_sdl_event(SDL_Event e)
         case SDL_VIDEOEXPOSE:
             DBG(("ui_handle_misc_sdl_event: SDL_VIDEOEXPOSE"));
             video_canvas_refresh_all(sdl_active_canvas);
+            break;
+#else
+        case SDL_DROPFILE:
+            if (machine_class != VICE_MACHINE_VSID) {
+                if (autostart_autodetect(e.drop.file, NULL, 0,
+                            AUTOSTART_MODE_RUN) < 0) {
+                    ui_error("Cannot autostart specified file.");
+                }
+            } else {
+                /* try to load PSID file */
+
+                if (machine_autodetect_psid(e.drop.file) < 0) {
+                    ui_error("%s is not a valid SID file.", e.drop.file);
+                }
+                if (psid_init_func != NULL && psid_play_func != NULL) {
+                    psid_init_func();
+                    psid_play_func(0);
+                    machine_trigger_reset(MACHINE_RESET_MODE_SOFT);
+                }
+            }
             break;
 #endif
 #ifdef SDL_DEBUG
@@ -240,14 +266,14 @@ ui_menu_action_t ui_dispatch_events(void)
         switch (event->eventType) {
             case SDL_MOUSEMOTION:
                 {
-                    /* locnet, 2011-06-16, detect auto calibrate */
+                    /* detect auto calibrate */
                     if ((event->x == -2048) && (event->y == -2048)) {
                         down_x = -1;
                         down_y = -1;
                         oldx = 0;
                         oldy = 0;
                         stopPoll = 1;
-                    /* locnet, 2011-07-01, detect pure relative move */
+                    /* detect pure relative move */
                     } else if ((event->down_x == -1024) && (event->down_y == -1024)) {
                         down_x = 0;
                         down_y = 0;
@@ -331,7 +357,7 @@ ui_menu_action_t ui_dispatch_events(void)
                 {
                     retval = sdljoy_button_event(0, event->keycode, 1);
 
-                    /* 2011-09-20, buffer overflow when autofire if stopPoll */
+                    /* buffer overflow when autofire if stopPoll */
                     if (!Android_HasRepeatEvent(SDL_JOYBUTTONDOWN, event->keycode)) {
                         stopPoll = 1;
                     }
@@ -341,7 +367,7 @@ ui_menu_action_t ui_dispatch_events(void)
                 {
                     retval = sdljoy_button_event(0, event->keycode, 0);
 
-                    /* 2011-09-20, buffer overflow when autofire if stopPoll */
+                    /* buffer overflow when autofire if stopPoll */
                     if (!Android_HasRepeatEvent(SDL_JOYBUTTONUP, event->keycode)) {
                         stopPoll = 1;
                     }
@@ -391,8 +417,10 @@ ui_menu_action_t ui_dispatch_events(void)
                             }
                             shift_down++;
                         }
+                        ui_display_kbd_status(event);
                         retval = sdlkbd_press(kcode, 0);
                     } else {
+                        ui_display_kbd_status(event);
                         retval = sdlkbd_release(kcode, 0);
 
                         if (ctrl || (kcode == SDLK_TAB)) {
@@ -438,9 +466,11 @@ ui_menu_action_t ui_dispatch_events(void)
     while (SDL_PollEvent(&e)) {
         switch (e.type) {
             case SDL_KEYDOWN:
+                ui_display_kbd_status(&e);
                 retval = sdlkbd_press(SDL2x_to_SDL1x_Keys(e.key.keysym.sym), e.key.keysym.mod);
                 break;
             case SDL_KEYUP:
+                ui_display_kbd_status(&e);
                 retval = sdlkbd_release(SDL2x_to_SDL1x_Keys(e.key.keysym.sym), e.key.keysym.mod);
                 break;
 #ifdef HAVE_SDL_NUMJOYSTICKS
@@ -458,6 +488,7 @@ ui_menu_action_t ui_dispatch_events(void)
                 break;
 #endif
             case SDL_MOUSEMOTION:
+                sdl_ui_consume_mouse_event(&e);
                 if (_mouse_enabled) {
                     mouse_move((int)(e.motion.xrel), (int)(e.motion.yrel));
                 }
@@ -483,22 +514,73 @@ ui_menu_action_t ui_dispatch_events(void)
     return retval;
 }
 
+/* note: we need to be a bit more "radical" about disabling the (mouse) pointer.
+ * in practise, we really only need it for the lightpen emulation.
+ *
+ * TODO: and perhaps in windowed mode enable it when the mouse is moved.
+ */
+
+#ifdef USE_SDLUI2
+static SDL_Cursor *arrow_cursor = NULL;
+static SDL_Cursor *crosshair_cursor = NULL;
+
+static void set_arrow_cursor(void)
+{
+    if (!arrow_cursor) {
+        arrow_cursor = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_ARROW);
+    }
+    SDL_SetCursor(arrow_cursor);
+}
+
+static void set_crosshair_cursor(void)
+{
+    if (!crosshair_cursor) {
+        crosshair_cursor = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_CROSSHAIR);
+    }
+    SDL_SetCursor(crosshair_cursor);
+}
+#endif
+
 void ui_check_mouse_cursor(void)
 {
     if (_mouse_enabled && !lightpen_enabled && !sdl_menu_state) {
-#ifndef USE_SDLUI2
+        /* mouse grabbed, not in menu. grab input but do not show a pointer */
         SDL_ShowCursor(SDL_DISABLE);
+#ifndef USE_SDLUI2
         SDL_WM_GrabInput(SDL_GRAB_ON);
 #else
+        set_arrow_cursor();
         SDL_SetRelativeMouseMode(SDL_TRUE);
 #endif
-    } else {
+    } else if (lightpen_enabled && !sdl_menu_state) {
+        /* lightpen active, not in menu. show a pointer for the lightpen emulation */
+        SDL_ShowCursor(SDL_ENABLE);
 #ifndef USE_SDLUI2
-        SDL_ShowCursor((sdl_active_canvas->fullscreenconfig->enable && !lightpen_enabled) ? SDL_DISABLE : SDL_ENABLE);
         SDL_WM_GrabInput(SDL_GRAB_OFF);
 #else
+        set_crosshair_cursor();
         SDL_SetRelativeMouseMode(SDL_FALSE);
 #endif
+    } else {
+        if (sdl_active_canvas->fullscreenconfig->enable) {
+            /* fullscreen, never show pointer (we really never need it) */
+            SDL_ShowCursor(SDL_DISABLE);
+#ifndef USE_SDLUI2
+            SDL_WM_GrabInput(SDL_GRAB_OFF);
+#else
+            set_arrow_cursor();
+            SDL_SetRelativeMouseMode(SDL_FALSE);
+#endif
+        } else {
+            /* windowed, TODO: disable pointer after time-out */
+            SDL_ShowCursor(SDL_DISABLE);
+#ifndef USE_SDLUI2
+            SDL_WM_GrabInput(SDL_GRAB_OFF);
+#else
+            set_arrow_cursor();
+            SDL_SetRelativeMouseMode(SDL_FALSE);
+#endif
+        }
     }
 }
 
@@ -560,7 +642,11 @@ static int set_native_monitor(int val, void *param)
 #endif
 
 #ifndef DEFAULT_MENU_KEY
-#define DEFAULT_MENU_KEY SDLK_F12
+# ifdef MACOSX_SUPPORT
+#  define DEFAULT_MENU_KEY SDLK_F10
+# else
+#  define DEFAULT_MENU_KEY SDLK_F12
+# endif
 #endif
 
 static const resource_int_t resources_int[] = {
@@ -582,6 +668,14 @@ static const resource_int_t resources_int[] = {
       &sdl_ui_menukeys[7], set_ui_menukey, (void *)MENU_ACTION_EXIT },
     { "MenuKeyMap", SDLK_m, RES_EVENT_NO, NULL,
       &sdl_ui_menukeys[8], set_ui_menukey, (void *)MENU_ACTION_MAP },
+    { "MenuKeyPageUp", SDLK_PAGEUP, RES_EVENT_NO, NULL,
+      &sdl_ui_menukeys[9], set_ui_menukey, (void *)MENU_ACTION_PAGEUP },
+    { "MenuKeyPageDown", SDLK_PAGEDOWN, RES_EVENT_NO, NULL,
+      &sdl_ui_menukeys[10], set_ui_menukey, (void *)MENU_ACTION_PAGEDOWN },
+    { "MenuKeyHome", SDLK_HOME, RES_EVENT_NO, NULL,
+      &sdl_ui_menukeys[11], set_ui_menukey, (void *)MENU_ACTION_HOME },
+    { "MenuKeyEnd", SDLK_END, RES_EVENT_NO, NULL,
+      &sdl_ui_menukeys[12], set_ui_menukey, (void *)MENU_ACTION_END },
     { "SaveResourcesOnExit", 0, RES_EVENT_NO, NULL,
       &save_resources_on_exit, set_save_resources_on_exit, NULL },
     { "ConfirmOnExit", 0, RES_EVENT_NO, NULL,
@@ -596,7 +690,7 @@ static const resource_int_t resources_int[] = {
 void ui_sdl_quit(void)
 {
     if (confirm_on_exit) {
-        if (message_box("VICE QUESTION", "Do you really want to exit?", MESSAGE_YESNO) == 1) {
+        if (message_box("VICE QUESTION", "Do you really want to exit?", MESSAGE_YESNO) != 0) {
             return;
         }
     }
@@ -606,7 +700,7 @@ void ui_sdl_quit(void)
             ui_error("Cannot save current settings.");
         }
     }
-    exit(0);
+    archdep_vice_exit(0);
 }
 
 /* Initialization  */
@@ -630,64 +724,84 @@ void ui_resources_shutdown(void)
     sdlkbd_resources_shutdown();
 }
 
-static const cmdline_option_t cmdline_options[] = {
-    { "-menukey", SET_RESOURCE, 1, NULL, NULL, "MenuKey", NULL,
-      USE_PARAM_STRING, USE_DESCRIPTION_STRING, IDCLS_UNUSED, IDCLS_UNUSED,
+static const cmdline_option_t cmdline_options[] =
+{
+    { "-menukey", SET_RESOURCE, CMDLINE_ATTRIB_NEED_ARGS,
+      NULL, NULL, "MenuKey", NULL,
       "<key>", "Keycode of the menu activate key" },
-    { "-menukeyup", SET_RESOURCE, 1, NULL, NULL, "MenuKeyUp", NULL,
-      USE_PARAM_STRING, USE_DESCRIPTION_STRING, IDCLS_UNUSED, IDCLS_UNUSED,
+    { "-menukeyup", SET_RESOURCE, CMDLINE_ATTRIB_NEED_ARGS,
+      NULL, NULL, "MenuKeyUp", NULL,
       "<key>", "Keycode of the menu up key" },
-    { "-menukeydown", SET_RESOURCE, 1, NULL, NULL, "MenuKeyDown", NULL,
-      USE_PARAM_STRING, USE_DESCRIPTION_STRING, IDCLS_UNUSED, IDCLS_UNUSED,
+    { "-menukeydown", SET_RESOURCE, CMDLINE_ATTRIB_NEED_ARGS,
+      NULL, NULL, "MenuKeyDown", NULL,
       "<key>", "Keycode of the menu down key" },
-    { "-menukeyleft", SET_RESOURCE, 1, NULL, NULL, "MenuKeyLeft", NULL,
-      USE_PARAM_STRING, USE_DESCRIPTION_STRING, IDCLS_UNUSED, IDCLS_UNUSED,
+    { "-menukeyleft", SET_RESOURCE, CMDLINE_ATTRIB_NEED_ARGS,
+      NULL, NULL, "MenuKeyLeft", NULL,
       "<key>", "Keycode of the menu left key" },
-    { "-menukeyright", SET_RESOURCE, 1, NULL, NULL, "MenuKeyRight", NULL,
-      USE_PARAM_STRING, USE_DESCRIPTION_STRING, IDCLS_UNUSED, IDCLS_UNUSED,
+    { "-menukeyright", SET_RESOURCE, CMDLINE_ATTRIB_NEED_ARGS,
+      NULL, NULL, "MenuKeyRight", NULL,
       "<key>", "Keycode of the menu right key" },
-    { "-menukeyselect", SET_RESOURCE, 1, NULL, NULL, "MenuKeySelect", NULL,
-      USE_PARAM_STRING, USE_DESCRIPTION_STRING, IDCLS_UNUSED, IDCLS_UNUSED,
+    { "-menukeypageup", SET_RESOURCE, CMDLINE_ATTRIB_NEED_ARGS,
+      NULL, NULL, "MenuKeyPageUp", NULL,
+      "<key>", "Keycode of the menu page up key" },
+    { "-menukeypagedown", SET_RESOURCE, CMDLINE_ATTRIB_NEED_ARGS,
+      NULL, NULL, "MenuKeyPageDown", NULL,
+      "<key>", "Keycode of the menu page down key" },
+    { "-menukeyhome", SET_RESOURCE, CMDLINE_ATTRIB_NEED_ARGS,
+      NULL, NULL, "MenuKeyHome", NULL,
+      "<key>", "Keycode of the menu home key" },
+    { "-menukeyend", SET_RESOURCE, CMDLINE_ATTRIB_NEED_ARGS,
+      NULL, NULL, "MenuKeyEnd", NULL,
+      "<key>", "Keycode of the menu end key" },
+    { "-menukeyselect", SET_RESOURCE, CMDLINE_ATTRIB_NEED_ARGS,
+      NULL, NULL, "MenuKeySelect", NULL,
       "<key>", "Keycode of the menu select key" },
-    { "-menukeycancel", SET_RESOURCE, 1, NULL, NULL, "MenuKeyCancel", NULL,
-      USE_PARAM_STRING, USE_DESCRIPTION_STRING, IDCLS_UNUSED, IDCLS_UNUSED,
+    { "-menukeycancel", SET_RESOURCE, CMDLINE_ATTRIB_NEED_ARGS,
+      NULL, NULL, "MenuKeyCancel", NULL,
       "<key>", "Keycode of the menu cancel key" },
-    { "-menukeyexit", SET_RESOURCE, 1, NULL, NULL, "MenuKeyExit", NULL,
-      USE_PARAM_STRING, USE_DESCRIPTION_STRING, IDCLS_UNUSED, IDCLS_UNUSED,
+    { "-menukeyexit", SET_RESOURCE, CMDLINE_ATTRIB_NEED_ARGS,
+      NULL, NULL, "MenuKeyExit", NULL,
       "<key>", "Keycode of the menu exit key" },
-    { "-menukeymap", SET_RESOURCE, 1, NULL, NULL, "MenuKeyMap", NULL,
-      USE_PARAM_STRING, USE_DESCRIPTION_STRING, IDCLS_UNUSED, IDCLS_UNUSED,
+    { "-menukeymap", SET_RESOURCE, CMDLINE_ATTRIB_NEED_ARGS,
+      NULL, NULL, "MenuKeyMap", NULL,
       "<key>", "Keycode of the menu map key" },
-    { "-saveresourcesonexit", SET_RESOURCE, 0, NULL, NULL, "SaveResourcesOnExit", (resource_value_t)1,
-      USE_PARAM_STRING, USE_DESCRIPTION_STRING, IDCLS_UNUSED, IDCLS_UNUSED,
+    { "-saveres", SET_RESOURCE, CMDLINE_ATTRIB_NONE,
+      NULL, NULL, "SaveResourcesOnExit", (resource_value_t)1,
       NULL, "Enable saving of the resources on exit" },
-    { "+saveresourcesonexit", SET_RESOURCE, 0, NULL, NULL, "SaveResourcesOnExit", (resource_value_t)0,
-      USE_PARAM_STRING, USE_DESCRIPTION_STRING, IDCLS_UNUSED, IDCLS_UNUSED,
+    { "+saveres", SET_RESOURCE, CMDLINE_ATTRIB_NONE,
+      NULL, NULL, "SaveResourcesOnExit", (resource_value_t)0,
       NULL, "Disable saving of the resources on exit" },
-    { "-confirmonexit", SET_RESOURCE, 0, NULL, NULL, "ConfirmOnExit", (resource_value_t)1,
-      USE_PARAM_STRING, USE_DESCRIPTION_STRING, IDCLS_UNUSED, IDCLS_UNUSED,
+    { "-confirmonexit", SET_RESOURCE, CMDLINE_ATTRIB_NONE,
+      NULL, NULL, "ConfirmOnExit", (resource_value_t)1,
       NULL, "Enable confirm on exit" },
-    { "+confirmonexit", SET_RESOURCE, 0, NULL, NULL, "ConfirmOnExit", (resource_value_t)0,
-      USE_PARAM_STRING, USE_DESCRIPTION_STRING, IDCLS_UNUSED, IDCLS_UNUSED,
+    { "+confirmonexit", SET_RESOURCE, CMDLINE_ATTRIB_NONE,
+      NULL, NULL, "ConfirmOnExit", (resource_value_t)0,
       NULL, "Disable confirm on exit" },
 #ifdef ALLOW_NATIVE_MONITOR
-    { "-nativemonitor", SET_RESOURCE, 0, NULL, NULL, "NativeMonitor", (resource_value_t)1,
-      USE_PARAM_STRING, USE_DESCRIPTION_STRING, IDCLS_UNUSED, IDCLS_UNUSED,
+    { "-nativemonitor", SET_RESOURCE, CMDLINE_ATTRIB_NONE,
+      NULL, NULL, "NativeMonitor", (resource_value_t)1,
       NULL, "Enable native monitor" },
-    { "+nativemonitor", SET_RESOURCE, 0, NULL, NULL, "NativeMonitor", (resource_value_t)0,
-      USE_PARAM_STRING, USE_DESCRIPTION_STRING, IDCLS_UNUSED, IDCLS_UNUSED,
+    { "+nativemonitor", SET_RESOURCE, CMDLINE_ATTRIB_NONE,
+      NULL, NULL, "NativeMonitor", (resource_value_t)0,
       NULL, "Disable native monitor" },
 #endif
     CMDLINE_LIST_END
 };
 
-static const cmdline_option_t statusbar_cmdline_options[] = {
-    { "-statusbar", SET_RESOURCE, 0, NULL, NULL, "SDLStatusbar", (resource_value_t)1,
-      USE_PARAM_STRING, USE_DESCRIPTION_STRING, IDCLS_UNUSED, IDCLS_UNUSED,
+static const cmdline_option_t statusbar_cmdline_options[] =
+{
+    { "-statusbar", SET_RESOURCE, CMDLINE_ATTRIB_NONE,
+      NULL, NULL, "SDLStatusbar", (resource_value_t)1,
       NULL, "Enable statusbar" },
-    { "+statusbar", SET_RESOURCE, 0, NULL, NULL, "SDLStatusbar", (resource_value_t)0,
-      USE_PARAM_STRING, USE_DESCRIPTION_STRING, IDCLS_UNUSED, IDCLS_UNUSED,
+    { "+statusbar", SET_RESOURCE, CMDLINE_ATTRIB_NONE,
+      NULL, NULL, "SDLStatusbar", (resource_value_t)0,
       NULL, "Disable statusbar" },
+    { "-kbdstatusbar", SET_RESOURCE, CMDLINE_ATTRIB_NONE,
+      NULL, NULL, "SDLKbdStatusbar", (resource_value_t)1,
+      NULL, "Enable keyboard-status bar" },
+    { "+kbdstatusbar", SET_RESOURCE, CMDLINE_ATTRIB_NONE,
+      NULL, NULL, "SDLKbdStatusbar", (resource_value_t)0,
+      NULL, "Disable keyboard-status bar" },
     CMDLINE_LIST_END
 };
 
@@ -733,6 +847,16 @@ int ui_init_finalize(void)
 void ui_shutdown(void)
 {
     DBG(("%s", __func__));
+#ifdef USE_SDLUI2
+    if (arrow_cursor) {
+        SDL_FreeCursor(arrow_cursor);
+        arrow_cursor = NULL;
+    }
+    if (crosshair_cursor) {
+        SDL_FreeCursor(crosshair_cursor);
+        crosshair_cursor = NULL;
+    }
+#endif
     sdl_ui_file_selection_dialog_shutdown();
 }
 
@@ -792,7 +916,7 @@ void ui_update_menus(void)
 /* ----------------------------------------------------------------- */
 /* uicolor.h */
 
-int uicolor_alloc_color(unsigned int red, unsigned int green, unsigned int blue, unsigned long *color_pixel, BYTE *pixel_return)
+int uicolor_alloc_color(unsigned int red, unsigned int green, unsigned int blue, unsigned long *color_pixel, uint8_t *pixel_return)
 {
     DBG(("%s", __func__));
     return 0;
@@ -803,7 +927,7 @@ void uicolor_free_color(unsigned int red, unsigned int green, unsigned int blue,
     DBG(("%s", __func__));
 }
 
-void uicolor_convert_color_table(unsigned int colnr, BYTE *data, long color_pixel, void *c)
+void uicolor_convert_color_table(unsigned int colnr, uint8_t *data, long color_pixel, void *c)
 {
     DBG(("%s", __func__));
 }
@@ -845,3 +969,26 @@ void sdl_vsid_draw(void)
     }
 }
 
+
+/*
+ * Work around linking differences between VSID and other emu's
+ */
+
+/** \brief  Set PSID init function pointer
+ *
+ * \param[in]   func    function pointer
+ */
+void sdl_vsid_set_init_func(void (*func)(void))
+{
+    psid_init_func = func;
+}
+
+
+/** \brief  Set PSID play function pointer
+ *
+ * \param[in]   func    function pointer
+ */
+void sdl_vsid_set_play_func(void (*func)(int))
+{
+    psid_play_func = func;
+}

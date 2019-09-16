@@ -39,7 +39,7 @@
 
 /* Types */
 
-#if !defined(bool) || defined(__CELLOS_LV2__)
+#ifndef bool
 typedef int bool;
 #endif
 
@@ -146,6 +146,7 @@ typedef enum t_action ACTION;
 struct cond_node_s {
     int operation;
     int value;
+    int banknum;
     MON_REG reg_num;
     bool is_reg;
     bool is_parenthized;
@@ -257,13 +258,15 @@ extern void mon_print_convert(int val);
 extern void mon_change_dir(const char *path);
 extern void mon_bank(MEMSPACE mem, const char *bank);
 extern const char *mon_get_current_bank_name(MEMSPACE mem);
+extern const char *mon_get_bank_name_for_bank(MEMSPACE mem, int banknum);
+extern int mon_banknum_from_bank(MEMSPACE mem, const char *bankname);
 extern void mon_display_io_regs(MON_ADDR addr);
 extern void mon_evaluate_default_addr(MON_ADDR *a);
-extern void mon_set_mem_val(MEMSPACE mem, WORD mem_addr, BYTE val);
+extern void mon_set_mem_val(MEMSPACE mem, uint16_t mem_addr, uint8_t val);
 extern bool mon_inc_addr_location(MON_ADDR *a, unsigned inc);
 extern void mon_start_assemble_mode(MON_ADDR addr, char *asm_line);
 extern long mon_evaluate_address_range(MON_ADDR *start_addr, MON_ADDR *end_addr,
-                                       bool must_be_range, WORD default_len);
+                                       bool must_be_range, uint16_t default_len);
 
 extern bool check_drive_emu_level_ok(int drive_num);
 extern void mon_print_conditional(cond_node_t *cnode);
@@ -273,16 +276,16 @@ extern bool mon_is_valid_addr(MON_ADDR a);
 extern bool mon_is_in_range(MON_ADDR start_addr, MON_ADDR end_addr,
                             unsigned loc);
 extern void mon_print_bin(int val, char on, char off);
-extern BYTE mon_get_mem_val(MEMSPACE mem, WORD mem_addr);
-extern BYTE mon_get_mem_val_ex(MEMSPACE mem, int bank, WORD mem_addr);
-extern void mon_get_mem_block(MEMSPACE mem, WORD mem_start, WORD mem_end, BYTE *data);
-extern void mon_get_mem_block_ex(MEMSPACE mem, int bank, WORD mem_start, WORD mem_end, BYTE *data);
+extern uint8_t mon_get_mem_val(MEMSPACE mem, uint16_t mem_addr);
+extern uint8_t mon_get_mem_val_ex(MEMSPACE mem, int bank, uint16_t mem_addr);
+extern void mon_get_mem_block(MEMSPACE mem, uint16_t mem_start, uint16_t mem_end, uint8_t *data);
+extern void mon_get_mem_block_ex(MEMSPACE mem, int bank, uint16_t mem_start, uint16_t mem_end, uint8_t *data);
 extern void mon_jump(MON_ADDR addr);
 extern void mon_go(void);
 extern void mon_exit(void);
 extern void mon_quit(void);
 extern void mon_keyboard_feed(const char *string);
-extern char *mon_symbol_table_lookup_name(MEMSPACE mem, WORD addr);
+extern char *mon_symbol_table_lookup_name(MEMSPACE mem, uint16_t addr);
 extern int mon_symbol_table_lookup_addr(MEMSPACE mem, char *name);
 extern char* mon_prepend_dot_to_name(char *name);
 extern void mon_add_name_to_symbol_table(MON_ADDR addr, char *name);
@@ -301,5 +304,6 @@ extern void mon_export(void);
 
 extern void mon_stopwatch_show(const char* prefix, const char* suffix);
 extern void mon_stopwatch_reset(void);
+extern void mon_maincpu_toggle_trace(int state);
 
 #endif

@@ -1,10 +1,11 @@
+/** \file   c128mmu.c
+ * \brief   C128 memory management uint
+ *
+ * \author  Andreas Boose <viceteam@t-online.de>
+ * \author  Marco van den Heuvel <blackystardust68@yahoo.com>
+ */
+
 /*
- * c128mmu.c
- *
- * Written by
- *  Andreas Boose <viceteam@t-online.de>
- *  Marco van den Heuvel <blackystardust68@yahoo.com>
- *
  * This file is part of VICE, the Versatile Commodore Emulator.
  * See README for copyright notice.
  *
@@ -46,7 +47,6 @@
 #include "monitor.h"
 #include "resources.h"
 #include "reu.h"
-#include "translate.h"
 #include "types.h"
 #include "vdc.h"
 #include "vicii.h"
@@ -56,7 +56,7 @@
 /* #define MMU_DEBUG */
 
 /* MMU register.  */
-static BYTE mmu[12];
+static uint8_t mmu[12];
 
 /* State of the 40/80 column key.  */
 static int mmu_column4080_key = 1;
@@ -90,7 +90,7 @@ static int set_force_c64_mode(int val, void *param)
 }
 
 static const resource_int_t resources_int[] = {
-    { "40/80ColumnKey", 1, RES_EVENT_SAME, NULL,
+    { "C128ColumnKey", 1, RES_EVENT_SAME, NULL,
       &mmu_column4080_key, set_column4080_key, NULL },
     { "Go64Mode", 0, RES_EVENT_SAME, NULL,
       &force_c64_mode_res, set_force_c64_mode, NULL },
@@ -102,27 +102,20 @@ int mmu_resources_init(void)
     return resources_register_int(resources_int);
 }
 
-static const cmdline_option_t cmdline_options[] = {
-    { "-40col", SET_RESOURCE, 0,
-      NULL, NULL, "40/80ColumnKey", (resource_value_t) 1,
-      USE_PARAM_STRING, USE_DESCRIPTION_ID,
-      IDCLS_UNUSED, IDCLS_ACTIVATE_40_COL_MODE,
-      NULL, NULL },
-    { "-80col", SET_RESOURCE, 0,
-      NULL, NULL, "40/80ColumnKey", (resource_value_t) 0,
-      USE_PARAM_STRING, USE_DESCRIPTION_ID,
-      IDCLS_UNUSED, IDCLS_ACTIVATE_80_COL_MODE,
-      NULL, NULL },
-    { "-go64", SET_RESOURCE, 0,
+static const cmdline_option_t cmdline_options[] =
+{
+    { "-40col", SET_RESOURCE, CMDLINE_ATTRIB_NONE,
+      NULL, NULL, "C128ColumnKey", (resource_value_t) 1,
+      NULL, "Activate 40 column mode" },
+    { "-80col", SET_RESOURCE, CMDLINE_ATTRIB_NONE,
+      NULL, NULL, "C128ColumnKey", (resource_value_t) 0,
+      NULL, "Activate 80 column mode" },
+    { "-go64", SET_RESOURCE, CMDLINE_ATTRIB_NONE,
       NULL, NULL, "Go64Mode", (resource_value_t) 1,
-      USE_PARAM_STRING, USE_DESCRIPTION_ID,
-      IDCLS_UNUSED, IDCLS_GO64_MODE,
-      NULL, NULL },
-    { "+go64", SET_RESOURCE, 0,
+      NULL, "Always switch to C64 mode on reset" },
+    { "+go64", SET_RESOURCE, CMDLINE_ATTRIB_NONE,
       NULL, NULL, "Go64Mode", (resource_value_t) 0,
-      USE_PARAM_STRING, USE_DESCRIPTION_ID,
-      IDCLS_UNUSED, IDCLS_GO128_MODE,
-      NULL, NULL },
+      NULL, "Always switch to C128 mode on reset" },
     CMDLINE_LIST_END
 };
 
@@ -136,7 +129,7 @@ int mmu_cmdline_options_init(void)
 static void mmu_toggle_column4080_key(void)
 {
     mmu_column4080_key = !mmu_column4080_key;
-    resources_set_int("40/80ColumnKey", mmu_column4080_key);
+    resources_set_int("C128ColumnKey", mmu_column4080_key);
     log_message(mmu_log, "40/80 column key %s.", (mmu_column4080_key) ? "released" : "pressed");
 }
 
@@ -155,7 +148,7 @@ static void mmu_switch_cpu(int value)
     }
 }
 
-static void mmu_set_ram_bank(BYTE value)
+static void mmu_set_ram_bank(uint8_t value)
 {
     if (c128_full_banks) {
         ram_bank = mem_ram + (((long)value & 0xc0) << 10);
@@ -186,9 +179,7 @@ static void mmu_switch_to_c64mode(void)
     }
     machine_tape_init_c64();
     mem_update_config(0x80 + mmu_config64);
-#ifdef COMMON_KBD
     keyboard_alternative_set(1);
-#endif
     machine_kbdbuf_reset_c64();
     machine_autostart_reset_c64();
     force_c64_mode = 0;
@@ -206,9 +197,7 @@ static void mmu_switch_to_c128mode(void)
                       ((mmu[0] & 0x40) ? 32 : 0) |
                       ((mmu[0] & 0x1) ? 0 : 64));
     z80mem_update_config((((mmu[0] & 0x1)) ? 0 : 1) | ((mmu[0] & 0x40) ? 2 : 0) | ((mmu[0] & 0x80) ? 4 : 0));
-#ifdef COMMON_KBD
     keyboard_alternative_set(0);
-#endif
     machine_kbdbuf_reset_c128();
     machine_autostart_reset_c128();
 }
@@ -234,7 +223,7 @@ void mmu_set_config64(int config)
 
 /* ------------------------------------------------------------------------- */
 
-BYTE mmu_peek(WORD addr)
+uint8_t mmu_peek(uint16_t addr)
 {
     addr &= 0xff;
 
@@ -244,7 +233,7 @@ BYTE mmu_peek(WORD addr)
 
     if (addr < 0xc) {
         if (addr == 5) {
-            BYTE exrom = export.exrom;
+            uint8_t exrom = export.exrom;
 
             if (force_c64_mode) {
                 exrom = 1;
@@ -262,25 +251,25 @@ BYTE mmu_peek(WORD addr)
     }
 }
 
-BYTE mmu_read(WORD addr)
+uint8_t mmu_read(uint16_t addr)
 {
     vicii_handle_pending_alarms_external(0);
 
     return mmu_peek(addr);
 }
 
-void mmu_store(WORD address, BYTE value)
+void mmu_store(uint16_t address, uint8_t value)
 {
     vicii_handle_pending_alarms_external_write();
 
-    address &= 0xf;
+    address &= 0xff;
 
 #ifdef MMU_DEBUG
     log_message(mmu_log, "MMU STORE $%x <- #$%x.", address, value);
 #endif
 
     if (address < 0xb) {
-        BYTE oldvalue;
+        uint8_t oldvalue;
 
         oldvalue = mmu[address];
         mmu[address] = value;
@@ -333,7 +322,7 @@ void mmu_store(WORD address, BYTE value)
 
 /* $FF00 - $FFFF: RAM, Kernal or internal function ROM, with MMU at
    $FF00 - $FF04.  */
-BYTE mmu_ffxx_read(WORD addr)
+uint8_t mmu_ffxx_read(uint16_t addr)
 {
     if (addr >= 0xff00 && addr <= 0xff04) {
         return mmu[addr & 0xf];
@@ -352,7 +341,7 @@ BYTE mmu_ffxx_read(WORD addr)
     return top_shared_read(addr);
 }
 
-BYTE mmu_ffxx_read_z80(WORD addr)
+uint8_t mmu_ffxx_read_z80(uint16_t addr)
 {
     if (addr >= 0xff00 && addr <= 0xff04) {
         return mmu[addr & 0xf];
@@ -361,7 +350,7 @@ BYTE mmu_ffxx_read_z80(WORD addr)
     return top_shared_read(addr);
 }
 
-void mmu_ffxx_store(WORD addr, BYTE value)
+void mmu_ffxx_store(uint16_t addr, uint8_t value)
 {
     if (addr == 0xff00) {
         mmu_store(0, value);
@@ -377,7 +366,7 @@ void mmu_ffxx_store(WORD addr, BYTE value)
     }
 }
 
-int mmu_dump(void *context, WORD addr)
+int mmu_dump(void *context, uint16_t addr)
 {
     mon_out("CR: bank: %d, $4000-$7FFF: %s, $8000-$BFFF: %s, $C000-$CFFF: %s, $D000-$DFFF: %s, $E000-$FFFF: %s\n",
             (mmu[0] & 0xc0) >> 6,
@@ -453,7 +442,7 @@ void mmu_init(void)
 
 void mmu_reset(void)
 {
-    WORD i;
+    uint16_t i;
 
     for (i = 0; i < 0xb; i++) {
         mmu[i] = 0;

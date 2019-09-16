@@ -41,7 +41,6 @@
 #include "userport.h"
 #include "userport_digimax.h"
 #include "util.h"
-#include "translate.h"
 
 #include "digimaxcore.c"
 
@@ -67,16 +66,15 @@ C64/C128 | CBM2 | TLC7226 DAC | NOTES
 */
 
 /* Some prototypes are needed */
-static void userport_digimax_store_pbx(BYTE value);
-static void userport_digimax_store_pa2(BYTE value);
-static void userport_digimax_store_pa3(BYTE value);
+static void userport_digimax_store_pbx(uint8_t value);
+static void userport_digimax_store_pa2(uint8_t value);
+static void userport_digimax_store_pa3(uint8_t value);
 static int userport_digimax_write_snapshot_module(snapshot_t *s);
 static int userport_digimax_read_snapshot_module(snapshot_t *s);
 
 static userport_device_t digimax_device = {
     USERPORT_DEVICE_DIGIMAX,
     "Userport DigiMAX",
-    IDGS_USERPORT_DIGIMAX,
     NULL, /* NO pbx read */
     userport_digimax_store_pbx,
     NULL, /* NO pa2 read */
@@ -105,28 +103,28 @@ static userport_device_list_t *userport_digimax_list_item = NULL;
 
 /* ------------------------------------------------------------------------- */
 
-static BYTE userport_digimax_address = 3;
+static uint8_t userport_digimax_address = 3;
 
 void userport_digimax_sound_chip_init(void)
 {
     digimax_sound_chip_offset = sound_chip_register(&digimax_sound_chip);
 }
 
-static void userport_digimax_store_pa2(BYTE value)
+static void userport_digimax_store_pa2(uint8_t value)
 {
     userport_digimax_address &= 2;
     userport_digimax_address |= (value & 1);
 }
 
-static void userport_digimax_store_pa3(BYTE value)
+static void userport_digimax_store_pa3(uint8_t value)
 {
     userport_digimax_address &= 1;
     userport_digimax_address |= ((value & 1) << 1);
 }
 
-static void userport_digimax_store_pbx(BYTE value)
+static void userport_digimax_store_pbx(uint8_t value)
 {
-    BYTE addr = 0;
+    uint8_t addr = 0;
 
     switch (userport_digimax_address) {
         case 0x0:
@@ -144,7 +142,7 @@ static void userport_digimax_store_pbx(BYTE value)
     }
 
     digimax_sound_data[addr] = value;
-    sound_store((WORD)(digimax_sound_chip_offset | addr), value, 0);
+    sound_store((uint16_t)(digimax_sound_chip_offset | addr), value, 0);
 }
 
 /* ---------------------------------------------------------------------*/
@@ -185,16 +183,12 @@ int userport_digimax_resources_init(void)
 
 static const cmdline_option_t cmdline_options[] =
 {
-    { "-userportdigimax", SET_RESOURCE, 0,
+    { "-userportdigimax", SET_RESOURCE, CMDLINE_ATTRIB_NONE,
       NULL, NULL, "UserportDIGIMAX", (resource_value_t)1,
-      USE_PARAM_STRING, USE_DESCRIPTION_ID,
-      IDCLS_UNUSED, IDCLS_ENABLE_USERPORT_DIGIMAX,
-      NULL, NULL },
-    { "+userportdigimax", SET_RESOURCE, 0,
+      NULL, "Enable the userport DigiMAX device" },
+    { "+userportdigimax", SET_RESOURCE, CMDLINE_ATTRIB_NONE,
       NULL, NULL, "UserportDIGIMAX", (resource_value_t)0,
-      USE_PARAM_STRING, USE_DESCRIPTION_ID,
-      IDCLS_UNUSED, IDCLS_DISABLE_USERPORT_DIGIMAX,
-      NULL, NULL },
+      NULL, "Disable the userport DigiMAX device" },
     CMDLINE_LIST_END
 };
 
@@ -246,7 +240,7 @@ static int userport_digimax_write_snapshot_module(snapshot_t *s)
 
 static int userport_digimax_read_snapshot_module(snapshot_t *s)
 {
-    BYTE major_version, minor_version;
+    uint8_t major_version, minor_version;
     snapshot_module_t *m;
 
     /* enable device */

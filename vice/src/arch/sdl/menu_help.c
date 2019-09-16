@@ -36,7 +36,6 @@
 #include "lib.h"
 #include "menu_common.h"
 #include "menu_help.h"
-#include "platform_discovery.h"
 #include "ui.h"
 #include "uimenu.h"
 #include "util.h"
@@ -193,21 +192,23 @@ static char *contrib_convert(const char *text, int cols)
     return new_text;
 }
 
-static unsigned int scroll_up(const char *text, int first_line, int amount)
+/* gets an offset into the text and an amount of lines to scroll
+   up, returns a new offset */
+static unsigned int scroll_up(const char *text, int offset, int amount)
 {
-    int line = first_line;
-
-    while ((amount--) && (line > 0)) {
-        int i = line - 2;
+    while ((amount--) && (offset >= 2)) {
+        int i = offset - 2;
 
         while ((i >= 0) && (text[i] != '\n')) {
             --i;
         }
 
-        line = i + 1;
+        offset = i + 1;
     }
-
-    return line;
+    if (offset < 0) {
+        offset = 0;
+    }
+    return offset;
 }
 
 #define CHARCODE_UMLAUT_A_LOWER         ((char)0xe4)
@@ -227,9 +228,11 @@ static unsigned int scroll_up(const char *text, int first_line, int amount)
 static void show_text(const char *text)
 {
     int first_line = 0;
+    int last_line = 0;
     int next_line = 0;
     int next_page = 0;
     unsigned int current_line = 0;
+    unsigned int this_line = 0;
     unsigned int len;
     int x, y, z;
     int active = 1;
@@ -239,22 +242,42 @@ static void show_text(const char *text)
 
     menu_draw = sdl_ui_get_menu_param();
 
-    string = lib_malloc(128);
+    string = lib_malloc(0x400);
     len = strlen(text);
+
+    /* find out how many lines */
+    for (x = 0, z = 0; text[x] != 0; x++) {
+        if (text[x] == '\n') {
+            last_line++;
+        }
+    }
+
+    last_line -= menu_draw->max_text_y;
+    for (x = 0, z = 0; text[x] != 0; x++) {
+        if (last_line == 0) {
+            break;
+        }
+        if (text[x] == '\n') {
+            last_line--;
+        }
+    }
+    last_line = x; /* save the offset */
 
     while (active) {
         sdl_ui_clear();
         first_line = current_line;
-        for (y = 0; (y < menu_draw->max_text_y) && (current_line < len); y++) {
+        this_line = current_line;
+        for (y = 0; (y < menu_draw->max_text_y) && (this_line < len); y++) {
             z = 0;
-            for (x = 0; (text[current_line + x] != '\n') &&
-                        (text[current_line + x] != 0); x++) {
-                switch (text[current_line + x]) {
+            for (x = 0; (text[this_line + x] != '\n') &&
+                        (text[this_line + x] != 0); x++) {
+                switch (text[this_line + x]) {
                     case '`':
                         string[x + z] = '\'';
                         break;
+                    /* FIXME: we should actually be able to handle some of these */
                     case CHARCODE_UMLAUT_A_LOWER:
-		    case CHARCODE_KROUZEK_A_LOWER:
+                    case CHARCODE_KROUZEK_A_LOWER:
                         string[x + z] = 'a';
                         break;
                     case CHARCODE_UMLAUT_A_UPPER:
@@ -279,9 +302,6 @@ static void show_text(const char *text)
                     case CHARCODE_UMLAUT_U_LOWER:
                         string[x + z] = 'u';
                         break;
-                    case '_':
-                        string[x + z] = (unsigned char)164;
-                        break;
                     case '\t':
                         string[x + z] = ' ';
                         string[x + z + 1] = ' ';
@@ -290,7 +310,7 @@ static void show_text(const char *text)
                         z += 3;
                         break;
                     default:
-                        string[x + z] = text[current_line + x];
+                        string[x + z] = text[this_line + x];
                         break;
                 }
             }
@@ -299,11 +319,11 @@ static void show_text(const char *text)
                 sdl_ui_print(string, 0, y);
             }
             if (y == 0) {
-                next_line = current_line + x + 1;
+                next_line = this_line + x + 1;
             }
-            current_line += x + 1;
+            this_line += x + 1;
         }
-        next_page = current_line;
+        next_page = this_line;
         active_keys = 1;
         sdl_ui_refresh();
 
@@ -316,20 +336,42 @@ static void show_text(const char *text)
                     active = 0;
                     break;
                 case MENU_ACTION_RIGHT:
+                case MENU_ACTION_PAGEDOWN:
                     active_keys = 0;
-                    current_line = next_page;
+                    if (current_line < last_line) {
+                        current_line = next_page;
+                        if (current_line > last_line) {
+                            current_line = last_line;
+                        }
+                    }
                     break;
                 case MENU_ACTION_DOWN:
                     active_keys = 0;
-                    current_line = next_line;
+                    if (current_line < last_line) {
+                        current_line = next_line;
+                        if (current_line > last_line) {
+                            current_line = last_line;
+                        }
+                    }
                     break;
                 case MENU_ACTION_LEFT:
+                case MENU_ACTION_PAGEUP:
                     active_keys = 0;
                     current_line = scroll_up(text, first_line, menu_draw->max_text_y);
                     break;
                 case MENU_ACTION_UP:
                     active_keys = 0;
                     current_line = scroll_up(text, first_line, 1);
+                    break;
+                case MENU_ACTION_HOME:
+                    active_keys = 0;
+                    current_line = 0;
+                    break;
+                case MENU_ACTION_END:
+                    active_keys = 0;
+                    if (current_line < last_line) {
+                        current_line = last_line;
+                    }
                     break;
                 default:
                     SDL_Delay(10);
@@ -359,9 +401,9 @@ static UI_MENU_CALLBACK(about_callback)
 #endif
         i++;
 #ifdef USE_SDLUI2
-        sdl_ui_print_center("SDL2 " PLATFORM_CPU " " PLATFORM_OS " " PLATFORM_COMPILER, i++);
+        sdl_ui_print_center("SDL2", i++);
 #else
-        sdl_ui_print_center("SDL " PLATFORM_CPU " " PLATFORM_OS " " PLATFORM_COMPILER, i++);
+        sdl_ui_print_center("SDL", i++);
 #endif
         i++;
         sdl_ui_print_center("The VICE Team", i++);
@@ -403,7 +445,7 @@ static char *get_compiletime_features(void)
     lstr = str;
     list = vice_get_feature_list();
     while (list->symbol) {
-        sprintf(lstr, "%s\n%s\n%s\n\n", list->isdefined ? "yes " : "no  ", list->descr, list->symbol);
+        sprintf(lstr, "%4s %s\n%s\n\n", list->isdefined ? "yes " : "no  ", list->symbol, list->descr);
         lstr += strlen(lstr);
         ++list;
     }
@@ -509,41 +551,6 @@ static UI_MENU_CALLBACK(warranty_callback)
     return NULL;
 }
 
-#ifdef SDL_DEBUG
-static UI_MENU_CALLBACK(show_font_callback)
-{
-    int active = 1;
-    int i, j;
-    char fontchars[] = "0x 0123456789abcdef";
-
-    if (activated) {
-        sdl_ui_clear();
-        sdl_ui_print_center("   0123456789ABCDEF", 0);
-        sdl_ui_print_center("0x \xff\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f", 1);
-        for (j = 1; j < 16; ++j) {
-            for (i = 0; i < 16; ++i) {
-                fontchars[3 + i] = (char)(j * 16 + i);
-            }
-            fontchars[0] = "0123456789ABCDEF"[j];
-            sdl_ui_print_center(fontchars, 1 + j);
-        }
-        sdl_ui_refresh();
-        while (active) {
-            switch (sdl_ui_menu_poll_input()) {
-                case MENU_ACTION_CANCEL:
-                case MENU_ACTION_EXIT:
-                    active = 0;
-                    break;
-                default:
-                    SDL_Delay(10);
-                    break;
-            }
-        }
-    }
-    return NULL;
-}
-#endif
-
 const ui_menu_entry_t help_menu[] = {
     { "About",
       MENU_ENTRY_DIALOG,
@@ -569,11 +576,5 @@ const ui_menu_entry_t help_menu[] = {
       MENU_ENTRY_DIALOG,
       warranty_callback,
       NULL },
-#ifdef SDL_DEBUG
-    { "Show font",
-      MENU_ENTRY_DIALOG,
-      show_font_callback,
-      NULL },
-#endif
     SDL_MENU_LIST_END
 };

@@ -28,6 +28,7 @@
 struct dc_storage{
 	char* command;
 	char* files[DC_MAX_SIZE];
+	unsigned unit;
 	unsigned count;
 	int index;
 	bool eject_state;
@@ -36,7 +37,10 @@ struct dc_storage{
 typedef struct dc_storage dc_storage;
 dc_storage* dc_create(void);
 void dc_parse_m3u(dc_storage* dc, const char* m3u_file);
+void dc_parse_vfl(dc_storage* dc, const char* vfl_file);
 bool dc_add_file(dc_storage* dc, const char* filename);
 void dc_free(dc_storage* dc);
+void dc_reset(dc_storage* dc);
+bool dc_remove_file(dc_storage* dc, int index);
 
 #endif

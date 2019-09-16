@@ -1,0 +1,5 @@
+cw-unix-pci.o: cw-unix-pci.c ../../src/vice.h ../../src/config.h
+
+../../src/vice.h:
+
+../../src/config.h:

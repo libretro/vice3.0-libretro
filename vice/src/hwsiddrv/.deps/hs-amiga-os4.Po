@@ -1,0 +1,5 @@
+hs-amiga-os4.o: hs-amiga-os4.c ../../src/vice.h ../../src/config.h
+
+../../src/vice.h:
+
+../../src/config.h:

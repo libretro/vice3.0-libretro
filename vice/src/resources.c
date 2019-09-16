@@ -350,47 +350,11 @@ static void resources_free(void)
     }
 }
 
+
+/** \brief  Shutown resources
+ */
 void resources_shutdown(void)
 {
-#ifdef VICE_DEBUG_RESOURCES
-    int i;
-
-    printf("VICE_DEBUG_RESOURCES: dumping resources: name, type\n");
-    for (i = 0; i < num_resources; i++) {
-        resource_ram_t *res = resources + i;
-
-        printf("RES\t%s\t", res->name);
-        switch (res->type) {
-            case RES_INTEGER:
-                printf("integer");
-                /* attempting to access default/current values of some
-                 * resources fails, such as `VICIIFullscreenDevice` which is
-                 * a resource constructed in the UI code */
-#if 0
-                if (res->value_ptr != NULL && res->factory_value != NULL) {
-                    printf("\t%d\t%d",
-                            vice_ptr_to_int(res->factory_value),
-                            vice_ptr_to_int(*(res->value_ptr)));
-                }
-#endif
-                break;
-            case RES_STRING:
-                printf("string");
-#if 0
-                if (res->value_ptr != NULL && res->factory_value != NULL) {
-                    printf("\t%s\t%s",
-                            (char *)(res->factory_value),
-                            *(char **)res->value_ptr);
-                }
-#endif
-                break;
-            default:
-                printf("???\t???\t???");
-        }
-        putchar('\n');
-
-    }
-#endif
     resources_free();
 
     lib_free(resources);
@@ -446,7 +410,7 @@ static void resource_create_event_data(char **event_data, int *data_size,
     name_size = (int)strlen(name) + 1;
 
     if (r->type == RES_INTEGER) {
-        *data_size = name_size + sizeof(DWORD);
+        *data_size = name_size + sizeof(uint32_t);
     } else {
         *data_size = name_size + (int)strlen((char *)value) + 1;
     }
@@ -455,7 +419,7 @@ static void resource_create_event_data(char **event_data, int *data_size,
     strcpy(*event_data, name);
 
     if (r->type == RES_INTEGER) {
-        *(DWORD *)(*event_data + name_size) = vice_ptr_to_uint(value);
+        *(uint32_t *)(*event_data + name_size) = vice_ptr_to_uint(value);
     } else {
         strcpy(*event_data + name_size, (char *)value);
     }
@@ -636,7 +600,7 @@ void resources_set_value_event(void *data, int size)
     valueptr = name + strlen(name) + 1;
     r = lookup(name);
     if (r->type == RES_INTEGER) {
-        resources_set_value_internal(r, (resource_value_t) uint_to_void_ptr(*(DWORD*)valueptr));
+        resources_set_value_internal(r, (resource_value_t) uint_to_void_ptr(*(uint32_t *)valueptr));
     } else {
         resources_set_value_internal(r, (resource_value_t)valueptr);
     }
@@ -1288,7 +1252,7 @@ int resources_save(const char *fname)
     if (fname == NULL) {
         if (vice_config_file == NULL) {
             /* get default filename. this also creates the .vice directory if not present */
-            default_name = archdep_default_save_resource_file_name();
+            default_name = archdep_default_resource_file_name();
         } else {
             default_name = lib_stralloc(vice_config_file);
         }

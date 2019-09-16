@@ -48,9 +48,11 @@
 
 /* SDL_Delay & GetTicks have 1ms resolution, while VICE needs 1us */
 #define VICE_SDL_TICKS_SCALE 1000
+static int pause_pending = 0;
 
+/* FIXME: this function should be a constant */
 /* Number of timer units per second. */
-signed long vsyncarch_frequency(void)
+unsigned long vsyncarch_frequency(void)
 {
     /* Milliseconds resolution. */
     return 1000 * VICE_SDL_TICKS_SCALE;
@@ -76,7 +78,7 @@ void vsyncarch_display_speed(double speed, double frame_rate, int warp_enabled)
 }
 
 /* Sleep a number of timer units. */
-void vsyncarch_sleep(signed long delay)
+void vsyncarch_sleep(unsigned long delay)
 {
     SDL_Delay(delay / VICE_SDL_TICKS_SCALE);
 }
@@ -113,4 +115,18 @@ void vsyncarch_presync(void)
 
 void vsyncarch_postsync(void)
 {
+    /* (*ui_dispatch_hook)(); */ /* ? */
+
+    /* this function is called once a frame, so this
+       handles single frame advance */
+    if (pause_pending) {
+        ui_pause_emulation(1);
+        pause_pending = 0;
+    }
+}
+
+void vsyncarch_advance_frame(void)
+{
+    ui_pause_emulation(0);
+    pause_pending = 1;
 }

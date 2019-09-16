@@ -247,26 +247,26 @@ int vdrive_bam_alloc_next_free_sector(vdrive_t *vdrive,
     return -1;
 }
 
-static void vdrive_bam_set(BYTE *bamp, unsigned int sector)
+static void vdrive_bam_set(uint8_t *bamp, unsigned int sector)
 {
     bamp[1 + sector / 8] |= (1 << (sector % 8));
     return;
 }
 
-static void vdrive_bam_clr(BYTE *bamp, unsigned int sector)
+static void vdrive_bam_clr(uint8_t *bamp, unsigned int sector)
 {
     bamp[1 + sector / 8] &= ~(1 << (sector % 8));
     return;
 }
 
-int vdrive_bam_isset(BYTE *bamp, unsigned int sector)
+int vdrive_bam_isset(uint8_t *bamp, unsigned int sector)
 {
     return bamp[1 + sector / 8] & (1 << (sector % 8));
 }
 
 int vdrive_bam_allocate_chain(vdrive_t *vdrive, unsigned int t, unsigned int s)
 {
-    BYTE tmp[256];
+    uint8_t tmp[256];
     int rc;
 
     while (t) {
@@ -310,10 +310,10 @@ int vdrive_bam_allocate_chain(vdrive_t *vdrive, unsigned int t, unsigned int s)
  *
  *(  FIXME: partition support
  */
-BYTE *vdrive_bam_get_track_entry(vdrive_t *vdrive, unsigned int track)
+uint8_t *vdrive_bam_get_track_entry(vdrive_t *vdrive, unsigned int track)
 {
-    BYTE *bamp = NULL;
-    BYTE *bam = vdrive->bam;
+    uint8_t *bamp = NULL;
+    uint8_t *bam = vdrive->bam;
 
     if (track == 0) {
         log_error(LOG_ERR, "invalid track number: 0");
@@ -369,7 +369,7 @@ BYTE *vdrive_bam_get_track_entry(vdrive_t *vdrive, unsigned int track)
     return bamp;
 }
 
-static void vdrive_bam_sector_free(vdrive_t *vdrive, BYTE *bamp,
+static void vdrive_bam_sector_free(vdrive_t *vdrive, uint8_t *bamp,
                                    unsigned int track, int add)
 {
     switch (vdrive->image_format) {
@@ -397,8 +397,12 @@ static void vdrive_bam_sector_free(vdrive_t *vdrive, BYTE *bamp,
 int vdrive_bam_allocate_sector(vdrive_t *vdrive,
                                unsigned int track, unsigned int sector)
 {
-    BYTE *bamp;
+    uint8_t *bamp;
 
+    /* Tracks > 70 don't go into the (regular) BAM on 1571 */
+    if ((track > NUM_TRACKS_1571) && (vdrive->image_format == VDRIVE_IMAGE_FORMAT_1571)) {
+        return 0;
+    }
     if (vdrive->image_format == VDRIVE_IMAGE_FORMAT_4000) {
         sector ^= 7;
     }
@@ -415,8 +419,12 @@ int vdrive_bam_allocate_sector(vdrive_t *vdrive,
 int vdrive_bam_free_sector(vdrive_t *vdrive, unsigned int track,
                            unsigned int sector)
 {
-    BYTE *bamp;
+    uint8_t *bamp;
 
+    /* Tracks > 70 don't go into the (regular) BAM on 1571 */
+    if ((track > NUM_TRACKS_1571) && (vdrive->image_format == VDRIVE_IMAGE_FORMAT_1571)) {
+        return 0;
+    }
     if (vdrive->image_format == VDRIVE_IMAGE_FORMAT_4000) {
         sector ^= 7;
     }
@@ -432,7 +440,7 @@ int vdrive_bam_free_sector(vdrive_t *vdrive, unsigned int track,
 
 void vdrive_bam_clear_all(vdrive_t *vdrive)
 {
-    BYTE *bam = vdrive->bam;
+    uint8_t *bam = vdrive->bam;
 
     switch (vdrive->image_format) {
         case VDRIVE_IMAGE_FORMAT_1541:
@@ -470,7 +478,7 @@ void vdrive_bam_clear_all(vdrive_t *vdrive)
 }
 
 /* Should be removed some day.  */
-static int mystrncpy(BYTE *d, BYTE *s, int n)
+static int mystrncpy(uint8_t *d, uint8_t *s, int n)
 {
     while (n-- && *s) {
         *d++ = *s++;
@@ -478,7 +486,7 @@ static int mystrncpy(BYTE *d, BYTE *s, int n)
     return (n);
 }
 
-void vdrive_bam_create_empty_bam(vdrive_t *vdrive, const char *name, BYTE *id)
+void vdrive_bam_create_empty_bam(vdrive_t *vdrive, const char *name, uint8_t *id)
 {
     /* Create Disk Format for 1541/1571/1581/2040/4000 disks.  */
     memset(vdrive->bam, 0, vdrive->bam_size);
@@ -496,7 +504,7 @@ void vdrive_bam_create_empty_bam(vdrive_t *vdrive, const char *name, BYTE *id)
         memset(vdrive->bam + vdrive->bam_name, 0xa0,
                (vdrive->image_format == VDRIVE_IMAGE_FORMAT_1581
                 || vdrive->image_format == VDRIVE_IMAGE_FORMAT_4000) ? 25 : 27);
-        mystrncpy(vdrive->bam + vdrive->bam_name, (BYTE *)name, 16);
+        mystrncpy(vdrive->bam + vdrive->bam_name, (uint8_t *)name, 16);
         mystrncpy(vdrive->bam + vdrive->bam_id, id, 2);
     }
 
@@ -544,7 +552,7 @@ void vdrive_bam_create_empty_bam(vdrive_t *vdrive, const char *name, BYTE *id)
             /* byte 3-5 unused */
             /* bytes 6- disk name + id + version */
             memset(vdrive->bam + vdrive->bam_name, 0xa0, 27);
-            mystrncpy(vdrive->bam + vdrive->bam_name, (BYTE *)name, 16);
+            mystrncpy(vdrive->bam + vdrive->bam_name, (uint8_t *)name, 16);
             mystrncpy(vdrive->bam + vdrive->bam_id, id, 2);
             vdrive->bam[BAM_VERSION_8050] = 50;
             vdrive->bam[BAM_VERSION_8050 + 1] = 67;
@@ -608,7 +616,7 @@ void vdrive_bam_create_empty_bam(vdrive_t *vdrive, const char *name, BYTE *id)
     return;
 }
 
-int vdrive_bam_get_disk_id(unsigned int unit, BYTE *id)
+int vdrive_bam_get_disk_id(unsigned int unit, uint8_t *id)
 {
     vdrive_t *vdrive;
 
@@ -623,7 +631,7 @@ int vdrive_bam_get_disk_id(unsigned int unit, BYTE *id)
     return 0;
 }
 
-int vdrive_bam_set_disk_id(unsigned int unit, BYTE *id)
+int vdrive_bam_set_disk_id(unsigned int unit, uint8_t *id)
 {
     vdrive_t *vdrive;
 
@@ -802,7 +810,9 @@ int vdrive_bam_write_bam(vdrive_t *vdrive)
 
 unsigned int vdrive_bam_free_block_count(vdrive_t *vdrive)
 {
-    unsigned int blocks, i, j;
+    unsigned int blocks;
+    unsigned int i;
+    unsigned int j; /* FIXME: j looks a lot like i or l */
 
     for (blocks = 0, i = 1; i <= vdrive->num_tracks; i++) {
         switch (vdrive->image_format) {
@@ -830,7 +840,6 @@ unsigned int vdrive_bam_free_block_count(vdrive_t *vdrive)
                 break;
             case VDRIVE_IMAGE_FORMAT_8050:
                 if (i != vdrive->Dir_Track) {
-                    int j;
                     for (j = 1; j < 3; j++) {
                         if (i >= vdrive->bam[(j * 0x100) + 4] && i < vdrive->bam[(j * 0x100) + 5]) {
                             blocks += vdrive->bam[(j * 0x100) + BAM_BIT_MAP_8050 + 5 * (i - vdrive->bam[(j * 0x100) + 4])];
@@ -841,7 +850,6 @@ unsigned int vdrive_bam_free_block_count(vdrive_t *vdrive)
                 break;
             case VDRIVE_IMAGE_FORMAT_8250:
                 if (i != vdrive->Dir_Track) {
-                    int j;
                     for (j = 1; j < 5; j++) {
                         if (i >= vdrive->bam[(j * 0x100) + 4] && i < vdrive->bam[(j * 0x100) + 5]) {
                             blocks += vdrive->bam[(j * 0x100) + BAM_BIT_MAP_8050 + 5 * (i - vdrive->bam[(j * 0x100) + 4])];

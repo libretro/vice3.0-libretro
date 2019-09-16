@@ -37,7 +37,6 @@
 #include "printer.h"
 #include "resources.h"
 #include "snapshot.h"
-#include "translate.h"
 #include "types.h"
 #include "userport.h"
 
@@ -59,15 +58,14 @@ C64/C128 | CBM2 | PET | VIC20 | CENTRONICS  | NOTES
 /* ------------------------------------------------------------------------- */
 
 /* Some prototypes are needed */
-static void userport_printer_store_pbx(BYTE b);
-static void userport_printer_store_pa2(BYTE s);
+static void userport_printer_store_pbx(uint8_t b);
+static void userport_printer_store_pa2(uint8_t s);
 static int userport_printer_write_snapshot_module(snapshot_t *s);
 static int userport_printer_read_snapshot_module(snapshot_t *s);
 
 static userport_device_t printer_device = {
     USERPORT_DEVICE_PRINTER,
     "Userport printer",
-    IDGS_USERPORT_PRINTER,
     NULL, /* NO pbx read */
     userport_printer_store_pbx,
     NULL, /* NO pa2 read */
@@ -137,17 +135,14 @@ int interface_userport_init_resources(void)
     return resources_register_int(resources_int);
 }
 
-static const cmdline_option_t cmdline_options[] = {
-    { "-pruser", SET_RESOURCE, 0,
+static const cmdline_option_t cmdline_options[] =
+{
+    { "-pruser", SET_RESOURCE, CMDLINE_ATTRIB_NONE,
       NULL, NULL, "PrinterUserport", (resource_value_t) 1,
-      USE_PARAM_STRING, USE_DESCRIPTION_ID,
-      IDCLS_UNUSED, IDCLS_ENABLE_USERPORT_PRINTER,
-      NULL, NULL },
-    { "+pruser", SET_RESOURCE, 0,
+      NULL, "Enable the userport printer emulation" },
+    { "+pruser", SET_RESOURCE, CMDLINE_ATTRIB_NONE,
       NULL, NULL, "PrinterUserport", (resource_value_t) 0,
-      USE_PARAM_STRING, USE_DESCRIPTION_ID,
-      IDCLS_UNUSED, IDCLS_DISABLE_USERPORT_PRINTER,
-      NULL, NULL },
+      NULL, "Disable the userport printer emulation" },
     CMDLINE_LIST_END
 };
 
@@ -158,18 +153,18 @@ int interface_userport_init_cmdline_options(void)
 
 /* ------------------------------------------------------------------------- */
 
-static BYTE value; /* userport value */
-static BYTE strobe;
+static uint8_t value; /* userport value */
+static uint8_t strobe;
 
-static void userport_printer_store_pbx(BYTE b)
+static void userport_printer_store_pbx(uint8_t b)
 {
     value = b;
 }
 
-static void userport_printer_store_pa2(BYTE s)
+static void userport_printer_store_pa2(uint8_t s)
 {
     if (userport_printer_enabled && strobe && !s) {     /* hi->lo on strobe */
-        driver_select_putc(USERPORT_OUTPUT, 4, (BYTE)value);
+        driver_select_putc(USERPORT_OUTPUT, 4, (uint8_t)value);
 
         set_userport_flag(1); /* signal lo->hi */
         set_userport_flag(0); /* signal hi->lo */
@@ -201,9 +196,8 @@ static int userport_printer_write_snapshot_module(snapshot_t *s)
         return -1;
     }
 
-    if (0
-        || SMW_B(m, value) < 0
-        || SMW_B(m, strobe) < 0) {
+    if (SMW_B(m, value) < 0
+            || SMW_B(m, strobe) < 0) {
         snapshot_module_close(m);
         return -1;
     }
@@ -212,7 +206,7 @@ static int userport_printer_write_snapshot_module(snapshot_t *s)
 
 static int userport_printer_read_snapshot_module(snapshot_t *s)
 {
-    BYTE major_version, minor_version;
+    uint8_t major_version, minor_version;
     snapshot_module_t *m;
 
     /* enable device */
@@ -230,9 +224,8 @@ static int userport_printer_read_snapshot_module(snapshot_t *s)
         goto fail;
     }
 
-    if (0
-        || SMR_B(m, &value) < 0
-        || SMR_B(m, &strobe) < 0) {
+    if (SMR_B(m, &value) < 0
+            || SMR_B(m, &strobe) < 0) {
         goto fail;
     }
     return snapshot_module_close(m);

@@ -1,0 +1,5 @@
+ps-ieee1284.o: ps-ieee1284.c ../../src/vice.h ../../src/config.h
+
+../../src/vice.h:
+
+../../src/config.h:

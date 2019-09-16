@@ -1,0 +1,5 @@
+hs-unix-pci.o: hs-unix-pci.c ../../src/vice.h ../../src/config.h
+
+../../src/vice.h:
+
+../../src/config.h:

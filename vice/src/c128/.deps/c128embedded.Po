@@ -1,0 +1,5 @@
+c128embedded.o: c128embedded.c ../../src/vice.h ../../src/config.h
+
+../../src/vice.h:
+
+../../src/config.h:

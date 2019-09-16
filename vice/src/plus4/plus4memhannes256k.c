@@ -31,7 +31,6 @@
 #include <string.h>
 
 #include "cartio.h"
-#include "cmdline.h"
 #include "lib.h"
 #include "log.h"
 #include "machine.h"
@@ -42,13 +41,12 @@
 #include "plus4memhannes256k.h"
 #include "resources.h"
 #include "snapshot.h"
-#include "translate.h"
 #include "types.h"
 #include "uiapi.h"
 
 
 /* HANNES 256K registers */
-static BYTE h256k_reg = 0;
+static uint8_t h256k_reg = 0;
 
 static log_t h256k_log = LOG_ERR;
 
@@ -60,11 +58,11 @@ int h256k_enabled = 0;
 static int h256k_bank = 3;
 static int h256k_bound = 1;
 
-BYTE *h256k_ram = NULL;
+uint8_t *h256k_ram = NULL;
 
 /* Some prototypes */
-static BYTE h256k_reg_read(WORD addr);
-static void h256k_reg_store(WORD addr, BYTE value);
+static uint8_t h256k_reg_read(uint16_t addr);
+static void h256k_reg_store(uint16_t addr, uint8_t value);
 static int h256k_dump(void);
 
 static io_source_t h256k_device = {
@@ -175,12 +173,12 @@ void h256k_shutdown(void)
 
 /* ------------------------------------------------------------------------- */
 
-static BYTE h256k_reg_read(WORD addr)
+static uint8_t h256k_reg_read(uint16_t addr)
 {
     return h256k_reg;
 }
 
-static void h256k_reg_store(WORD addr, BYTE value)
+static void h256k_reg_store(uint16_t addr, uint8_t value)
 {
     h256k_bank = value & 3;
     h256k_reg = ((value & 0xbf) | 0x40);
@@ -197,7 +195,7 @@ static void h256k_reg_store(WORD addr, BYTE value)
     h256k_bound = (value & 0x80) >> 7;
 }
 
-void h256k_store(WORD addr, BYTE value)
+void h256k_store(uint16_t addr, uint8_t value)
 {
     int real_bank;
 
@@ -224,7 +222,7 @@ void h256k_store(WORD addr, BYTE value)
     }
 }
 
-BYTE h256k_read(WORD addr)
+uint8_t h256k_read(uint16_t addr)
 {
     int real_bank;
 

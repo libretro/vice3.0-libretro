@@ -32,6 +32,7 @@
 
 #define COMMENT "#"
 #define M3U_SPECIAL_COMMAND "#COMMAND:"
+#define VFL_UNIT_ENTRY "UNIT "
 
 // Return the directory name of filename 'filename'.
 char* dirname_int(const char* filename)
@@ -105,6 +106,7 @@ void dc_reset(dc_storage* dc)
 		free(dc->files[i]);
 		dc->files[i] = NULL;
 	}
+	dc->unit = 0;
 	dc->count = 0;
 	dc->index = -1;
 	dc->eject_state = true;
@@ -117,6 +119,7 @@ dc_storage* dc_create(void)
 	
 	if((dc = malloc(sizeof(dc_storage))) != NULL)
 	{
+		dc->unit = 0;
 		dc->count = 0;
 		dc->index = -1;
 		dc->eject_state = true;
@@ -133,11 +136,14 @@ dc_storage* dc_create(void)
 bool dc_add_file_int(dc_storage* dc, char* filename)
 {
 	// Verify
-	if(dc == NULL)
-		return false;
-
 	if(filename == NULL)
 		return false;
+
+	if(dc == NULL)
+	{
+		free(filename);
+		return false;
+	}
 
 	// If max size is not
 	if(dc->count < DC_MAX_SIZE)
@@ -148,6 +154,8 @@ bool dc_add_file_int(dc_storage* dc, char* filename)
 		return true;
 	}
 	
+	free(filename);
+
 	return false;
 }
 
@@ -166,37 +174,75 @@ bool dc_add_file(dc_storage* dc, const char* filename)
 	return dc_add_file_int(dc, filename_int);
 }
 
-void dc_parse_m3u(dc_storage* dc, const char* m3u_file)
+bool dc_remove_file(dc_storage* dc, int index)
+{
+    if (dc == NULL)
+        return false;
+
+    if (index >= dc->count)
+        return false;
+
+    // Shift entries after index up
+    if (index != dc->count - 1)
+        memmove(dc->files + index, dc->files + index + 1, (dc->count - 1 - index) * sizeof(dc->files[0]));
+
+    dc->count--;
+
+    return true;
+}
+
+void dc_parse_list(dc_storage* dc, const char* list_file, bool is_vfl)
 {
 	// Verify
 	if(dc == NULL)
 		return;
 	
-	if(m3u_file == NULL)
+	if(list_file == NULL)
 		return;
 
 	FILE* fp = NULL;
 
 	// Try to open the file
-	if ((fp = fopen(m3u_file, "r")) == NULL)
+	if ((fp = fopen(list_file, "r")) == NULL)
 		return;
 
 	// Reset
 	dc_reset(dc);
 	
-	// Get the m3u base dir for resolving relative path
-	char* basedir = dirname_int(m3u_file);
+	// Get the list base dir for resolving relative path
+	char* basedir = dirname_int(list_file);
 	
 	// Read the lines while there is line to read and we have enough space
 	char buffer[2048];
 	while ((dc->count <= DC_MAX_SIZE) && (fgets(buffer, sizeof(buffer), fp) != NULL))
 	{
 		char* string = trimwhitespace(buffer);
-		
+
+		if (string[0] == '\0')
+			continue;
+
 		// If it's a m3u special key or a file
-		if (strstartswith(string, M3U_SPECIAL_COMMAND))
+		if (!is_vfl && strstartswith(string, M3U_SPECIAL_COMMAND))
 		{
 			dc->command = strright(string, strlen(string) - strlen(M3U_SPECIAL_COMMAND));
+		}
+		else if (is_vfl && strstartswith(string, VFL_UNIT_ENTRY))
+		{
+			int unit = strtol(string + strlen(VFL_UNIT_ENTRY), NULL, 10);
+			// VICE doesn't allow flip list for tape (unit 1),
+			// but let's not split hairs
+			if (unit != 1 && !(unit >= 8 && unit <= 11))
+			{
+				// Invalid unit number - just ignore the list
+				break;
+			}
+			if (dc->unit != 0 && dc->count != 0)
+			{
+				// VFL file could teoretically contain flip lists
+				// for multliple drives. Read only the first one.
+				break;
+			}
+			dc->unit = unit;
 		}
 		else if (!strstartswith(string, COMMENT))
 		{
@@ -210,13 +256,37 @@ void dc_parse_m3u(dc_storage* dc, const char* m3u_file)
 
 		}
 	}
-	
+
+	// If it's vfl, we have to reverse it
+	if (is_vfl)
+	{
+		int idx = 0;
+		int ridx = dc->count - 1;
+		while (idx < ridx)
+		{
+			char* tmp = dc->files[idx];
+			dc->files[idx] = dc->files[ridx];
+			dc->files[ridx] = tmp;
+			++idx; --ridx;
+		}
+	}
+
 	// If basedir was provided
 	if(basedir != NULL)
 		free(basedir);
 
 	// Close the file 
 	fclose(fp);
+}
+
+void dc_parse_m3u(dc_storage* dc, const char* m3u_file)
+{
+	dc_parse_list(dc, m3u_file, false);
+}
+
+void dc_parse_vfl(dc_storage* dc, const char* vfl_file)
+{
+	dc_parse_list(dc, vfl_file, true);
 }
 
 void dc_free(dc_storage* dc)

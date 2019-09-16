@@ -37,10 +37,10 @@
 #include "resources.h"
 #include "snapshot.h"
 #include "sound.h"
-#include "translate.h"
 #include "util.h"
 
 #include "digimaxcore.c"
+#include "shortbus_digimax.h"
 
 /*
     Digimax Short Bus expansion
@@ -56,7 +56,7 @@
 /* This flag indicates if the IDE64 cart is active */
 static int shortbus_digimax_host_active = 0;
 
-/* This flag indicated if the expansion is active,
+/* This flag indicates if the expansion is active,
    real activity depends on the 'host' active flag */
 static int shortbus_digimax_expansion_active = 0;
 
@@ -68,8 +68,8 @@ static char *shortbus_digimax_address_list = NULL;
 /* ---------------------------------------------------------------------*/
 
 /* some prototypes are needed */
-static void shortbus_digimax_sound_store(WORD addr, BYTE value);
-static BYTE shortbus_digimax_sound_read(WORD addr);
+static void shortbus_digimax_sound_store(uint16_t addr, uint8_t value);
+static uint8_t shortbus_digimax_sound_read(uint16_t addr);
 
 static io_source_t digimax_device = {
     "ShortBus " CARTRIDGE_NAME_DIGIMAX,
@@ -95,15 +95,15 @@ void shortbus_digimax_sound_chip_init(void)
     digimax_sound_chip_offset = sound_chip_register(&digimax_sound_chip);
 }
 
-static void shortbus_digimax_sound_store(WORD addr, BYTE value)
+static void shortbus_digimax_sound_store(uint16_t addr, uint8_t value)
 {
     digimax_sound_data[addr] = value;
-    sound_store((WORD)(digimax_sound_chip_offset | addr), value, 0);
+    sound_store((uint16_t)(digimax_sound_chip_offset | addr), value, 0);
 }
 
-static BYTE shortbus_digimax_sound_read(WORD addr)
+static uint8_t shortbus_digimax_sound_read(uint16_t addr)
 {
-    BYTE value = sound_read((WORD)(digimax_sound_chip_offset | addr), 0);
+    uint8_t value = sound_read((uint16_t)(digimax_sound_chip_offset | addr), 0);
 
     return value;
 }
@@ -168,8 +168,8 @@ static int set_shortbus_digimax_base(int val, void *param)
     switch (addr) {
         case 0xde40:
         case 0xde48:
-            digimax_device.start_address = (WORD)addr;
-            digimax_device.end_address = (WORD)(addr + 3);
+            digimax_device.start_address = (uint16_t)addr;
+            digimax_device.end_address = (uint16_t)(addr + 3);
             break;
         default:
             return -1;
@@ -213,26 +213,20 @@ void shortbus_digimax_resources_shutdown(void)
 
 static const cmdline_option_t cmdline_options[] =
 {
-    { "-sbdigimax", SET_RESOURCE, 0,
+    { "-sbdigimax", SET_RESOURCE, CMDLINE_ATTRIB_NONE,
       NULL, NULL, "SBDIGIMAX", (resource_value_t)1,
-      USE_PARAM_STRING, USE_DESCRIPTION_ID,
-      IDCLS_UNUSED, IDCLS_ENABLE_SHORTBUS_DIGIMAX,
-      NULL, NULL },
-    { "+sbdigimax", SET_RESOURCE, 0,
+      NULL, "Enable the Short Bus DigiMAX expansion" },
+    { "+sbdigimax", SET_RESOURCE, CMDLINE_ATTRIB_NONE,
       NULL, NULL, "SBDIGIMAX", (resource_value_t)0,
-      USE_PARAM_STRING, USE_DESCRIPTION_ID,
-      IDCLS_UNUSED, IDCLS_DISABLE_SHORTBUS_DIGIMAX,
-      NULL, NULL },
+      NULL, "Disable the Short Bus DigiMAX expansion" },
     CMDLINE_LIST_END
 };
 
 static cmdline_option_t base_cmdline_options[] =
 {
-    { "-sbdigimaxbase", SET_RESOURCE, 1,
+    { "-sbdigimaxbase", SET_RESOURCE, CMDLINE_ATTRIB_NEED_ARGS,
       NULL, NULL, "SBDIGIMAXbase", NULL,
-      USE_PARAM_ID, USE_DESCRIPTION_COMBO,
-      IDCLS_P_BASE_ADDRESS, IDCLS_SHORTBUS_DIGIMAX_BASE,
-      NULL, NULL },
+      "<Base address>", NULL },
     CMDLINE_LIST_END
 };
 
@@ -245,7 +239,7 @@ int shortbus_digimax_cmdline_options_init(void)
     }
 
     temp1 = util_gen_hex_address_list(0xde40, 0xde50, 8);
-    shortbus_digimax_address_list = util_concat(". (", temp1, ")", NULL);
+    shortbus_digimax_address_list = util_concat("Base address of the Short Bus DigiMAX expansion. (", temp1, ")", NULL);
     lib_free(temp1);
 
     base_cmdline_options[0].description = shortbus_digimax_address_list;
@@ -287,7 +281,7 @@ int shortbus_digimax_write_snapshot_module(snapshot_t *s)
     }
 
     if (0
-        || SMW_DW(m, (DWORD)shortbus_digimax_address) < 0
+        || SMW_DW(m, (uint32_t)shortbus_digimax_address) < 0
         || SMW_BA(m, digimax_sound_data, 4) < 0
         || SMW_B(m, snd.voice0) < 0
         || SMW_B(m, snd.voice1) < 0
@@ -302,7 +296,7 @@ int shortbus_digimax_write_snapshot_module(snapshot_t *s)
 
 int shortbus_digimax_read_snapshot_module(snapshot_t *s)
 {
-    BYTE vmajor, vminor;
+    uint8_t vmajor, vminor;
     snapshot_module_t *m;
     int temp_digimax_address;
 

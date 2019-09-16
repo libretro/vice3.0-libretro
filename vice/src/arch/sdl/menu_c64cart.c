@@ -84,7 +84,7 @@ static void makegroup(cartridge_info_t *cartlist, ui_menu_entry_t *entry, int fl
     while(cartlist->name) {
         if (cartlist->flags & flags) {
             ui_c64cart_entry.string = cartlist->name;
-            ui_c64cart_entry.data = (ui_callback_data_t)(unsigned long)cartlist->crtid;
+            ui_c64cart_entry.data = (ui_callback_data_t)(int_to_void_ptr(cartlist->crtid));
             memcpy(entry, &ui_c64cart_entry, sizeof(ui_menu_entry_t));
             entry++;
         }
@@ -923,13 +923,13 @@ static UI_MENU_CALLBACK(iocollision_show_type_callback)
     resources_get_int("IOCollisionHandling", &type);
     switch (type) {
         case IO_COLLISION_METHOD_DETACH_ALL:
-            return "-> detach all";
+            return MENU_SUBMENU_STRING " detach all";
             break;
         case IO_COLLISION_METHOD_DETACH_LAST:
-            return "-> detach last";
+            return MENU_SUBMENU_STRING " detach last";
             break;
         case IO_COLLISION_METHOD_AND_WIRES:
-            return "-> AND values";
+            return MENU_SUBMENU_STRING " AND values";
             break;
     }
     return "n/a";

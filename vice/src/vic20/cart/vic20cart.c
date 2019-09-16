@@ -68,14 +68,13 @@
 #include "sid-snapshot.h"
 #include "sidcart.h"
 #include "snapshot.h"
-#ifdef HAVE_PCAP
+#ifdef HAVE_RAWNET
 #define CARTRIDGE_INCLUDE_PRIVATE_API
 #define CARTRIDGE_INCLUDE_PUBLIC_API
 #include "ethernetcart.h"
 #undef CARTRIDGE_INCLUDE_PRIVATE_API
 #undef CARTRIDGE_INCLUDE_PUBLIC_API
 #endif
-#include "translate.h"
 #include "util.h"
 #include "vic20cart.h"
 #include "vic20cartmem.h"
@@ -200,7 +199,7 @@ int cartridge_resources_init(void)
         || vic_fp_resources_init() < 0
         || vic_um_resources_init() < 0
         || megacart_resources_init() < 0
-#ifdef HAVE_PCAP
+#ifdef HAVE_RAWNET
         || ethernetcart_resources_init() < 0
 #endif
         || aciacart_resources_init() < 0
@@ -221,7 +220,7 @@ void cartridge_resources_shutdown(void)
     megacart_resources_shutdown();
     finalexpansion_resources_shutdown();
     generic_resources_shutdown();
-#ifdef HAVE_PCAP
+#ifdef HAVE_RAWNET
     ethernetcart_resources_shutdown();
 #endif
     aciacart_resources_shutdown();
@@ -254,76 +253,48 @@ static int attach_cartridge_cmdline(const char *param, void *extra_param)
 
 static const cmdline_option_t cmdline_options[] =
 {
-    { "-cartreset", SET_RESOURCE, 0,
+    { "-cartreset", SET_RESOURCE, CMDLINE_ATTRIB_NONE,
       NULL, NULL, "CartridgeReset", (void *)1,
-      USE_PARAM_STRING, USE_DESCRIPTION_ID,
-      IDCLS_UNUSED, IDCLS_CART_ATTACH_DETACH_RESET,
-      NULL, NULL },
-    { "+cartreset", SET_RESOURCE, 0,
+      NULL, "Reset machine if a cartridge is attached or detached" },
+    { "+cartreset", SET_RESOURCE, CMDLINE_ATTRIB_NONE,
       NULL, NULL, "CartridgeReset", (void *)0,
-      USE_PARAM_STRING, USE_DESCRIPTION_ID,
-      IDCLS_UNUSED, IDCLS_CART_ATTACH_DETACH_NO_RESET,
-      NULL, NULL },
-    { "-cart2", CALL_FUNCTION, 1,
+      NULL, "Do not reset machine if a cartridge is attached or detached" },
+    { "-cart2", CALL_FUNCTION, CMDLINE_ATTRIB_NEED_ARGS,
       attach_cartridge_cmdline, (void *)CARTRIDGE_VIC20_16KB_2000, NULL, NULL,
-      USE_PARAM_ID, USE_DESCRIPTION_ID,
-      IDCLS_P_NAME, IDCLS_SPECIFY_EXT_ROM_2000_NAME,
-      NULL, NULL },
-    { "-cart4", CALL_FUNCTION, 1,
+      "<Name>", "Specify 4/8/16K extension ROM name at $2000" },
+    { "-cart4", CALL_FUNCTION, CMDLINE_ATTRIB_NEED_ARGS,
       attach_cartridge_cmdline, (void *)CARTRIDGE_VIC20_16KB_4000, NULL, NULL,
-      USE_PARAM_ID, USE_DESCRIPTION_ID,
-      IDCLS_P_NAME, IDCLS_SPECIFY_EXT_ROM_4000_NAME,
-      NULL, NULL },
-    { "-cart6", CALL_FUNCTION, 1,
+      "<Name>", "Specify 4/8/16K extension ROM name at $4000" },
+    { "-cart6", CALL_FUNCTION, CMDLINE_ATTRIB_NEED_ARGS,
       attach_cartridge_cmdline, (void *)CARTRIDGE_VIC20_16KB_6000, NULL, NULL,
-      USE_PARAM_ID, USE_DESCRIPTION_ID,
-      IDCLS_P_NAME, IDCLS_SPECIFY_EXT_ROM_6000_NAME,
-      NULL, NULL },
-    { "-cartA", CALL_FUNCTION, 1,
+      "<Name>", "Specify 4/8/16K extension ROM name at $6000" },
+    { "-cartA", CALL_FUNCTION, CMDLINE_ATTRIB_NEED_ARGS,
       attach_cartridge_cmdline, (void *)CARTRIDGE_VIC20_8KB_A000, NULL, NULL,
-      USE_PARAM_ID, USE_DESCRIPTION_ID,
-      IDCLS_P_NAME, IDCLS_SPECIFY_EXT_ROM_A000_NAME,
-      NULL, NULL },
-    { "-cartB", CALL_FUNCTION, 1,
+      "<Name>", "Specify 4/8K extension ROM name at $A000" },
+    { "-cartB", CALL_FUNCTION, CMDLINE_ATTRIB_NEED_ARGS,
       attach_cartridge_cmdline, (void *)CARTRIDGE_VIC20_4KB_B000, NULL, NULL,
-      USE_PARAM_ID, USE_DESCRIPTION_ID,
-      IDCLS_P_NAME, IDCLS_SPECIFY_EXT_ROM_B000_NAME,
-      NULL, NULL },
-    { "-cartbb", CALL_FUNCTION, 1,
+      "<Name>", "Specify 4K extension ROM name at $B000" },
+    { "-cartbb", CALL_FUNCTION, CMDLINE_ATTRIB_NEED_ARGS,
       attach_cartridge_cmdline, (void *)CARTRIDGE_VIC20_BEHRBONZ, NULL, NULL,
-      USE_PARAM_ID, USE_DESCRIPTION_ID,
-      IDCLS_P_NAME, IDCLS_SPECIFY_BEHRBONZ_ROM_NAME,
-      NULL, NULL },
-    { "-cartgeneric", CALL_FUNCTION, 1,
+      "<Name>", "Specify Behr Bonz extension ROM name" },
+    { "-cartgeneric", CALL_FUNCTION, CMDLINE_ATTRIB_NEED_ARGS,
       attach_cartridge_cmdline, (void *)CARTRIDGE_VIC20_GENERIC, NULL, NULL,
-      USE_PARAM_ID, USE_DESCRIPTION_ID,
-      IDCLS_P_NAME, IDCLS_SPECIFY_GENERIC_ROM_NAME,
-      NULL, NULL },
-    { "-cartmega", CALL_FUNCTION, 1,
+      "<Name>", "Specify generic extension ROM name" },
+    { "-cartmega", CALL_FUNCTION, CMDLINE_ATTRIB_NEED_ARGS,
       attach_cartridge_cmdline, (void *)CARTRIDGE_VIC20_MEGACART, NULL, NULL,
-      USE_PARAM_ID, USE_DESCRIPTION_ID,
-      IDCLS_P_NAME, IDCLS_SPECIFY_MEGA_CART_ROM_NAME,
-      NULL, NULL },
-    { "-cartfe", CALL_FUNCTION, 1,
+      "<Name>", "Specify Mega-Cart extension ROM name" },
+    { "-cartfe", CALL_FUNCTION, CMDLINE_ATTRIB_NEED_ARGS,
       attach_cartridge_cmdline, (void *)CARTRIDGE_VIC20_FINAL_EXPANSION, NULL, NULL,
-      USE_PARAM_ID, USE_DESCRIPTION_ID,
-      IDCLS_P_NAME, IDCLS_SPECIFY_FINAL_EXPANSION_ROM_NAME,
-      NULL, NULL },
-    { "-ultimem", CALL_FUNCTION, 1,
+      "<Name>", "Specify Final Expansion extension ROM name" },
+    { "-ultimem", CALL_FUNCTION, CMDLINE_ATTRIB_NEED_ARGS,
       attach_cartridge_cmdline, (void *)CARTRIDGE_VIC20_UM, NULL, NULL,
-      USE_PARAM_ID, USE_DESCRIPTION_ID,
-      IDCLS_P_NAME, IDCLS_SPECIFY_VIC_UM_ROM_NAME,
-      NULL, NULL },
-    { "-cartfp", CALL_FUNCTION, 1,
+      "<Name>", "Specify UltiMem extension ROM name" },
+    { "-cartfp", CALL_FUNCTION, CMDLINE_ATTRIB_NEED_ARGS,
       attach_cartridge_cmdline, (void *)CARTRIDGE_VIC20_FP, NULL, NULL,
-      USE_PARAM_ID, USE_DESCRIPTION_ID,
-      IDCLS_P_NAME, IDCLS_SPECIFY_VIC_FP_ROM_NAME,
-      NULL, NULL },
-    { "+cart", CALL_FUNCTION, 0,
+      "<Name>", "Specify Vic Flash Plugin extension ROM name" },
+    { "+cart", CALL_FUNCTION, CMDLINE_ATTRIB_NONE,
       detach_cartridge_cmdline, NULL, NULL, NULL,
-      USE_PARAM_STRING, USE_DESCRIPTION_ID,
-      IDCLS_UNUSED, IDCLS_DISABLE_CART,
-      NULL, NULL },
+      NULL, "Disable default cartridge" },
     CMDLINE_LIST_END
 };
 
@@ -337,7 +308,7 @@ int cartridge_cmdline_options_init(void)
         || vic_fp_cmdline_options_init() < 0
         || vic_um_cmdline_options_init() < 0
         || megacart_cmdline_options_init() < 0
-#ifdef HAVE_PCAP
+#ifdef HAVE_RAWNET
         || ethernetcart_cmdline_options_init() < 0
 #endif
         || aciacart_cmdline_options_init() < 0
@@ -475,10 +446,70 @@ const char *cartridge_get_file_name(int addr)
 {
     if (vic20cart_type == CARTRIDGE_VIC20_GENERIC) {
         /* special case handling for the multiple file generic type */
-        return generic_get_file_name((WORD)addr);
+        return generic_get_file_name((uint16_t)addr);
     }
 
     return cartfile;
+}
+
+/*
+    save cartridge to binary file
+
+    *atleast* all carts whose image might be modified at runtime should be hooked up here.
+
+    TODO: add bin save for all ROM carts also
+*/
+int cartridge_bin_save(int type, const char *filename)
+{
+    switch (type) {
+        case CARTRIDGE_VIC20_GEORAM:
+            return georam_bin_save(filename);
+    }
+    return -1;
+}
+
+/* FIXME: this can be used once we implement a crt like format for vic20 */
+#if 0
+/*
+    save cartridge to crt file
+
+    *atleast* all carts whose image might be modified at runtime AND
+    which have a valid crt id should be hooked up here.
+
+    TODO: add crt save for all ROM carts also
+*/
+int cartridge_crt_save(int type, const char *filename)
+{
+    switch (type) {
+    }
+    return -1;
+}
+#endif
+
+/*
+    flush cart image
+
+    all carts whose image might be modified at runtime should be hooked up here.
+*/
+int cartridge_flush_image(int type)
+{
+    switch (type) {
+        case CARTRIDGE_VIC20_GEORAM:
+            return georam_flush_image();
+    }
+    return -1;
+}
+
+int cartridge_save_image(int type, const char *filename)
+{
+/* FIXME: this can be used once we implement a crt like format for vic20 */
+#if 0
+    char *ext = util_get_extension((char *)filename);
+    if (ext != NULL && !strcmp(ext, "crt")) {
+        return cartridge_crt_save(type, filename);
+    }
+#endif
+    return cartridge_bin_save(type, filename);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -492,8 +523,8 @@ const char *cartridge_get_file_name(int addr)
 int vic20cart_snapshot_write_module(snapshot_t *s)
 {
     snapshot_module_t *m;
-    BYTE i;
-    BYTE number_of_carts = 0;
+    uint8_t i;
+    uint8_t number_of_carts = 0;
     int cart_ids[VIC20CART_DUMP_MAX_CARTS];
     int last_cart = 0;
     export_list_t *e = export_query_list(NULL);
@@ -517,7 +548,7 @@ int vic20cart_snapshot_write_module(snapshot_t *s)
         return -1;
     }
 
-    if (SMW_DW(m, (DWORD)vic20cart_type) < 0) {
+    if (SMW_DW(m, (uint32_t)vic20cart_type) < 0) {
         goto fail;
     }
 
@@ -532,7 +563,7 @@ int vic20cart_snapshot_write_module(snapshot_t *s)
 
     /* Save cart IDs */
     for (i = 0; i < number_of_carts; i++) {
-        if (SMW_DW(m, (DWORD)cart_ids[i]) < 0) {
+        if (SMW_DW(m, (uint32_t)cart_ids[i]) < 0) {
             goto fail;
         }
     }
@@ -624,7 +655,7 @@ int vic20cart_snapshot_write_module(snapshot_t *s)
                     return -1;
                 }
                 break;
-#ifdef HAVE_PCAP
+#ifdef HAVE_RAWNET
             case CARTRIDGE_TFE:
                 if (ethernetcart_snapshot_write_module(s) < 0) {
                     return -1;
@@ -648,11 +679,11 @@ fail:
 
 int vic20cart_snapshot_read_module(snapshot_t *s)
 {
-    BYTE vmajor, vminor;
+    uint8_t vmajor, vminor;
     snapshot_module_t *m;
     int new_cart_type, cartridge_reset;
-    BYTE i;
-    BYTE number_of_carts = 0;
+    uint8_t i;
+    uint8_t number_of_carts = 0;
     int cart_ids[VIC20CART_DUMP_MAX_CARTS];
 
     m = snapshot_module_open(s, SNAP_MODULE_NAME, &vmajor, &vminor);
@@ -796,7 +827,7 @@ int vic20cart_snapshot_read_module(snapshot_t *s)
                     return -1;
                 }
                 break;
-#ifdef HAVE_PCAP
+#ifdef HAVE_RAWNET
             case CARTRIDGE_TFE:
                 if (ethernetcart_snapshot_read_module(s) < 0) {
                     return -1;

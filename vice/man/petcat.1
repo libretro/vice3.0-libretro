@@ -1,4 +1,4 @@
-.TH PETCAT 1 "Dec 2016" "VICE" "C64 Program Development"
+.TH PETCAT 1 "March 2017" "VICE" "C64 Program Development"
 .nr X
 .SH NAME
 petcat \- convert and display PETSCII or BASIC files
@@ -38,7 +38,7 @@ the right conversion has to be selected on the command line.
 Where such confusion cannot happen, automatical recognition of input
 is used. This is useful when expanding several files at once or if
 the program contains code for several versions, selected according to
-the hardware; eg. Simon's Basic vs. Basic 7.0.
+the hardware; eg. Simons' Basic vs. Basic 7.0.
 .br
 Please note that each input file is converted individually,
 but the output is produced as continuous flow. Also, all input
@@ -68,7 +68,7 @@ accepted, care must be taken when editing such a program on a C64 again.
 .SS Clarification
 .LP
 Since CBM programs usually contain unprintable characters, a way to
-spesify them has been created.
+specify them has been created.
 Normally,
 .IR petcat
 uses the same codes as most printers, but for tokenizing programs
@@ -166,7 +166,7 @@ Basic 2.0 with Turtle Basic
 Basic 2.0 with Super Expander
 .TP
 .B simon si
-Basic 2.0 and Simon's Basic
+Basic 2.0 and Simons' Basic
 .TP
 .B speech sp
 Basic 2.0 with Speech Basic v2.7
@@ -196,14 +196,14 @@ While crunching, control codes that appear outside quotes are not
 interpreted.
 The low order byte of load address must be "01".
 .SH SEE ALSO
-.BR cat (1),
-.BR tr (1),
-.BR sed (1),
-.BR fvcbm (1),
-.BR petlp (1),
-.BR cbmconvert,
-.BR iso2asc (1),
-.BR ASCII (7),
+.BR cat(1),
+.BR tr(1),
+.BR sed(1),
+.BR fvcbm(1),
+.BR petlp(1),
+.BR cbmconvert(1),
+.BR iso2asc(1),
+.BR ascii(7),
 .BR "\fICBM Tokens Documentation\fP",
 .BR "CBM's \fIProgrammers' Reference Guide\fP series"
 .SH AUTHOR

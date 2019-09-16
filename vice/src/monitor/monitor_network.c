@@ -33,6 +33,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "ui.h"
+
 #include "cmdline.h"
 #include "lib.h"
 #include "log.h"
@@ -40,15 +42,13 @@
 #include "monitor_network.h"
 #include "montypes.h"
 #include "resources.h"
-#include "translate.h"
-#include "ui.h"
 #include "uiapi.h"
 #include "util.h"
 #include "vicesocket.h"
 
 #ifdef HAVE_NETWORK
 
-#define ADDR_LIMIT(x) ((WORD)(addr_mask(x)))
+#define ADDR_LIMIT(x) ((uint16_t)(addr_mask(x)))
 
 static vice_network_socket_t * listen_socket = NULL;
 static vice_network_socket_t * connected_socket = NULL;
@@ -299,7 +299,7 @@ static void monitor_network_process_binary_command(unsigned char * pbuffer, int 
                     unsigned char * p = lib_malloc(length);
 
                     for (i = 0; i < length; i++) {
-                        p[i] = mon_get_mem_val(memspace, (WORD)ADDR_LIMIT(startaddress + i));
+                        p[i] = mon_get_mem_val(memspace, (uint16_t)ADDR_LIMIT(startaddress + i));
                     }
 
                     monitor_network_binary_answer(length, MON_ERR_OK, p);
@@ -524,21 +524,15 @@ void monitor_network_resources_shutdown(void)
 
 static const cmdline_option_t cmdline_options[] =
 {
-    { "-remotemonitor", SET_RESOURCE, 0,
+    { "-remotemonitor", SET_RESOURCE, CMDLINE_ATTRIB_NONE,
       NULL, NULL, "MonitorServer", (resource_value_t)1,
-      USE_PARAM_STRING, USE_DESCRIPTION_ID,
-      IDCLS_UNUSED, IDCLS_ENABLE_REMOTE_MONITOR,
-      NULL, NULL },
-    { "+remotemonitor", SET_RESOURCE, 0,
+      NULL, "Enable remote monitor" },
+    { "+remotemonitor", SET_RESOURCE, CMDLINE_ATTRIB_NONE,
       NULL, NULL, "MonitorServer", (resource_value_t)0,
-      USE_PARAM_STRING, USE_DESCRIPTION_ID,
-      IDCLS_UNUSED, IDCLS_DISABLE_REMOTE_MONITOR,
-      NULL, NULL },
-    { "-remotemonitoraddress", SET_RESOURCE, 1,
+      NULL, "Disable remote monitor" },
+    { "-remotemonitoraddress", SET_RESOURCE, CMDLINE_ATTRIB_NEED_ARGS,
       NULL, NULL, "MonitorServerAddress", NULL,
-      USE_PARAM_ID, USE_DESCRIPTION_ID,
-      IDCLS_P_NAME, IDCLS_REMOTE_MONITOR_ADDRESS,
-      NULL, NULL },
+      "<Name>", "The local address the remote monitor should bind to" },
     CMDLINE_LIST_END
 };
 

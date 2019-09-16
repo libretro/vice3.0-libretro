@@ -1,0 +1,5 @@
+cs8900.o: cs8900.c ../../src/vice.h ../../src/config.h
+
+../../src/vice.h:
+
+../../src/config.h:

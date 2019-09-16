@@ -35,28 +35,65 @@
 #include "resources.h"
 #include "sound.h"
 #include "ui.h"
+#include "uifonts.h"
 #include "uimenu.h"
 #include "uimsgbox.h"
 #include "vsync.h"
 
 #define MAX_MSGBOX_LEN 28
 
+
+/** \brief  Table of number of buttons for each `message mode` enum value
+ */
+static int msg_mode_buttons[] = {
+    1,  /* MESSAGE_OK */
+    2,  /* MESSAGE_YESNO */
+    3,  /* MESSAGE_CPUJAM */
+    5,  /* MESSAGE_UNIT_SELECT */
+};
+
+
+
 static menu_draw_t *menu_draw;
 
+/** \brief  Show a message box with some buttons
+ *
+ * \param[in]   title           Message box title
+ * \param[in]   message         Message box message/prompt
+ * \param[in]   message_mode    Type of message box to display (defined in .h)
+ *
+ * \return  index of selected button, or -1 on cancel (Esc)
+ */
 static int handle_message_box(const char *title, const char *message, int message_mode)
 {
     char *text, *pos;
     unsigned int msglen, len;
     int before;
     int x;
-    char template[] = "\335                            \335";
+    char template[] = UIFONT_VERTICAL_STRING "                            " UIFONT_VERTICAL_STRING;
     unsigned int j = 5;
     int active = 1;
     int cur_pos = 0;
+    int button_count;
+
+    /* determine button count for requested `message mode` */
+    if (message_mode < 0 || message_mode >= (int)(sizeof msg_mode_buttons / sizeof msg_mode_buttons[0])) {
+#ifdef __func__
+        fprintf(stderr, "%s:%d:%s: illegal `message_mode` value %d\n",
+               __FILE__, __LINE__, __func__, message_mode);
+#endif
+        return -1;
+    }
+    button_count = msg_mode_buttons[message_mode];
 
     /* print the top edge of the dialog. */
     sdl_ui_clear();
-    sdl_ui_print_center("\260\300\300\300\300\300\300\300\300\300\300\300\300\300\300\300\300\300\300\300\300\300\300\300\300\300\300\300\300\256", 2);
+    sdl_ui_print_center(UIFONT_TOPLEFT_STRING UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING 
+                        UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING 
+                        UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING 
+                        UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING 
+                        UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING 
+                        UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING UIFONT_TOPRIGHT_STRING, 2);
 
     /* make sure that the title length is not more than 28 chars. */
     len = strlen(title);
@@ -72,7 +109,12 @@ static int handle_message_box(const char *title, const char *message, int messag
     sdl_ui_print_center(template, 3);
 
     /* print the title/text separator part of the dialog. */
-    sdl_ui_print_center("\253\300\300\300\300\300\300\300\300\300\300\300\300\300\300\300\300\300\300\300\300\300\300\300\300\300\300\300\300\263", 4);
+    sdl_ui_print_center(UIFONT_RIGHTTEE_STRING UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING 
+                        UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING 
+                        UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING 
+                        UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING 
+                        UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING 
+                        UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING UIFONT_LEFTTEE_STRING, 4);
 
     text = lib_stralloc(message);
     msglen = (unsigned int)strlen(text);
@@ -133,28 +175,39 @@ static int handle_message_box(const char *title, const char *message, int messag
     lib_free(text);
 
     /* print any needed buttons. */
-    sdl_ui_print_center("\335                            \335", j);
+    sdl_ui_print_center(UIFONT_VERTICAL_STRING "                            " UIFONT_VERTICAL_STRING, j);
     switch (message_mode) {
         case MESSAGE_OK:
-            sdl_ui_print_center("\335            \260\300\300\256            \335", j + 1);
-            x = sdl_ui_print_center("\335            \335OK\335            \335", j + 2);
-            sdl_ui_print_center("\335            \255\300\300\275            \335", j + 3);
+            sdl_ui_print_center(UIFONT_VERTICAL_STRING "            " UIFONT_TOPLEFT_STRING UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING UIFONT_TOPRIGHT_STRING "            " UIFONT_VERTICAL_STRING, j + 1);
+            x = sdl_ui_print_center(UIFONT_VERTICAL_STRING "            " UIFONT_VERTICAL_STRING "OK" UIFONT_VERTICAL_STRING "            " UIFONT_VERTICAL_STRING, j + 2);
+            sdl_ui_print_center(UIFONT_VERTICAL_STRING "            " UIFONT_BOTTOMLEFT_STRING UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING UIFONT_BOTTOMRIGHT_STRING "            " UIFONT_VERTICAL_STRING, j + 3);
             break;
         case MESSAGE_YESNO:
-            sdl_ui_print_center("\335      \260\300\300\300\256       \260\300\300\256      \335", j + 1);
-            x = sdl_ui_print_center("\335      \335YES\335       \335NO\335      \335", j + 2);
-            sdl_ui_print_center("\335      \255\300\300\300\275       \255\300\300\275      \335", j + 3);
+            sdl_ui_print_center(UIFONT_VERTICAL_STRING "      " UIFONT_TOPLEFT_STRING UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING UIFONT_TOPRIGHT_STRING "       " UIFONT_TOPLEFT_STRING UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING UIFONT_TOPRIGHT_STRING "      " UIFONT_VERTICAL_STRING, j + 1);
+            x = sdl_ui_print_center(UIFONT_VERTICAL_STRING "      " UIFONT_VERTICAL_STRING "YES" UIFONT_VERTICAL_STRING "       " UIFONT_VERTICAL_STRING "NO" UIFONT_VERTICAL_STRING "      " UIFONT_VERTICAL_STRING, j + 2);
+            sdl_ui_print_center(UIFONT_VERTICAL_STRING "      " UIFONT_BOTTOMLEFT_STRING UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING UIFONT_BOTTOMRIGHT_STRING "       " UIFONT_BOTTOMLEFT_STRING UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING UIFONT_BOTTOMRIGHT_STRING "      " UIFONT_VERTICAL_STRING, j + 3);
+            break;
+        case MESSAGE_UNIT_SELECT:
+            /* Present a selection of '8', '9', '10', '11' or 'SKIP' */
+            sdl_ui_print_center(UIFONT_VERTICAL_STRING "  " UIFONT_TOPLEFT_STRING UIFONT_HORIZONTAL_STRING UIFONT_TOPRIGHT_STRING " " UIFONT_TOPLEFT_STRING UIFONT_HORIZONTAL_STRING UIFONT_TOPRIGHT_STRING " " UIFONT_TOPLEFT_STRING UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING UIFONT_TOPRIGHT_STRING " " UIFONT_TOPLEFT_STRING UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING UIFONT_TOPRIGHT_STRING " " UIFONT_TOPLEFT_STRING UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING UIFONT_TOPRIGHT_STRING "  " UIFONT_VERTICAL_STRING, j + 1);
+            x = sdl_ui_print_center(UIFONT_VERTICAL_STRING "  " UIFONT_VERTICAL_STRING "8" UIFONT_VERTICAL_STRING " " UIFONT_VERTICAL_STRING "9" UIFONT_VERTICAL_STRING " " UIFONT_VERTICAL_STRING "10" UIFONT_VERTICAL_STRING " " UIFONT_VERTICAL_STRING "11" UIFONT_VERTICAL_STRING " " UIFONT_VERTICAL_STRING "SKIP" UIFONT_VERTICAL_STRING "  " UIFONT_VERTICAL_STRING, j + 2);
+            sdl_ui_print_center(UIFONT_VERTICAL_STRING "  " UIFONT_BOTTOMLEFT_STRING UIFONT_HORIZONTAL_STRING UIFONT_BOTTOMRIGHT_STRING " " UIFONT_BOTTOMLEFT_STRING UIFONT_HORIZONTAL_STRING UIFONT_BOTTOMRIGHT_STRING " " UIFONT_BOTTOMLEFT_STRING UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING UIFONT_BOTTOMRIGHT_STRING " " UIFONT_BOTTOMLEFT_STRING UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING UIFONT_BOTTOMRIGHT_STRING " " UIFONT_BOTTOMLEFT_STRING UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING UIFONT_BOTTOMRIGHT_STRING "  " UIFONT_VERTICAL_STRING, j + 3);
             break;
         case MESSAGE_CPUJAM:
         default:
-            sdl_ui_print_center("\335 \260\300\300\300\300\300\256  \260\300\300\300\300\300\300\300\256  \260\300\300\300\300\256 \335", j + 1);
-            x = sdl_ui_print_center("\335 \335RESET\335  \335MONITOR\335  \335CONT\335 \335", j + 2);
-            sdl_ui_print_center("\335 \255\300\300\300\300\300\275  \255\300\300\300\300\300\300\300\275  \255\300\300\300\300\275 \335", j + 3);
+            sdl_ui_print_center(UIFONT_VERTICAL_STRING " " UIFONT_TOPLEFT_STRING UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING UIFONT_TOPRIGHT_STRING "  " UIFONT_TOPLEFT_STRING UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING UIFONT_TOPRIGHT_STRING "  " UIFONT_TOPLEFT_STRING UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING UIFONT_TOPRIGHT_STRING " " UIFONT_VERTICAL_STRING, j + 1);
+            x = sdl_ui_print_center(UIFONT_VERTICAL_STRING " " UIFONT_VERTICAL_STRING "RESET" UIFONT_VERTICAL_STRING "  " UIFONT_VERTICAL_STRING "MONITOR" UIFONT_VERTICAL_STRING "  " UIFONT_VERTICAL_STRING "CONT" UIFONT_VERTICAL_STRING " " UIFONT_VERTICAL_STRING, j + 2);
+            sdl_ui_print_center(UIFONT_VERTICAL_STRING " " UIFONT_BOTTOMLEFT_STRING UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING UIFONT_BOTTOMRIGHT_STRING "  " UIFONT_BOTTOMLEFT_STRING UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING UIFONT_BOTTOMRIGHT_STRING "  " UIFONT_BOTTOMLEFT_STRING UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING UIFONT_BOTTOMRIGHT_STRING " " UIFONT_VERTICAL_STRING, j + 3);
             break;
     }
 
     /* print the bottom part of the dialog. */
-    sdl_ui_print_center("\255\300\300\300\300\300\300\300\300\300\300\300\300\300\300\300\300\300\300\300\300\300\300\300\300\300\300\300\300\275", j + 4);
+    sdl_ui_print_center(UIFONT_BOTTOMLEFT_STRING UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING 
+                        UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING 
+                        UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING 
+                        UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING 
+                        UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING 
+                        UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING UIFONT_HORIZONTAL_STRING UIFONT_BOTTOMRIGHT_STRING, j + 4);
 
     x += (menu_draw->max_text_x - 30) / 2;
     while (active) {
@@ -174,6 +227,32 @@ static int handle_message_box(const char *title, const char *message, int messag
                 if (cur_pos == 1) {
                     sdl_ui_reverse_colors();
                 }
+                break;
+
+            case MESSAGE_UNIT_SELECT:
+                sdl_ui_print_center(UIFONT_VERTICAL_STRING "  " UIFONT_VERTICAL_STRING "8" UIFONT_VERTICAL_STRING " " UIFONT_VERTICAL_STRING "9" UIFONT_VERTICAL_STRING " " UIFONT_VERTICAL_STRING "10" UIFONT_VERTICAL_STRING " " UIFONT_VERTICAL_STRING "11" UIFONT_VERTICAL_STRING " " UIFONT_VERTICAL_STRING "SKIP" UIFONT_VERTICAL_STRING "  " UIFONT_VERTICAL_STRING, j + 2);
+ 
+                sdl_ui_reverse_colors();
+                switch (cur_pos) {
+                    case 0:
+                        sdl_ui_print("8", x - 26, j + 2);
+                        break;
+                    case 1:
+                        sdl_ui_print("9", x - 22, j + 2);
+                        break;
+                    case 2:
+                        sdl_ui_print("10", x - 18, j + 2);
+                        break;
+                    case 3:
+                        sdl_ui_print("11", x - 13, j + 2);
+                        break;
+                    case 4:
+                        sdl_ui_print("SKIP", x - 8, j + 2);
+                        break;
+                    default:
+                        break;
+                }
+                sdl_ui_reverse_colors();
                 break;
             case MESSAGE_CPUJAM:
             default:
@@ -200,7 +279,7 @@ static int handle_message_box(const char *title, const char *message, int messag
         switch (sdl_ui_menu_poll_input()) {
             case MENU_ACTION_CANCEL:
             case MENU_ACTION_EXIT:
-                cur_pos = 0;
+                cur_pos = -1;
                 active = 0;
                 break;
             case MENU_ACTION_SELECT:
@@ -211,7 +290,7 @@ static int handle_message_box(const char *title, const char *message, int messag
                 if (message_mode != MESSAGE_OK) {
                     cur_pos--;
                     if (cur_pos < 0) {
-                        cur_pos = message_mode;
+                        cur_pos = button_count - 1;
                     }
                 }
                 break;
@@ -219,7 +298,7 @@ static int handle_message_box(const char *title, const char *message, int messag
             case MENU_ACTION_DOWN:
                 if (message_mode != MESSAGE_OK) {
                     cur_pos++;
-                    if (cur_pos > message_mode) {
+                    if (cur_pos >= button_count) {
                         cur_pos = 0;
                     }
                 }

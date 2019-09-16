@@ -1,0 +1,6 @@
+cw-amiga-openpci.o: cw-amiga-openpci.c ../../src/vice.h \
+ ../../src/config.h
+
+../../src/vice.h:
+
+../../src/config.h:

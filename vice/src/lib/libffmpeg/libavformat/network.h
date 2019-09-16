@@ -24,12 +24,7 @@
 #include <errno.h>
 #include <stdint.h>
 
-#ifdef IDE_COMPILE
-#include "ffmpeg-config.h"
-#include "ide-config.h"
-#else
 #include "config.h"
-#endif
 
 #include "libavutil/error.h"
 #include "os_support.h"
@@ -122,6 +117,7 @@ struct sockaddr_storage {
 #endif
 
 #if !HAVE_STRUCT_ADDRINFO
+#if !(defined(__AROS__) && defined(__amd64__))
 struct addrinfo {
     int ai_flags;
     int ai_family;
@@ -132,6 +128,7 @@ struct addrinfo {
     char *ai_canonname;
     struct addrinfo *ai_next;
 };
+#endif
 #endif /* !HAVE_STRUCT_ADDRINFO */
 
 /* getaddrinfo constants */

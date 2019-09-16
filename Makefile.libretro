@@ -145,9 +145,13 @@ else ifneq (,$(findstring ios,$(platform)))
 	ifeq ($(IOSSDK),)
 		IOSSDK := $(shell xcodebuild -version -sdk iphoneos Path)
 	endif
-
-   CC = clang -arch armv7 -isysroot $(IOSSDK)
-   CXX = clang++ -arch armv7 -isysroot $(IOSSDK)
+   ifeq ($(platform), ios-arm64)
+     CC = clang -arch arm64 -isysroot $(IOSSDK)
+     CXX = clang++ -arch arm64 -isysroot $(IOSSDK)
+   else
+     CC = clang -arch armv7 -isysroot $(IOSSDK)
+     CXX = clang++ -arch armv7 -isysroot $(IOSSDK)
+   endif
 	COMMONFLAGS += -DIOS 
 	CFLAGS += -DHAVE_STRLCPY -DHAVE_VSNPRINTF -DHAVE_SNPRINTF -DHAVE_STPCPY
 	CXXFLAGS += -DHAVE_STRLCPY -DHAVE_VSNPRINTF -DHAVE_SNPRINTF -DHAVE_STPCPY
@@ -157,6 +161,18 @@ else ifneq (,$(findstring ios,$(platform)))
 		CC += -miphoneos-version-min=5.0
 		COMMONFLAGS += -miphoneos-version-min=5.0
 	endif
+else ifeq ($(platform), tvos-arm64)
+   TARGET := $(TARGET_NAME)_libretro_tvos.dylib
+   COMMONFLAGS += -DHAVE_POSIX_MEMALIGN=1 -marm
+   fpic = -fPIC
+   LDFLAGS += -dynamiclib
+   ifeq ($(IOSSDK),)
+     IOSSDK := $(shell xcodebuild -version -sdk appletvos Path)
+   endif
+   COMMONFLAGS += -DIOS 
+   CFLAGS += -DHAVE_STRLCPY -DHAVE_VSNPRINTF -DHAVE_SNPRINTF -DHAVE_STPCPY
+   CXXFLAGS += -DHAVE_STRLCPY -DHAVE_VSNPRINTF -DHAVE_SNPRINTF -DHAVE_STPCPY
+
 else ifeq ($(platform), theos_ios)
 DEPLOYMENT_IOSVERSION = 5.0
 TARGET = iphone:latest:$(DEPLOYMENT_IOSVERSION)
@@ -224,7 +240,8 @@ else ifeq ($(platform), psp1)
    CC = psp-gcc$(EXE_EXT)
    CXX = psp-g++$(EXE_EXT)
    AR = psp-ar$(EXE_EXT)
-   COMMONFLAGS += -DPSP -G0
+   COMMONFLAGS += -DPSP -G0 -I$(shell psp-config --pspsdk-path)/include
+   CFLAGS += -std=c99
 	STATIC_LINKING = 1
 
 # Vita
@@ -266,11 +283,28 @@ else ifeq ($(platform), ps3)
 	COMMONFLAGS += -DHAVE_STRTOUL $(ENDIANNESS_DEFINES)
    STATIC_LINKING = 1
 
+# ARM
+else ifneq (,$(findstring armv,$(platform)))
+   TARGET := $(TARGET_NAME)_libretro.so
+   fpic := -fPIC
+   SHARED := -shared -Wl,--no-undefined 
+   LDFLAGS += -shared -Wl,--version-script=$(CORE_DIR)/libretro/link.T
+ifneq (,$(findstring neon,$(platform)))
+   CFLAGS += -mfpu=neon
+   HAVE_NEON = 1
+endif
+ifneq (,$(findstring softfloat,$(platform)))
+   CFLAGS += -mfloat-abi=softfp
+else ifneq (,$(findstring hardfloat,$(platform)))
+   CFLAGS += -mfloat-abi=hard
+endif
+   CFLAGS += -DARM -marm -DALIGN_DWORD -mstructure-size-boundary=32 -mthumb-interwork -falign-functions=16 -pipe -fstack-protector
+
 else ifeq ($(platform), wincross64)
    AR = x86_64-w64-mingw32-ar
    CC = x86_64-w64-mingw32-gcc
    CXX = x86_64-w64-mingw32-g++ 
-   CFLAGS += -D__WIN32__ -DHAVE_SNPRINTF -DHAVE_VSNPRINTF -D__USE_MINGW_ANSI_STDIO=1 -DDEBUG_MAIN=1 -DDEBUG_CMDLINE=1 -DHAVE_NETWORK
+   CFLAGS += -D__WIN32__ -DHAVE_SNPRINTF -DHAVE_VSNPRINTF -D__USE_MINGW_ANSI_STDIO=1 -DHAVE_NETWORK
 #   CFLAGS += -mno-ms-bitfields
 # -DX64_WINDOWS_ABI
    TARGET := $(TARGET_NAME)_libretro.dll
@@ -279,7 +313,7 @@ else ifeq ($(platform), wincross64)
 LDFLAGS += -lws2_32 -luser32 -lwinmm -ladvapi32 -lshlwapi -lwsock32 -lws2_32 -lpsapi -liphlpapi -lshell32 -luserenv -lmingw32 -shared -lgcc -lm -lmingw32
 
 else
-   CFLAGS += -D__WIN32__ -DHAVE_SNPRINTF -DHAVE_VSNPRINTF -D__USE_MINGW_ANSI_STDIO=1 -DDEBUG_MAIN=1 -DDEBUG_CMDLINE=1
+   CFLAGS += -D__WIN32__ -DHAVE_SNPRINTF -DHAVE_VSNPRINTF -D__USE_MINGW_ANSI_STDIO=1
    TARGET := $(TARGET_NAME)_libretro.dll
    LDFLAGS += --shared -static-libgcc -static-libstdc++ -Wl,--version-script=$(CORE_DIR)/libretro/link.T -L/usr/x86_64-w64-mingw32/lib
    LDFLAGS += -lws2_32 -luser32 -lwinmm -ladvapi32 -lshlwapi -lwsock32 -lws2_32 -lpsapi -liphlpapi -lshell32 -luserenv -lmingw32 -shared -lgcc -lm -lmingw32
@@ -307,9 +341,9 @@ COMMONFLAGS += -DFRONTEND_SUPPORTS_RGB565
 
 COMMONFLAGS += -DCORE_NAME=\"$(EMUTYPE)\"
 
-OBJECTS     += $(SOURCES_CC:.cc=.o) $(SOURCES_C:.c=.o) 
+OBJECTS     += $(SOURCES_CC:.cc=.o) $(SOURCES_C:.c=.o)
 CXXFLAGS    += -D__LIBRETRO__ $(fpic) $(INCFLAGS) $(COMMONFLAGS)
-CFLAGS      += -D__LIBRETRO__ $(fpic) $(INCFLAGS) $(COMMONFLAGS) 
+CFLAGS      += -D__LIBRETRO__ $(fpic) $(INCFLAGS) $(COMMONFLAGS)
 LDFLAGS     += -lm $(fpic)
 
 ifeq ($(platform), theos_ios)

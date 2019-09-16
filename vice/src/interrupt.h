@@ -93,7 +93,7 @@ struct interrupt_cpu_status_s {
     int trap;
 
     /* Debugging function.  */
-    void (*trap_func)(WORD, void *data);
+    void (*trap_func)(uint16_t, void *data);
 
     /* Data to pass to the debugging function when called.  */
     void *trap_data;
@@ -150,7 +150,9 @@ inline static void interrupt_set_irq(interrupt_cpu_status_t *cs,
                cycles are stolen from the CPU.  */
 #ifdef DEBUG
             if (debug.maincpu_traceflg) {
-                log_debug("ICLK=%i  last_stolen_cycle=%d", cpu_clk, cs->last_stolen_cycles_clk);
+                log_debug("ICLK=%lu  last_stolen_cycle=%lu",
+                        (unsigned long)cpu_clk,
+                        (unsigned long)(cs->last_stolen_cycles_clk));
             }
 #endif
             cs->irq_delay_cycles = 0;
@@ -194,7 +196,9 @@ inline static void interrupt_set_nmi(interrupt_cpu_status_t *cs,
 
 #ifdef DEBUG
                 if (debug.maincpu_traceflg) {
-                    log_debug("ICLK=%i  last_stolen_cycle=%d", cpu_clk, cs->last_stolen_cycles_clk);
+                    log_debug("ICLK=%lu  last_stolen_cycle=%lu",
+                            (unsigned long)cpu_clk,
+                            (unsigned long)(cs->last_stolen_cycles_clk));
                 }
 #endif
                 /* This makes sure that NMI delay is correctly emulated when
@@ -278,8 +282,8 @@ extern unsigned int interrupt_cpu_status_int_new(interrupt_cpu_status_t *cs,
                                                  const char *name);
 extern void interrupt_ack_reset(interrupt_cpu_status_t *cs);
 extern void interrupt_set_reset_trap_func(interrupt_cpu_status_t *cs, void (*reset_trap_func)(void));
-extern void interrupt_maincpu_trigger_trap(void (*trap_func)(WORD, void *data), void *data);
-extern void interrupt_do_trap(interrupt_cpu_status_t *cs, WORD address);
+extern void interrupt_maincpu_trigger_trap(void (*trap_func)(uint16_t, void *data), void *data);
+extern void interrupt_do_trap(interrupt_cpu_status_t *cs, uint16_t address);
 
 extern void interrupt_monitor_trap_on(interrupt_cpu_status_t *cs);
 extern void interrupt_monitor_trap_off(interrupt_cpu_status_t *cs);

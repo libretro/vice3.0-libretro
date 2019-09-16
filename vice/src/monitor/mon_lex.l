@@ -33,6 +33,11 @@
 
 #include "vice.h"
 
+#if defined(__OS2__) && defined(IDE_COMPILE)
+#define _STDINT_H_INCLUDED
+#define _INTTYPES_H_INCLUDED
+#endif
+
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -46,13 +51,21 @@
 #include <io.h>
 #endif
 
+#ifdef AMIGA_MORPHOS
+#undef REG_PC
+#endif
+
 #include "lib.h"
 #include "mon_command.h"
 #include "montypes.h"
 #include "asm.h"
-#include "mon_parse.h" /* FIXME ! */
+#include "mon_parse.h"
 #include "types.h"
 
+
+/* prototype */
+void free_buffer(void);
+void make_buffer(char *str);
 
 #define YY_ALWAYS_INTERACTIVE 1
 #define YY_NO_UNISTD_H
@@ -227,6 +240,7 @@ HDIGIT  [0-9a-f]
         undump          { BEGIN(FNAME);         return CMD_UNDUMP; }
         watch|w         { BEGIN(INITIAL);       return CMD_WATCH; }
         yydebug         { BEGIN(INITIAL);       return CMD_YYDEBUG; }
+        maincpu_trace   { BEGIN(INITIAL);       return CMD_MAINCPU_TRACE; }
 }
  /* this is not a real command, but could be a label name for a label assignment */
 <CMD>[_a-zA-Z][_a-zA-Z0-9]* { BEGIN(LABEL_ASGN); yylval.str = lib_stralloc(yytext); return CMD_LABEL_ASGN; }
@@ -484,6 +498,8 @@ if		{ BEGIN (COND_MODE); return IF; }
 	\)		{ return R_PAREN; }
         \[              { return L_BRACKET; }
         \]              { return R_BRACKET; }
+
+	[_a-zA-Z0-0]*	{yylval.str= lib_stralloc(yytext); return BANKNAME; }
 }
 
 <ASM_MODE>[a-zA-Z][a-zA-Z]\ [a-zA-Z]\,[a-zA-Z] {
@@ -513,7 +529,7 @@ if		{ BEGIN (COND_MODE); return IF; }
 <ASM_MODE>iyh|IYH       { return REG_IYH; }
 <ASM_MODE>iyl|IYL       { return REG_IYL; }
 <ASM_MODE>[a-zA-Z]{2,4}                           { yylval.str = lib_stralloc(yytext); return OPCODE; }
-<ASM_MODE,INITIAL>\.[_@\?:a-zA-Z][_@\?:.a-zA-Z0-9]*        { yylval.str = lib_stralloc(yytext); return LABEL; }
+<ASM_MODE,INITIAL,COND_MODE>\.[_@\?:a-zA-Z][_@\?:.a-zA-Z0-9]*        { yylval.str = lib_stralloc(yytext); return LABEL; }
 
 <ASM_MODE>(a|A)/[ \t]*[:\n]           { if (!dont_match_reg_a) return REG_A;
                                         yylval.i = 0x0a; return H_NUMBER; }

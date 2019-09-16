@@ -43,7 +43,6 @@
 #include "network.h"
 #include "resources.h"
 #include "serial.h"
-#include "translate.h"
 #include "types.h"
 #include "uiapi.h"
 #include "vdrive-bam.h"
@@ -122,67 +121,44 @@ int file_system_resources_init(void)
 
 /* ------------------------------------------------------------------------- */
 
-static const cmdline_option_t cmdline_options[] = {
-    { "-device8", SET_RESOURCE, 1,
+static const cmdline_option_t cmdline_options[] =
+{
+    { "-device8", SET_RESOURCE, CMDLINE_ATTRIB_NEED_ARGS,
       NULL, NULL, "FileSystemDevice8", (void *)ATTACH_DEVICE_FS,
-      USE_PARAM_ID, USE_DESCRIPTION_ID,
-      IDCLS_P_TYPE, IDCLS_SET_DEVICE_TYPE_8,
-      NULL, NULL },
-    { "-device9", SET_RESOURCE, 1,
+      "<Type>", "Set device type for device #8 (0: None, 1: Filesystem, 2: OpenCBM, 3: Block device)" },
+    { "-device9", SET_RESOURCE, CMDLINE_ATTRIB_NEED_ARGS,
       NULL, NULL, "FileSystemDevice9", (void *)ATTACH_DEVICE_FS,
-      USE_PARAM_ID, USE_DESCRIPTION_ID,
-      IDCLS_P_TYPE, IDCLS_SET_DEVICE_TYPE_9,
-      NULL, NULL },
-    { "-device10", SET_RESOURCE, 1,
+      "<Type>", "Set device type for device #9 (0: None, 1: Filesystem, 2: OpenCBM, 3: Block device)" },
+    { "-device10", SET_RESOURCE, CMDLINE_ATTRIB_NEED_ARGS,
       NULL, NULL, "FileSystemDevice10", (void *)ATTACH_DEVICE_FS,
-      USE_PARAM_ID, USE_DESCRIPTION_ID,
-      IDCLS_P_TYPE, IDCLS_SET_DEVICE_TYPE_10,
-      NULL, NULL },
-    { "-device11", SET_RESOURCE, 1,
+      "<Type>", "Set device type for device #10 (0: None, 1: Filesystem, 2: OpenCBM, 3: Block device)" },
+    { "-device11", SET_RESOURCE, CMDLINE_ATTRIB_NEED_ARGS,
       NULL, NULL, "FileSystemDevice11", (void *)ATTACH_DEVICE_FS,
-      USE_PARAM_ID, USE_DESCRIPTION_ID,
-      IDCLS_P_TYPE, IDCLS_SET_DEVICE_TYPE_11,
-      NULL, NULL },
-    { "-attach8ro", SET_RESOURCE, 0,
+      "<Type>", "Set device type for device #11 (0: None, 1: Filesystem, 2: OpenCBM, 3: Block device)" },
+    { "-attach8ro", SET_RESOURCE, CMDLINE_ATTRIB_NONE,
       NULL, NULL, "AttachDevice8Readonly", (resource_value_t)1,
-      USE_PARAM_STRING, USE_DESCRIPTION_ID,
-      IDCLS_UNUSED, IDCLS_ATTACH_READ_ONLY_8,
-      NULL, NULL },
-    { "-attach8rw", SET_RESOURCE, 0,
+      NULL, "Attach disk image for drive #8 read only" },
+    { "-attach8rw", SET_RESOURCE, CMDLINE_ATTRIB_NONE,
       NULL, NULL, "AttachDevice8Readonly", (resource_value_t)0,
-      USE_PARAM_STRING, USE_DESCRIPTION_ID,
-      IDCLS_UNUSED, IDCLS_ATTACH_READ_WRITE_8,
-      NULL, NULL },
-    { "-attach9ro", SET_RESOURCE, 0,
+      NULL, "Attach disk image for drive #8 read write (if possible)" },
+    { "-attach9ro", SET_RESOURCE, CMDLINE_ATTRIB_NONE,
       NULL, NULL, "AttachDevice9Readonly", (resource_value_t)1,
-      USE_PARAM_STRING, USE_DESCRIPTION_ID,
-      IDCLS_UNUSED, IDCLS_ATTACH_READ_ONLY_9,
-      NULL, NULL },
-    { "-attach9rw", SET_RESOURCE, 0,
+      NULL, "Attach disk image for drive #9 read only" },
+    { "-attach9rw", SET_RESOURCE, CMDLINE_ATTRIB_NONE,
       NULL, NULL, "AttachDevice9Readonly", (resource_value_t)0,
-      USE_PARAM_STRING, USE_DESCRIPTION_ID,
-      IDCLS_UNUSED, IDCLS_ATTACH_READ_WRITE_9,
-      NULL, NULL },
-    { "-attach10ro", SET_RESOURCE, 0,
+      NULL, "Attach disk image for drive #9 read write (if possible)" },
+    { "-attach10ro", SET_RESOURCE, CMDLINE_ATTRIB_NONE,
       NULL, NULL, "AttachDevice10Readonly", (resource_value_t)1,
-      USE_PARAM_STRING, USE_DESCRIPTION_ID,
-      IDCLS_UNUSED, IDCLS_ATTACH_READ_ONLY_10,
-      NULL, NULL },
-    { "-attach10rw", SET_RESOURCE, 0,
+      NULL, "Attach disk image for drive #10 read only" },
+    { "-attach10rw", SET_RESOURCE, CMDLINE_ATTRIB_NONE,
       NULL, NULL, "AttachDevice10Readonly", (resource_value_t)0,
-      USE_PARAM_STRING, USE_DESCRIPTION_ID,
-      IDCLS_UNUSED, IDCLS_ATTACH_READ_WRITE_10,
-      NULL, NULL },
-    { "-attach11ro", SET_RESOURCE, 0,
+      NULL, "Attach disk image for drive #10 read write (if possible)" },
+    { "-attach11ro", SET_RESOURCE, CMDLINE_ATTRIB_NONE,
       NULL, NULL, "AttachDevice11Readonly", (resource_value_t)1,
-      USE_PARAM_STRING, USE_DESCRIPTION_ID,
-      IDCLS_UNUSED, IDCLS_ATTACH_READ_ONLY_11,
-      NULL, NULL },
-    { "-attach11rw", SET_RESOURCE, 0,
+      NULL, "Attach disk image for drive #11 read only" },
+    { "-attach11rw", SET_RESOURCE, CMDLINE_ATTRIB_NONE,
       NULL, NULL, "AttachDevice11Readonly", (resource_value_t)0,
-      USE_PARAM_STRING, USE_DESCRIPTION_ID,
-      IDCLS_UNUSED, IDCLS_ATTACH_READ_WRITE_11,
-      NULL, NULL },
+      NULL, "Attach disk image for drive #11 read write (if possible)" },
     CMDLINE_LIST_END
 };
 
@@ -290,12 +266,12 @@ const char *file_system_get_disk_name(unsigned int unit)
     return disk_image_fsimage_name_get(vdrive->image);
 }
 
-int file_system_bam_get_disk_id(unsigned int unit, BYTE *id)
+int file_system_bam_get_disk_id(unsigned int unit, uint8_t *id)
 {
     return vdrive_bam_get_disk_id(unit, id);
 }
 
-int file_system_bam_set_disk_id(unsigned int unit, BYTE *id)
+int file_system_bam_set_disk_id(unsigned int unit, uint8_t *id)
 {
     return vdrive_bam_set_disk_id(unit, id);
 }
@@ -555,6 +531,9 @@ static int attach_disk_image(disk_image_t **imgptr, vdrive_t *floppy,
     image = *imgptr;
 
     memcpy(image, &new_image, sizeof(disk_image_t));
+    /* free the P64 stuff, fixes the leak in src/attach.c, reported when
+     * using --enable-debug */
+    lib_free(new_image.p64);
 
     switch (unit) {
         case 8:

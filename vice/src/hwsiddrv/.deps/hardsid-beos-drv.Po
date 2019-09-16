@@ -1,0 +1,6 @@
+hardsid-beos-drv.o: hardsid-beos-drv.c ../../src/vice.h \
+ ../../src/config.h
+
+../../src/vice.h:
+
+../../src/config.h:

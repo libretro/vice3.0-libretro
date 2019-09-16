@@ -42,10 +42,16 @@
 #include "palette.h"
 #include "resources.h"
 #include "screenshot.h"
-#include "translate.h"
 #include "uiapi.h"
 #include "util.h"
-#include "../sounddrv/soundmovie.h"
+#include "soundmovie.h"
+
+/** \brief  Helper macro to determine ffmpeg version
+ */
+#if (LIBAVCODEC_VERSION_MAJOR >= 58) && (LIBAVCODEC_VERSION_MINOR >= 18)
+# define HAVE_FFMPEG4
+#endif
+
 
 static gfxoutputdrv_codec_t avi_audio_codeclist[] = {
     { AV_CODEC_ID_MP2, "MP2" },
@@ -265,22 +271,17 @@ static int ffmpegdrv_resources_init(void)
 
     return resources_register_int(resources_int);
 }
-/*---------------------------------------------------------------------*/
-
 
 /*---------- Commandline options --------------------------------------*/
 
-static const cmdline_option_t cmdline_options[] = {
-    { "-ffmpegaudiobitrate", SET_RESOURCE, 1,
+static const cmdline_option_t cmdline_options[] =
+{
+    { "-ffmpegaudiobitrate", SET_RESOURCE, CMDLINE_ATTRIB_NEED_ARGS,
       NULL, NULL, "FFMPEGAudioBitrate", NULL,
-      USE_PARAM_ID, USE_DESCRIPTION_ID,
-      IDCLS_P_VALUE, IDCLS_SET_AUDIO_STREAM_BITRATE,
-      NULL, NULL },
-    { "-ffmpegvideobitrate", SET_RESOURCE, 1,
+      "<value>", "Set bitrate for audio stream in media file" },
+    { "-ffmpegvideobitrate", SET_RESOURCE, CMDLINE_ATTRIB_NEED_ARGS,
       NULL, NULL, "FFMPEGVideoBitrate", NULL,
-      USE_PARAM_ID, USE_DESCRIPTION_ID,
-      IDCLS_P_VALUE, IDCLS_SET_VIDEO_STREAM_BITRATE,
-      NULL, NULL },
+      "<value>", "Set bitrate for video stream in media file" },
     CMDLINE_LIST_END
 };
 
@@ -346,7 +347,7 @@ static int ffmpegdrv_open_audio(AVFormatContext *oc, AVStream *st)
     int audio_inbuf_samples;
     int ret;
     AVDictionary *opts = NULL;
-    
+
     c = st->codec;
     /* open codec */
     /* aac encoder ist flaged 'experimental' */
@@ -360,7 +361,11 @@ static int ffmpegdrv_open_audio(AVFormatContext *oc, AVStream *st)
     }
 
     audio_is_open = 1;
+#ifdef HAVE_FFMPEG4
+    if (c->codec->capabilities & AV_CODEC_CAP_VARIABLE_FRAME_SIZE) {
+#else
     if (c->codec->capabilities & CODEC_CAP_VARIABLE_FRAME_SIZE) {
+#endif
         audio_inbuf_samples = 10000;
     } else {
         audio_inbuf_samples = c->frame_size;
@@ -372,9 +377,9 @@ static int ffmpegdrv_open_audio(AVFormatContext *oc, AVStream *st)
     if (!audio_st.frame || !audio_st.tmp_frame) {
         return -1;
     }
-    
+
     ffmpegdrv_audio_in.size = audio_inbuf_samples * c->channels;
-    ffmpegdrv_audio_in.buffer = (SWORD*)audio_st.tmp_frame->data[0];
+    ffmpegdrv_audio_in.buffer = (int16_t *)audio_st.tmp_frame->data[0];
     return 0;
 }
 
@@ -453,8 +458,13 @@ static int ffmpegmovie_init_audio(int speed, int channels, soundmovie_buffer_t *
     audio_st.samples_count = 0;
 
     /* Some formats want stream headers to be separate. */
-    if (ffmpegdrv_oc->oformat->flags & AVFMT_GLOBALHEADER)
+    if (ffmpegdrv_oc->oformat->flags & AVFMT_GLOBALHEADER) {
+#ifdef HAVE_FFMPEG4
+        c->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
+#else
         c->flags |= CODEC_FLAG_GLOBAL_HEADER;
+#endif
+    }
 
     /* create resampler context */
 #ifndef HAVE_FFMPEG_AVRESAMPLE
@@ -787,7 +797,11 @@ static void ffmpegdrv_init_video(screenshot_t *screenshot)
 
     /* Some formats want stream headers to be separate. */
     if (ffmpegdrv_oc->oformat->flags & AVFMT_GLOBALHEADER) {
+#ifdef HAVE_FFMPEG4
+        c->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
+#else
         c->flags |= CODEC_FLAG_GLOBAL_HEADER;
+#endif
     }
 
     if (audio_init_done) {
@@ -804,12 +818,12 @@ static int ffmpegdrv_init_file(void)
     VICE_P_AV_DUMP_FORMAT(ffmpegdrv_oc, 0, ffmpegdrv_oc->filename, 1);
 
     if (video_st.st && (ffmpegdrv_open_video(ffmpegdrv_oc, video_st.st) < 0)) {
-        ui_error(translate_text(IDGS_FFMPEG_CANNOT_OPEN_VSTREAM));
+        ui_error("ffmpegdrv: Cannot open video stream");
         screenshot_stop_recording();
         return -1;
     }
     if (audio_st.st && (ffmpegdrv_open_audio(ffmpegdrv_oc, audio_st.st) < 0)) {
-        ui_error(translate_text(IDGS_FFMPEG_CANNOT_OPEN_ASTREAM));
+        ui_error("ffmpegdrv: Cannot open audio stream");
         screenshot_stop_recording();
         return -1;
     }
@@ -818,7 +832,7 @@ static int ffmpegdrv_init_file(void)
         if (VICE_P_AVIO_OPEN(&ffmpegdrv_oc->pb, ffmpegdrv_oc->filename,
                             AVIO_FLAG_WRITE) < 0) {
 
-            ui_error(translate_text(IDGS_FFMPEG_CANNOT_OPEN_S), ffmpegdrv_oc->filename);
+            ui_error("ffmpegdrv: Cannot open %s", ffmpegdrv_oc->filename);
             screenshot_stop_recording();
             return -1;
         }
@@ -967,6 +981,7 @@ static int ffmpegdrv_record(screenshot_t *screenshot)
 
     video_st.frame->pts = video_st.next_pts++;
 
+#ifdef AVFMT_RAWPICTURE
     if (ffmpegdrv_oc->oformat->flags & AVFMT_RAWPICTURE) {
         AVPacket pkt;
         VICE_P_AV_INIT_PACKET(&pkt);
@@ -977,7 +992,9 @@ static int ffmpegdrv_record(screenshot_t *screenshot)
         pkt.pts = pkt.dts = video_st.frame->pts;
 
         ret = VICE_P_AV_INTERLEAVED_WRITE_FRAME(ffmpegdrv_oc, &pkt);
-    } else {
+    } else
+#endif
+    {
         AVPacket pkt = { 0 };
         int got_packet;
 

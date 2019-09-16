@@ -47,7 +47,6 @@
 #include "monitor.h"
 #include "resources.h"
 #include "snapshot.h"
-#include "translate.h"
 #include "types.h"
 #include "util.h"
 
@@ -106,7 +105,7 @@ static int isepic_switch = 0;
 static int isepic_write_image = 0;
 
 /* 2 KB RAM */
-static BYTE *isepic_ram;
+static uint8_t *isepic_ram;
 
 /* current page */
 static unsigned int isepic_page = 0;
@@ -130,12 +129,12 @@ static int isepic_state = ISEPIC_STATE_NMI_WAITING;
 /* ------------------------------------------------------------------------- */
 
 /* some prototypes are needed */
-static BYTE isepic_io1_read(WORD addr);
-static BYTE isepic_io1_peek(WORD addr);
-static void isepic_io1_store(WORD addr, BYTE byte);
-static BYTE isepic_io2_read(WORD addr);
-static BYTE isepic_io2_peek(WORD addr);
-static void isepic_io2_store(WORD addr, BYTE byte);
+static uint8_t isepic_io1_read(uint16_t addr);
+static uint8_t isepic_io1_peek(uint16_t addr);
+static void isepic_io1_store(uint16_t addr, uint8_t byte);
+static uint8_t isepic_io2_read(uint16_t addr);
+static uint8_t isepic_io2_peek(uint16_t addr);
+static void isepic_io2_store(uint16_t addr, uint8_t byte);
 static int isepic_dump(void);
 
 static io_source_t isepic_io1_device = {
@@ -300,6 +299,18 @@ int isepic_enable(void)
     return 0;
 }
 
+
+int isepic_disable(void)
+{
+    DBG(("ISEPIC: disable\n"));
+    if (resources_set_int("IsepicCartridgeEnabled", 0) < 0) {
+        return -1;
+    }
+    return 0;
+}
+
+
+
 static int set_isepic_switch(int value, void *param)
 {
     int val = value ? 1 : 0;
@@ -390,41 +401,27 @@ void isepic_resources_shutdown(void)
 
 static const cmdline_option_t cmdline_options[] =
 {
-    { "-isepic", SET_RESOURCE, 0,
+    { "-isepic", SET_RESOURCE, CMDLINE_ATTRIB_NONE,
       NULL, NULL, "IsepicCartridgeEnabled", (resource_value_t)1,
-      USE_PARAM_STRING, USE_DESCRIPTION_ID,
-      IDCLS_UNUSED, IDCLS_ENABLE_ISEPIC,
-      NULL, NULL },
-    { "+isepic", SET_RESOURCE, 0,
+      NULL, "Enable the ISEPIC cartridge" },
+    { "+isepic", SET_RESOURCE, CMDLINE_ATTRIB_NONE,
       NULL, NULL, "IsepicCartridgeEnabled", (resource_value_t)0,
-      USE_PARAM_STRING, USE_DESCRIPTION_ID,
-      IDCLS_UNUSED, IDCLS_DISABLE_ISEPIC,
-      NULL, NULL },
-    { "-isepicimagename", SET_RESOURCE, 1,
+      NULL, "Disable the ISEPIC cartridge" },
+    { "-isepicimagename", SET_RESOURCE, CMDLINE_ATTRIB_NEED_ARGS,
       NULL, NULL, "Isepicfilename", NULL,
-      USE_PARAM_ID, USE_DESCRIPTION_ID,
-      IDCLS_P_NAME, IDCLS_SET_ISEPIC_FILENAME,
-      NULL, NULL },
-    { "-isepicimagerw", SET_RESOURCE, 0,
+      "<Name>", "Set ISEPIC image name" },
+    { "-isepicimagerw", SET_RESOURCE, CMDLINE_ATTRIB_NONE,
       NULL, NULL, "IsepicImageWrite", (resource_value_t)1,
-      USE_PARAM_STRING, USE_DESCRIPTION_ID,
-      IDCLS_UNUSED, IDCLS_ALLOW_WRITING_TO_ISEPIC_IMAGE,
-      NULL, NULL },
-    { "+isepicimagerw", SET_RESOURCE, 0,
+      NULL, "Allow writing to ISEPIC image" },
+    { "+isepicimagerw", SET_RESOURCE, CMDLINE_ATTRIB_NONE,
       NULL, NULL, "IsepicImageWrite", (resource_value_t)0,
-      USE_PARAM_STRING, USE_DESCRIPTION_ID,
-      IDCLS_UNUSED, IDCLS_DO_NOT_WRITE_TO_ISEPIC_IMAGE,
-      NULL, NULL },
-    { "-isepicswitch", SET_RESOURCE, 0,
+      NULL, "Do not write to ISEPIC image" },
+    { "-isepicswitch", SET_RESOURCE, CMDLINE_ATTRIB_NONE,
       NULL, NULL, "IsepicSwitch", (resource_value_t)1,
-      USE_PARAM_STRING, USE_DESCRIPTION_ID,
-      IDCLS_UNUSED, IDCLS_ENABLE_ISEPIC_SWITCH,
-      NULL, NULL },
-    { "+isepicswitch", SET_RESOURCE, 0,
+      NULL, "Enable the ISEPIC switch" },
+    { "+isepicswitch", SET_RESOURCE, CMDLINE_ATTRIB_NONE,
       NULL, NULL, "IsepicSwitch", (resource_value_t)0,
-      USE_PARAM_STRING, USE_DESCRIPTION_ID,
-      IDCLS_UNUSED, IDCLS_DISABLE_ISEPIC_SWITCH,
-      NULL, NULL },
+      NULL, "Disable the ISEPIC switch" },
     CMDLINE_LIST_END
 };
 
@@ -435,7 +432,7 @@ int isepic_cmdline_options_init(void)
 
 /* ------------------------------------------------------------------------- */
 
-static BYTE isepic_io1_read(WORD addr)
+static uint8_t isepic_io1_read(uint16_t addr)
 {
     DBG(("io1 r %04x (sw:%d)\n", addr, isepic_switch));
 
@@ -445,12 +442,12 @@ static BYTE isepic_io1_read(WORD addr)
     return 0;
 }
 
-static BYTE isepic_io1_peek(WORD addr)
+static uint8_t isepic_io1_peek(uint16_t addr)
 {
     return 0;
 }
 
-static void isepic_io1_store(WORD addr, BYTE byte)
+static void isepic_io1_store(uint16_t addr, uint8_t byte)
 {
     DBG(("io1 w %04x %02x (sw:%d)\n", addr, byte, isepic_switch));
 
@@ -459,9 +456,9 @@ static void isepic_io1_store(WORD addr, BYTE byte)
     }
 }
 
-static BYTE isepic_io2_peek(WORD addr)
+static uint8_t isepic_io2_peek(uint16_t addr)
 {
-    BYTE retval = 0;
+    uint8_t retval = 0;
 
     if (isepic_switch) {
         retval = isepic_ram[(isepic_page * 256) + (addr & 0xff)];
@@ -470,9 +467,9 @@ static BYTE isepic_io2_peek(WORD addr)
     return retval;
 }
 
-static BYTE isepic_io2_read(WORD addr)
+static uint8_t isepic_io2_read(uint16_t addr)
 {
-    BYTE retval = 0;
+    uint8_t retval = 0;
 
     DBG(("io2 r %04x (sw:%d) (p:%d)\n", addr, isepic_switch, isepic_page));
 
@@ -486,7 +483,7 @@ static BYTE isepic_io2_read(WORD addr)
     return retval;
 }
 
-static void isepic_io2_store(WORD addr, BYTE byte)
+static void isepic_io2_store(uint16_t addr, uint8_t byte)
 {
     DBG(("io2 w %04x %02x (sw:%d)\n", addr, byte, isepic_switch));
 
@@ -503,7 +500,7 @@ static int isepic_dump(void)
 
 /* ------------------------------------------------------------------------- */
 
-BYTE isepic_romh_read(WORD addr)
+uint8_t isepic_romh_read(uint16_t addr)
 {
     if (isepic_state == ISEPIC_STATE_NMI_EXECUTING) {
        switch (addr) {
@@ -516,7 +513,7 @@ BYTE isepic_romh_read(WORD addr)
     return mem_read_without_ultimax(addr);
 }
 
-void isepic_romh_store(WORD addr, BYTE byte)
+void isepic_romh_store(uint16_t addr, uint8_t byte)
 {
     if (isepic_state == ISEPIC_STATE_NMI_EXECUTING) {
         switch (addr) {
@@ -529,7 +526,7 @@ void isepic_romh_store(WORD addr, BYTE byte)
     mem_store_without_ultimax(addr, byte);
 }
 
-BYTE isepic_page_read(WORD addr)
+uint8_t isepic_page_read(uint16_t addr)
 {
     if (isepic_switch && addr >= 0x8000 && addr < 0xa000 && isepic_state == ISEPIC_STATE_NMI_EXECUTING) {
         return isepic_ram[(isepic_page * 256) + (addr & 0xff)];
@@ -538,7 +535,7 @@ BYTE isepic_page_read(WORD addr)
     }
 }
 
-void isepic_page_store(WORD addr, BYTE value)
+void isepic_page_store(uint16_t addr, uint8_t value)
 {
     if (isepic_switch && addr >= 0x8000 && addr < 0xa000 && isepic_state == ISEPIC_STATE_NMI_EXECUTING) {
         isepic_ram[(isepic_page * 256) + (addr & 0xff)] = value;
@@ -547,7 +544,7 @@ void isepic_page_store(WORD addr, BYTE value)
     }
 }
 
-int isepic_romh_phi1_read(WORD addr, BYTE *value)
+int isepic_romh_phi1_read(uint16_t addr, uint8_t *value)
 {
     if (isepic_state == ISEPIC_STATE_NMI_EXECUTING) {
         switch (addr) {
@@ -560,12 +557,12 @@ int isepic_romh_phi1_read(WORD addr, BYTE *value)
     return CART_READ_C64MEM;
 }
 
-int isepic_romh_phi2_read(WORD addr, BYTE *value)
+int isepic_romh_phi2_read(uint16_t addr, uint8_t *value)
 {
     return isepic_romh_phi1_read(addr, value);
 }
 
-int isepic_peek_mem(WORD addr, BYTE *value)
+int isepic_peek_mem(uint16_t addr, uint8_t *value)
 {
     if (isepic_switch) {
         if ((addr >= 0x1000) && (addr <= 0xcfff)) {
@@ -591,7 +588,7 @@ const char *isepic_get_file_name(void)
     return isepic_filename;
 }
 
-void isepic_mmu_translate(unsigned int addr, BYTE **base, int *start, int *limit)
+void isepic_mmu_translate(unsigned int addr, uint8_t **base, int *start, int *limit)
 {
 #if 0
     switch (addr & 0xf000) {
@@ -633,12 +630,12 @@ void isepic_reset(void)
     }
 }
 
-void isepic_config_setup(BYTE *rawcart)
+void isepic_config_setup(uint8_t *rawcart)
 {
     memcpy(isepic_ram, rawcart, ISEPIC_RAM_SIZE);
 }
 
-static int isepic_common_attach(BYTE *rawcart)
+static int isepic_common_attach(uint8_t *rawcart)
 {
     if (resources_set_int("IsepicCartridgeEnabled", 1) < 0) {
         return -1;
@@ -650,7 +647,7 @@ static int isepic_common_attach(BYTE *rawcart)
     return -1;
 }
 
-static int isepic_bin_load(const char *filename, BYTE *rawcart)
+static int isepic_bin_load(const char *filename, uint8_t *rawcart)
 {
     if (util_file_load(filename, rawcart, ISEPIC_RAM_SIZE, UTIL_FILE_LOAD_SKIP_ADDRESS) < 0) {
         return -1;
@@ -659,7 +656,7 @@ static int isepic_bin_load(const char *filename, BYTE *rawcart)
     return 0;
 }
 
-int isepic_bin_attach(const char *filename, BYTE *rawcart)
+int isepic_bin_attach(const char *filename, uint8_t *rawcart)
 {
     if (isepic_bin_load(filename, rawcart) < 0) {
         return -1;
@@ -694,7 +691,7 @@ int isepic_bin_save(const char *filename)
     return 0;
 }
 
-static int isepic_crt_load(FILE *fd, BYTE *rawcart)
+static int isepic_crt_load(FILE *fd, uint8_t *rawcart)
 {
     crt_chip_header_t chip;
 
@@ -714,7 +711,7 @@ static int isepic_crt_load(FILE *fd, BYTE *rawcart)
     return 0;
 }
 
-int isepic_crt_attach(FILE *fd, BYTE *rawcart, const char *filename)
+int isepic_crt_attach(FILE *fd, uint8_t *rawcart, const char *filename)
 {
     if (isepic_crt_load(fd, rawcart) < 0) {
         return -1;
@@ -810,9 +807,9 @@ int isepic_snapshot_write_module(snapshot_t *s)
     }
 
     if (0
-        || (SMW_B(m, (BYTE)isepic_enabled) < 0)
-        || (SMW_B(m, (BYTE)isepic_switch) < 0)
-        || (SMW_B(m, (BYTE)isepic_page) < 0)
+        || (SMW_B(m, (uint8_t)isepic_enabled) < 0)
+        || (SMW_B(m, (uint8_t)isepic_switch) < 0)
+        || (SMW_B(m, (uint8_t)isepic_page) < 0)
         || (SMW_BA(m, isepic_ram, ISEPIC_RAM_SIZE) < 0)) {
         snapshot_module_close(m);
         return -1;
@@ -823,7 +820,7 @@ int isepic_snapshot_write_module(snapshot_t *s)
 
 int isepic_snapshot_read_module(snapshot_t *s)
 {
-    BYTE vmajor, vminor;
+    uint8_t vmajor, vminor;
     snapshot_module_t *m;
 
     m = snapshot_module_open(s, snap_module_name, &vmajor, &vminor);

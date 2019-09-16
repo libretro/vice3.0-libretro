@@ -145,30 +145,41 @@ void RSDL_GetClipRect(RSDL_Surface *surface, RSDL_Rect *rect)
 
 
 void Retro_FreeSurface(RSDL_Surface *surf )
-{   
+{
    if (!surf)
       return;
 
+#ifdef RETRO_DEBUG
    printf("free surf format palette color\n");
-
-   if(surf->format->palette->colors)	
+#endif
+   if(surf->format->palette->colors)
       free(surf->format->palette->colors);
 
-   printf("free surf format palette \n");
-   if(surf->format->palette)	
+#ifdef RETRO_DEBUG
+   printf("free surf format palette\n");
+#endif
+   if(surf->format->palette)
       free(surf->format->palette);
-   printf("free surf format  \n");
-   if(surf->format)	
+
+#ifdef RETRO_DEBUG
+   printf("free surf format\n");
+#endif
+   if(surf->format)
       free(surf->format);
-   printf("free surf pixel  \n"); 
+
+#ifdef RETRO_DEBUG
+   printf("free surf pixel\n");
+#endif
    if(surf->pixels)
-      free(surf->pixels);       
+      free(surf->pixels);
 }
 
 
 RSDL_Surface *Retro_CreateRGBSurface32( int w,int h, int d, int rm,int rg,int rb,int ra)
 {
+#ifdef RETRO_DEBUG
    printf("s(%d,%d,%d) (%x,%x,%x,%x)\n",w,h,d,rm,rg,rb,ra);
+#endif
 
    RSDL_Surface *bitmp;
 
@@ -193,7 +204,9 @@ RSDL_Surface *Retro_CreateRGBSurface32( int w,int h, int d, int rm,int rg,int rb
       return NULL;
    }
 
+#ifdef RETRO_DEBUG
   printf("create surface XR8G8B8 libretro\n");
+#endif
 //FIXME: why pal for 32 bits surface ?
   bitmp->format->palette->ncolors=256;
   bitmp->format->palette->colors=(RSDL_Color *)malloc(1024);
@@ -257,7 +270,9 @@ RSDL_Surface *Retro_CreateRGBSurface32( int w,int h, int d, int rm,int rg,int rb
 
 RSDL_Surface *Retro_CreateRGBSurface16( int w,int h, int d, int rm,int rg,int rb,int ra)
 {
+#ifdef RETRO_DEBUG
    printf("s(%d,%d,%d) (%x,%x,%x,%x)\n",w,h,d,rm,rg,rb,ra);
+#endif
 
    RSDL_Surface *bitmp;
 
@@ -282,7 +297,9 @@ RSDL_Surface *Retro_CreateRGBSurface16( int w,int h, int d, int rm,int rg,int rb
       return NULL;
    }
 
+#ifdef RETRO_DEBUG
   printf("create surface RGB565 libretro\n");
+#endif
 //FIXME: why pal for 32 bits surface ?
   bitmp->format->palette->ncolors=256;
   bitmp->format->palette->colors=(RSDL_Color *)malloc(256*2);

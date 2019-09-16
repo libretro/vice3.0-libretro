@@ -1,10 +1,11 @@
+/** \file   menu_tape.c
+ * \brief   Tape menu for SDL UI
+ *
+ * \author  Hannu Nuotio <hannu.nuotio@tut.fi>
+ * \author  Marco van den Heuvel <blackystardust68@yahoo.com>
+ */
+
 /*
- * menu_tape.c - Tape menu for SDL UI.
- *
- * Written by
- *  Hannu Nuotio <hannu.nuotio@tut.fi>
- *  Marco van den Heuvel <blackystardust68@yahoo.com>
- *
  * This file is part of VICE, the Versatile Commodore Emulator.
  * See README for copyright notice.
  *
@@ -32,6 +33,7 @@
 #include "cbmimage.h"
 #include "datasette.h"
 #include "diskimage.h"
+#include "tapecart.h"
 #include "lib.h"
 #include "menu_common.h"
 #include "tape.h"
@@ -73,7 +75,9 @@ static UI_MENU_CALLBACK(custom_datasette_control_callback)
     return NULL;
 }
 
-UI_MENU_CALLBACK(create_tape_image_callback)
+
+
+static UI_MENU_CALLBACK(create_tape_image_callback)
 {
     char *name = NULL;
     int overwrite = 1;
@@ -82,7 +86,7 @@ UI_MENU_CALLBACK(create_tape_image_callback)
         name = sdl_ui_file_selection_dialog("Select tape image name", FILEREQ_MODE_SAVE_FILE);
         if (name != NULL) {
             if (util_file_exists(name)) {
-                if (message_box("VICE QUESTION", "File exists, do you want to overwrite?", MESSAGE_YESNO) == 1) {
+                if (message_box("VICE QUESTION", "File exists, do you want to overwrite?", MESSAGE_YESNO) != 1) {
                     overwrite = 0;
                 }
             }
@@ -203,6 +207,62 @@ const ui_menu_entry_t cpclockf83_device_menu[] = {
     SDL_MENU_LIST_END
 };
 
+
+/*
+ * tapecart support (see https://github.com/ikorb/tapecart/)
+ */
+UI_MENU_DEFINE_TOGGLE(TapecartEnabled)
+UI_MENU_DEFINE_TOGGLE(TapecartUpdateTCRT)
+UI_MENU_DEFINE_TOGGLE(TapecartOptimizeTCRT)
+UI_MENU_DEFINE_INT(TapecartLoglevel)
+UI_MENU_DEFINE_FILE_STRING(TapecartTCRTFilename)
+
+
+/** \brief  Flush tapecart image to disk
+ */
+static UI_MENU_CALLBACK(tapecart_flush_callback)
+{
+    if (activated) {
+        if (tapecart_flush_tcrt() != 0) {
+            /* report error */
+            ui_error("Failed to flush tapecart image");
+        } else {
+            ui_message("Flushed tapecart image to disk");
+        }
+    }
+    return NULL;
+}
+
+
+const ui_menu_entry_t tapecart_submenu[] = {
+    { "Enable tapecart",
+        MENU_ENTRY_RESOURCE_TOGGLE,
+        toggle_TapecartEnabled_callback,
+        NULL },
+    { "Save tapecart data when changed",
+        MENU_ENTRY_RESOURCE_TOGGLE,
+        toggle_TapecartUpdateTCRT_callback,
+        NULL },
+    { "Optimize tapecart data when changed",
+        MENU_ENTRY_RESOURCE_TOGGLE,
+        toggle_TapecartOptimizeTCRT_callback,
+        NULL },
+    { "tapecart Log level",
+        MENU_ENTRY_RESOURCE_INT,
+        int_TapecartLoglevel_callback,
+        (ui_callback_data_t)"Set tapecart log level" },
+    { "TCRT filename",
+        MENU_ENTRY_DIALOG,
+        file_string_TapecartTCRTFilename_callback,
+        (ui_callback_data_t)"Select TCRT file" },
+    { "Flush current image",
+        MENU_ENTRY_OTHER,
+        tapecart_flush_callback,
+        NULL },
+    SDL_MENU_LIST_END
+};
+
+
 UI_MENU_DEFINE_TOGGLE(Datasette)
 UI_MENU_DEFINE_TOGGLE(TapeSenseDongle)
 UI_MENU_DEFINE_TOGGLE(DTLBasicDongle)
@@ -228,5 +288,9 @@ const ui_menu_entry_t tapeport_devices_menu[] = {
       MENU_ENTRY_SUBMENU,
       submenu_callback,
       (ui_callback_data_t)cpclockf83_device_menu },
+    { "tapecart device settings",
+        MENU_ENTRY_SUBMENU,
+        submenu_callback,
+        (ui_callback_data_t)tapecart_submenu },
     SDL_MENU_LIST_END
 };

@@ -1,18 +1,16 @@
 # Makefile.am for the SDL version of `libarch.a'.
 
 if WIN32_COMPILE
-extra_includes = -I$(top_srcdir)/src/arch/win32/msvc/wpcap
+extra_includes = -I$(top_srcdir)/src/arch/mingw32-pcap/wpcap
 else
 extra_includes =
 endif
-
+ 
 if DUMMY_COMPILE
 SUBDIRS = \
-	msvc-files \
 	qnx4 \
 	sortix-files \
-	syllable-files \
-	win32-watcom
+	syllable-files
 endif
 
 AM_CPPFLAGS = \
@@ -38,29 +36,38 @@ AM_CPPFLAGS = \
 	-I$(top_srcdir)/src/lib/p64 \
 	-I$(top_srcdir)/src/platform \
 	-I$(top_srcdir)/src/joyport \
+	-I$(top_srcdir)/src/gfxoutputdrv \
+	-I$(top_srcdir)/src/tapeport \
+	-I$(top_srcdir)/src/imagecontents \
 	-I$(top_srcdir)/src
 
 noinst_LIBRARIES = libarch.a
+
+if SDL2_COMPILE
+
+libarch_a_VERDEP_SOURCES = \
+	video_sdl2.c
+
+else
+
+libarch_a_VERDEP_SOURCES = \
+	video_sdl1.c
+
+endif
 
 libarch_a_SOURCES = \
 	archdep.c \
 	archdep.h \
 	blockdev.c \
-	catweaselmkiii-drv.c \
 	console.c \
 	console_unix.c \
 	coproc.c \
 	coproc.h \
-	cw-device.c \
-	cw-pci.c \
 	dynlib.c \
 	fullscreen.c \
 	fullscreenarch.h \
-	hardsid-drv.c \
-	hs-device.c \
-	hs-isa.c \
-	hs-pci.c \
-	io-access.c \
+	icon.c \
+	icon.h \
 	joy.c \
 	joy.h \
 	kbd.c \
@@ -93,6 +100,8 @@ libarch_a_SOURCES = \
 	menu_drive.h \
 	menu_drive_rom.c \
 	menu_drive_rom.h \
+	menu_edit.c \
+	menu_edit.h \
 	menu_ethernet.c \
 	menu_ethernet.h \
 	menu_ethernetcart.c \
@@ -107,6 +116,8 @@ libarch_a_SOURCES = \
 	menu_joyport.h \
 	menu_joystick.c \
 	menu_joystick.h \
+	menu_media.c \
+	menu_media.h \
 	menu_midi.c \
 	menu_midi.h \
 	menu_monitor.c \
@@ -157,25 +168,23 @@ libarch_a_SOURCES = \
 	menu_vic20hw.h \
 	menu_video.c \
 	menu_video.h \
-	mididrv.c \
 	mousedrv.c \
 	mousedrv.h \
-	parsid-drv.c \
-	pci-drv.c \
-	ps-device.c \
-	ps-ieee1284.c \
-	ps-io.c \
 	rawnetarch.c \
 	rs232dev.c \
 	sdlmain.c \
 	signals.c \
-	socketimpl.h \
-	ssi2001-drv.c \
-	types.h \
 	ui.c \
 	ui.h \
-	uicmdline.c \
+	uifontscbm2.c \
+	uifontscrtc.c \
+	uifontsted.c \
+	uifontsvic.c \
+	uifontsvicii.c \
+	uifonts.c \
+	uifonts.h \
 	uifilereq.c \
+	uiimagefilereq.c \
 	uifilereq.h \
 	uihotkey.c \
 	uihotkey.h \
@@ -189,7 +198,7 @@ libarch_a_SOURCES = \
 	uipoll.h \
 	uistatusbar.c \
 	uistatusbar.h \
-	video.c \
+	$(libarch_a_VERDEP_SOURCES) \
 	videoarch.h \
 	vkbd.c \
 	vkbd.h \
@@ -211,56 +220,23 @@ EXTRA_DIST = \
 	archdep_amiga.h \
 	archdep_beos.c \
 	archdep_beos.h \
-	archdep_cegcc.c \
-	archdep_cegcc.h \
+	archdep_os2.c \
+	archdep_os2.h \
 	archdep_unix.c \
 	archdep_unix.h \
 	archdep_win32.c \
 	archdep_win32.h \
-	archdep_xbox.c \
-	archdep_xbox.h \
 	console_amiga.c \
 	console_sdl.c \
 	console_unix.c \
-	generate_msvc6_sdl1x.bat \
-	generate_msvc6_sdl2x.bat \
-	generate_msvc70_ffmpeg_sdl1x.bat \
-	generate_msvc70_ffmpeg_sdl2x.bat \
-	generate_msvc70_sdl1x.bat \
-	generate_msvc70_sdl2x.bat \
-	generate_msvc71_ffmpeg_sdl1x.bat \
-	generate_msvc71_ffmpeg_sdl2x.bat \
-	generate_msvc71_sdl1x.bat \
-	generate_msvc71_sdl2x.bat \
-	generate_msvc8_ffmpeg_sdl1x.bat \
-	generate_msvc8_ffmpeg_sdl2x.bat \
-	generate_msvc8_sdl1x.bat \
-	generate_msvc8_sdl2x.bat \
-	generate_msvc9_ffmpeg_sdl1x.bat \
-	generate_msvc9_ffmpeg_sdl2x.bat \
-	generate_msvc9_sdl1x.bat \
-	generate_msvc9_sdl2x.bat \
-	generate_msvc10_ffmpeg_sdl1x.bat \
-	generate_msvc10_ffmpeg_sdl2x.bat \
-	generate_msvc10_sdl1x.bat \
-	generate_msvc10_sdl2x.bat \
-	generate_msvc11_ffmpeg_sdl1x.bat \
-	generate_msvc11_ffmpeg_sdl2x.bat \
-	generate_msvc11_sdl1x.bat \
-	generate_msvc11_sdl2x.bat \
-	generate_msvc12_ffmpeg_sdl1x.bat \
-	generate_msvc12_ffmpeg_sdl2x.bat \
-	generate_msvc12_sdl1x.bat \
-	generate_msvc12_sdl2x.bat \
-	generate_msvc14_ffmpeg_sdl1x.bat \
-	generate_msvc14_ffmpeg_sdl2x.bat \
-	generate_msvc14_sdl1x.bat \
-	generate_msvc14_sdl2x.bat \
-	generate_msvcmips_sdl1x.bat \
+	dynlib-unix.c \
+	dynlib-win32.c \
 	make-bindist_amiga.sh \
 	make-bindist_beos.sh \
 	make-bindist_qnx6.sh \
 	make-bindist_scosol.sh \
 	make-bindist_skyos.sh \
 	make-bindist_syllable.sh \
-	make-bindist_win32.sh
+	make-bindist_win32.sh \
+	rs232dev-unix.c \
+	rs232dev-win32.c

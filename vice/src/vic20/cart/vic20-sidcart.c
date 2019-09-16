@@ -37,7 +37,6 @@
 #include "sid-resources.h"
 #include "sid-snapshot.h"
 #include "snapshot.h"
-#include "translate.h"
 #include "vic20.h"
 
 /* ---------------------------------------------------------------------*/
@@ -87,7 +86,7 @@ static sound_chip_t sidcart_sound_chip = {
     0 /* chip enabled */
 };
 
-static WORD sidcart_sound_chip_offset = 0;
+static uint16_t sidcart_sound_chip_offset = 0;
 
 void sidcart_sound_chip_init(void)
 {
@@ -124,7 +123,7 @@ static void sidcart_disable(void)
 
 static int set_sidcart_address(int val)
 {
-    WORD address = (WORD)val;
+    uint16_t address = (uint16_t)val;
 
     switch (val) {
         case 0x9800:
@@ -219,33 +218,26 @@ int sidcart_resources_init(void)
 
 /* ---------------------------------------------------------------------*/
 
-static const cmdline_option_t sidcart_cmdline_options[] = {
-    { "-sidcart", SET_RESOURCE, 1,
+static const cmdline_option_t sidcart_cmdline_options[] =
+{
+    { "-sidcart", SET_RESOURCE, CMDLINE_ATTRIB_NONE,
       NULL, NULL, "SidCart", NULL,
-      USE_PARAM_STRING, USE_DESCRIPTION_ID,
-      IDCLS_UNUSED, IDCLS_ENABLE_SIDCART,
-      NULL, NULL },
-    { "+sidcart", SET_RESOURCE, 0,
+      NULL, "Enable the SID cartridge" },
+    { "+sidcart", SET_RESOURCE, CMDLINE_ATTRIB_NONE,
       NULL, NULL, "SidCart", NULL,
-      USE_PARAM_STRING, USE_DESCRIPTION_ID,
-      IDCLS_UNUSED, IDCLS_DISABLE_SIDCART,
-      NULL, NULL },
-    { "-sidcartaddress", SET_RESOURCE, 1,
+      NULL, "Disable the SID cartridge" },
+    { "-sidcartaddress", SET_RESOURCE, CMDLINE_ATTRIB_NEED_ARGS,
       NULL, NULL, "SidAddress", NULL,
-      USE_PARAM_ID, USE_DESCRIPTION_ID,
-      IDCLS_P_ADDRESS, IDCLS_VIC20_SIDCART_ADDRESS,
-      NULL, NULL },
-    { "-sidcartclock", SET_RESOURCE, 1,
+      "<address>", "SID cartridge address (0x9800/0x9C00)" },
+    { "-sidcartclock", SET_RESOURCE, CMDLINE_ATTRIB_NEED_ARGS,
       NULL, NULL, "SidClock", NULL,
-      USE_PARAM_ID, USE_DESCRIPTION_ID,
-      IDCLS_P_CLOCK, IDCLS_PLUS4_SIDCART_CLOCK,
-      NULL, NULL },
+      "<clock>", "SID cartridge clock (0: C64 clock, 1: VIC20 clock)" },
     CMDLINE_LIST_END
 };
 
 int sidcart_cmdline_options_init(void)
 {
-    if (sid_cmdline_options_init() < 0) {
+    if (sid_cmdline_options_init(SIDTYPE_SIDCART) < 0) {
         return -1;
     }
     return cmdline_register_options(sidcart_cmdline_options);
@@ -284,8 +276,8 @@ int sidcart_snapshot_write_module(snapshot_t *s)
     }
 
     if (0
-        || SMW_W(m, (WORD)sidcart_address) < 0
-        || SMW_B(m, (BYTE)sidcart_clock) < 0) {
+        || SMW_W(m, (uint16_t)sidcart_address) < 0
+        || SMW_B(m, (uint8_t)sidcart_clock) < 0) {
         snapshot_module_close(m);
         return -1;
     }
@@ -297,7 +289,7 @@ int sidcart_snapshot_write_module(snapshot_t *s)
 
 int sidcart_snapshot_read_module(snapshot_t *s)
 {
-    BYTE vmajor, vminor;
+    uint8_t vmajor, vminor;
     snapshot_module_t *m;
     int tmp_address;
     int tmp_clock;

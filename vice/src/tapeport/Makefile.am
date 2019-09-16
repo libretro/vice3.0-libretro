@@ -16,6 +16,9 @@ libtapeport_a_SOURCES = \
 	sense-dongle.h \
 	tape_diag_586220_harness.c \
 	tape_diag_586220_harness.h \
+	tapecart.c \
+	tapecart.h \
+	tapecart-loader.h \
 	tapelog.c \
 	tapelog.h \
 	tapeport.c \

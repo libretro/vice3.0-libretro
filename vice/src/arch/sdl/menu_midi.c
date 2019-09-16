@@ -124,7 +124,7 @@ void sdl_menu_midi_out_free(void)
 #endif /* defined(MACOSX_SUPPORT) */
 
 /* win32 MIDI settings */
-#if defined(WIN32_COMPILE) && !defined(__XBOX__)
+#ifdef WIN32_COMPILE
 
 #include <windows.h>
 #include <mmsystem.h>
@@ -186,7 +186,7 @@ UI_MENU_CALLBACK(MIDIInDev_dynmenu_callback)
                 midi_in_dyn_menu[i].string = (char *)lib_stralloc(mic.szPname);
                 midi_in_dyn_menu[i].type = MENU_ENTRY_RESOURCE_RADIO;
                 midi_in_dyn_menu[i].callback = radio_MIDIInDev_callback;
-                midi_in_dyn_menu[i].data = (ui_callback_data_t)j;
+                midi_in_dyn_menu[i].data = (ui_callback_data_t)(int_to_void_ptr(j));
                 i++;
             }
         }
@@ -197,7 +197,7 @@ UI_MENU_CALLBACK(MIDIInDev_dynmenu_callback)
     midi_in_dyn_menu[i].callback = NULL;
     midi_in_dyn_menu[i].data = NULL;
 
-    return "->";
+    return MENU_SUBMENU_STRING;
 }
 
 UI_MENU_CALLBACK(MIDIOutDev_dynmenu_callback)
@@ -228,7 +228,7 @@ UI_MENU_CALLBACK(MIDIOutDev_dynmenu_callback)
                 midi_out_dyn_menu[i].string = (char *)lib_stralloc(moc.szPname);
                 midi_out_dyn_menu[i].type = MENU_ENTRY_RESOURCE_RADIO;
                 midi_out_dyn_menu[i].callback = radio_MIDIOutDev_callback;
-                midi_out_dyn_menu[i].data = (ui_callback_data_t)j;
+                midi_out_dyn_menu[i].data = (ui_callback_data_t)(int_to_void_ptr(j));
                 i++;
             }
         }
@@ -239,7 +239,7 @@ UI_MENU_CALLBACK(MIDIOutDev_dynmenu_callback)
     midi_out_dyn_menu[i].callback = NULL;
     midi_out_dyn_menu[i].data = NULL;
 
-    return "->";
+    return MENU_SUBMENU_STRING;
 }
 
 #define VICE_SDL_MIDI_ARCHDEP_ITEMS           \
@@ -253,7 +253,7 @@ UI_MENU_CALLBACK(MIDIOutDev_dynmenu_callback)
       MIDIOutDev_dynmenu_callback,            \
       (ui_callback_data_t)midi_out_dyn_menu },
 
-#endif /* defined(WIN32_COMPILE) && !defined(__XBOX__) */
+#endif /* defined(WIN32_COMPILE) */
 
 /* Common menus */
 
