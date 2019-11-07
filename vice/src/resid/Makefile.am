@@ -2,9 +2,19 @@
 
 AR = @AR@
 
+AM_CFLAGS = @VICE_CFLAGS@
+
+#AM_CXXFLAGS = @VICE_CXXFLAGS@
+
 noinst_LIBRARIES = libresid.a
 
-libresid_a_SOURCES = sid.cc voice.cc wave.cc envelope.cc filter.cc dac.cc extfilt.cc pot.cc version.cc
+if NEW_8580_FILTER
+FILTER8580SRC = filter8580new.cc
+else
+FILTER8580SRC = filter.cc
+endif
+
+libresid_a_SOURCES = sid.cc voice.cc wave.cc envelope.cc $(FILTER8580SRC) dac.cc extfilt.cc pot.cc version.cc
 
 BUILT_SOURCES = $(noinst_DATA:.dat=.h)
 

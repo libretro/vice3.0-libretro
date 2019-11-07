@@ -80,6 +80,13 @@ static int refresh_rate;
 /* "Warp mode".  If nonzero, attempt to run as fast as possible. */
 static int warp_mode_enabled;
 
+#ifdef __LIBRETRO__
+int retro_warp_mode_enabled()
+{
+	return warp_mode_enabled;
+}
+#endif
+
 
 static int set_relative_speed(int val, void *param)
 {
