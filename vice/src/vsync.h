@@ -33,6 +33,10 @@
 #define VSYNC_DEBUG
 #endif
 
+#ifdef __LIBRETRO__
+int retro_warp_mode_enabled();
+#endif
+
 struct video_canvas_s;
 
 extern int vsync_frame_counter;

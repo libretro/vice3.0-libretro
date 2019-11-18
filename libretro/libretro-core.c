@@ -18,6 +18,7 @@
 #include "cartridge.h"
 #endif
 #include "initcmdline.h"
+#include "vsync.h"
 
 #include "compat/strcasestr.h"
 
@@ -2930,9 +2931,33 @@ void retro_run(void)
       runstate = RUNSTATE_RUNNING;
    } 
 
-   while (cpuloop==1)
-      maincpu_mainloop_retro();
-   cpuloop=1;
+   /* Measure frame-time and time between frames to render as much frames as possible when warp is enabled. Does not work
+      perfectly as the time needed by the framework cannot be accounted, but should not reduce amount of actually rendered
+      frames too much. */
+   {
+      static struct retro_perf_callback pcb;
+      if (!pcb.get_time_usec)
+         environ_cb(RETRO_ENVIRONMENT_GET_PERF_INTERFACE, &pcb);
+
+      static retro_time_t t_frame=0, t_end_prev=0;
+
+      retro_time_t t_begin=pcb.get_time_usec();
+      retro_time_t t_interframe=(t_end_prev ? t_begin-t_end_prev : 0);
+
+      for (int frame_count=0;frame_count<(retro_warp_mode_enabled() ? (t_interframe+t_frame)/t_frame : 1);++frame_count)
+      {
+         while(cpuloop==1)
+            maincpu_mainloop_retro();
+         cpuloop=1;
+
+         if (!frame_count)
+         {
+            retro_time_t t_end=pcb.get_time_usec();
+            t_end_prev=t_end;
+            t_frame=t_end-t_begin;
+         }
+      }
+   }
 
    retro_blit();
    if (SHOWKEY==1) app_render();
