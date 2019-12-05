@@ -371,8 +371,15 @@ LDFLAGS     += -lm $(fpic)
 #CFLAGS      += -std=c99
 CXXFLAGS    += -std=c++98
 
+# Cannot use macro here because of different syntax
+ifeq ("ws","w$(findstring s,$(word 1,$(MAKEFLAGS)))")
 $(info CFLAGS: $(CFLAGS))
 $(info -------)
+endif
+
+define MAKE_SILENT
+	"ws" == "w$(findstring s,$(word 1,${MAKEFLAGS}))"
+endef
 
 ifeq ($(platform), theos_ios)
 COMMON_FLAGS := -DIOS -DARM $(COMMON_DEFINES) $(INCFLAGS) -I$(THEOS_INCLUDE_PATH) -Wno-error
@@ -384,20 +391,38 @@ else
 all: $(TARGET)
 $(TARGET): $(OBJECTS)
 ifeq ($(platform), emscripten)
+	@if [[ $(MAKE_SILENT) ]]; then \
+		echo $(CXX): $@ \
+	fi
 	$(CXX) -r $(SHARED) -o $@ $(OBJECTS) $(LDFLAGS)
 else  ifeq ($(STATIC_LINKING), 1)
+	@if [[ $(MAKE_SILENT) ]]; then \
+		echo $(AR): $@; \
+	fi
 	$(AR) rcs $@ $(OBJECTS)
 else
+	@if [[ $(MAKE_SILENT) ]]; then \
+		echo $(CXX): $@; \
+	fi
 	$(CXX) -o $@ $(OBJECTS) $(LDFLAGS)
 endif
 
 %.o: %.c
+	@if [[ $(MAKE_SILENT) ]]; then \
+		echo $(CC): $^; \
+	fi
 	$(CC) $(CFLAGS) -c $^ -o $@
 
 %.o: %.cpp
+	@if [[ $(MAKE_SILENT) ]]; then \
+		echo $(CXX): $^; \
+	fi
 	$(CXX) $(CXXFLAGS) -c $^ -o $@
 
 %.o: %.cc
+	@if [[ $(MAKE_SILENT) ]]; then \
+		echo $(CXX): $^; \
+	fi
 	$(CXX) $(CXXFLAGS) -c $^ -o $@
 
 clean:
