@@ -339,7 +339,7 @@ include Makefile.common
 
 COMMONFLAGS += -DCORE_NAME=\"$(EMUTYPE)\"
 
-OBJECTS     += $(SOURCES_CXX:.cc=.o) $(SOURCES_C:.c=.o)
+OBJECTS     += $(patsubst %.cpp,%.o,$(SOURCES_CXX:.cc=.o)) $(SOURCES_C:.c=.o)
 CXXFLAGS    += -D__LIBRETRO__ $(fpic) $(INCFLAGS) $(COMMONFLAGS)
 CFLAGS      += -D__LIBRETRO__ $(fpic) $(INCFLAGS) $(COMMONFLAGS)
 LDFLAGS     += -lm $(fpic)
