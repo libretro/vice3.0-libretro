@@ -52,7 +52,7 @@ static snapshot_stream_t* snapshot_stream = NULL;
 static int load_trap_happened = 0;
 static int save_trap_happened = 0;
 
-int mapper_keys[36] = { 0 };
+int mapper_keys[38] = { 0 };		// Bruno total number of hot key binds - default 36
 unsigned int vice_devices[5];
 unsigned int opt_mapping_options_display;
 unsigned int opt_video_options_display;
@@ -119,13 +119,34 @@ extern int RETROVICIICOLORCONTRAST;
 extern int RETROVICIICOLORBRIGHTNESS;
 #endif
 
+ //   /* ### Bruno RESET */  have to have zoom_mode_id_prev = -1 equivalent resets for our new variables
+
 unsigned int zoom_mode_id = 0;
 int zoom_mode_id_prev = -1;
 unsigned int opt_zoom_mode_id = 0;
+
+unsigned int zoom_mode_count = 4;	// How many Vertical Crop Modes are available? Default 4 - used for hot-key cycling
+
+unsigned int bcrop_horiz_mode = 0;
+int bcrop_horiz_mode_prev = -1;
+unsigned int bcrop_horiz_mode_count = 3;	// How many Horizontal Crop Modes are available? Default 3 - used for hot-key cycling
+
+// unsigned int opt_bcrop_horiz_mode = 0;  // Bruno - not used
+
+
+unsigned int crop_top_px = 0;
+int crop_top_px_prev = -1;
+unsigned int clean_top_crop = 0;
+
+unsigned int crop_bottom_px = 0;
+int crop_bottom_px_prev = -1;
+unsigned int clean_bottom_crop = 0;
+
 unsigned int zoomed_width;
 unsigned int zoomed_height;
 unsigned int zoomed_XS_offset;
 unsigned int zoomed_YS_offset;
+
 static unsigned int opt_aspect_ratio = 0;
 static unsigned int opt_aspect_ratio_prev = 0;
 
@@ -453,18 +474,6 @@ static int process_cmdline(const char* argv)
             cur_port_locked = 1;
         }
 
-        // "Browsed" file in ZIP
-        char browsed_file[RETRO_PATH_MAX] = {0};
-        if (strstr(argv, ".zip#"))
-        {
-            char *token = strtok((char*)argv, "#");
-            while (token != NULL)
-            {
-                snprintf(browsed_file, sizeof(browsed_file), "%s", token);
-                token = strtok(NULL, "#");
-            }
-        }
-
         // ZIP
         if (strendswith(argv, ".zip"))
         {
@@ -495,7 +504,7 @@ static int process_cmdline(const char* argv)
             zip_dir = opendir(zip_path);
             while ((zip_dirp = readdir(zip_dir)) != NULL)
             {
-               if (zip_dirp->d_name[0] == '.' || strendswith(zip_dirp->d_name, ".m3u") || zip_mode > 1 || browsed_file[0] != '\0')
+               if (zip_dirp->d_name[0] == '.' || strendswith(zip_dirp->d_name, ".m3u") || zip_mode > 1)
                   continue;
 
                // Multi file mode, generate playlist
@@ -519,8 +528,6 @@ static int process_cmdline(const char* argv)
             {
                case 0: // Extracted path
                case 2: // Single image
-                  if (browsed_file[0] != '\0')
-                      snprintf(full_path, sizeof(full_path), "%s%s%s", zip_path, FSDEV_DIR_SEP_STR, browsed_file);
                   break;
                case 1: // Generated playlist
                   zip_m3u = fopen(zip_m3u_path, "w");
@@ -1404,24 +1411,15 @@ void retro_set_environment(retro_environment_t cb)
          },
          "disabled"
       },
-#if !defined(__PET__) && !defined(__CBM2__)
-      {
-         "vice_border",
-         "Display Borders",
-         "All cores except 'x64sc' will reset when this option is changed.",
-         {
-            { "enabled", NULL },
-            { "disabled", NULL },
-            { NULL, NULL },
-         },
-         "enabled"
-      },
-#endif
+
+
+// VIDEO OPTONS START
+
 #if defined(__X64__) || defined(__X64SC__) || defined(__X128__) || defined(__VIC20__) || defined(__PLUS4__)
       {
          "vice_aspect_ratio",
          "Aspect Ratio",
-         "",
+         "Automatic applies Pixel Aspect correction for the current system model\nPAL/NTSC force specific Pixel Aspect & can be used to stretch/compress opposite model\n1:1 does no Pixel Aspect correction",
          {
             { "auto", "Automatic" },
             { "pal", "PAL" },
@@ -1431,20 +1429,203 @@ void retro_set_environment(retro_environment_t cb)
          },
          "auto"
       },
+#endif
+
+#if !defined(__PET__) && !defined(__CBM2__)
       {
-         "vice_zoom_mode",
-         "Zoom Mode",
-         "Zoom will be ignored without borders.\nRequirements in RetroArch settings:\n- Aspect Ratio: Core provided,\n- Integer Scale: Off.",
+         "vice_border",
+         "Display Borders",
+         "Leave 'ON' otherwise may affect performance - Use Border Cropping options instead\n"
+         "All cores except 'x64sc' reset when this option is changed",
+         {
+            { "enabled", NULL },
+            { "disabled", NULL },
+            { NULL, NULL },
+         },
+         "enabled"
+      },
+#endif
+
+//   /* ### Bruno MENU  */  
+
+#if defined(__X64__) || defined(__X64SC__) || defined(__X128__) || defined(__VIC20__) || defined(__PLUS4__)
+      {
+         "vice_bordercrop_horiz",
+         "Crop Horizontal Borders",
+		 "",
          {
             { "none", "disabled" },
-            { "small", "Small" },
-            { "medium", "Medium" },
-            { "maximum", "Maximum" },
+            { "small", "Small Crop" },
+            { "medium", "Medium Crop" },
+            { "full", "Full Crop" },
             { NULL, NULL },
          },
          "none"
       },
+      {
+         "vice_zoom_mode",				// option name "vice_zoom_mode" for legacy compatibility with existing options files
+         "Crop Vertical Borders",
+         "Crop only when Display Borders 'ON'\nRetroArch Video/Scaling Settings required: Aspect Ratio: Core provided, Integer Scale: Off",
+         {
+            { "none", "disabled" },
+            { "small", "Small Crop" },
+            { "medium", "Medium Crop" },
+            { "full", "Full Crop" },
+            { "manual", "Manual Crop" },
+            { NULL, NULL },
+         },
+         "none"
+      },
+
+      {
+         "vice_bordercrop_top",
+         "Manual Top Cropping",
+         "",
+         {
+			{ "0", "0 px" },
+			{ "1", "1 px" },
+			{ "2", "2 px" },
+			{ "3", "3 px" },
+			{ "4", "4 px" },
+			{ "5", "5 px" },
+			{ "6", "6 px" },
+			{ "7", "7 px" },
+			{ "8", "8 px" },
+			{ "9", "9 px" },
+			{ "10", "10 px" },
+			{ "11", "11 px" },
+			{ "12", "12 px" },
+			{ "13", "13 px" },
+			{ "14", "14 px" },
+			{ "15", "15 px" },
+			{ "16", "16 px" },
+			{ "17", "17 px" },
+			{ "18", "18 px" },
+			{ "19", "19 px" },
+			{ "20", "20 px" },
+			{ "21", "21 px" },
+			{ "22", "22 px" },
+			{ "23", "(NTSC Border) 23 px" },
+			{ "24", "24 px" },
+			{ "25", "25 px" },
+			{ "26", "26 px" },
+			{ "27", "27 px" },
+			{ "28", "28 px" },
+			{ "29", "29 px" },
+			{ "30", "30 px" },
+			{ "31", "31 px" },
+			{ "32", "32 px" },
+			{ "33", "33 px" },
+			{ "34", "34 px" },
+			{ "35", "(PAL Border) 35 px" },
+			{ "36", "36 px" },
+			{ "37", "37 px" },
+			{ "38", "38 px" },
+			{ "39", "39 px" },
+			{ "40", "40 px" },
+			{ "41", "41 px" },
+			{ "42", "42 px" },
+			{ "43", "43 px" },
+			{ "44", "44 px" },
+			{ "45", "45 px" },
+			{ "46", "46 px" },
+			{ "47", "47 px" },
+			{ "48", "48 px" },
+			{ "49", "49 px" },
+			{ "50", "50 px" },
+			{ "51", "51 px" },
+			{ "52", "52 px" },
+			{ "53", "53 px" },
+			{ "54", "54 px" },
+			{ "55", "55 px" },
+			{ "56", "56 px" },
+			{ "57", "57 px" },
+			{ "58", "58 px" },
+			{ "59", "59 px" },
+			{ "60", "60 px" },
+			{ NULL, NULL },
+         },
+         "none"
+      },
+
+      {
+         "vice_bordercrop_bottom",
+         "Manual Bottom Cropping",
+         "Only when Crop Vertical Borders is set to 'Manual'\nUneven cropping can shift/offset screen area, useful for Game Overrides\nNormal border sizes: NTSC (23 px / 24 px), PAL (35 px / 37 px)",
+         {
+			{ "0", "0 px" },
+ 			{ "1", "1 px" },
+ 			{ "2", "2 px" },
+ 			{ "3", "3 px" },
+ 			{ "4", "4 px" },
+ 			{ "5", "5 px" },
+ 			{ "6", "6 px" },
+ 			{ "7", "7 px" },
+ 			{ "8", "8 px" },
+ 			{ "9", "9 px" },
+ 			{ "10", "10 px" },
+ 			{ "11", "11 px" },
+ 			{ "12", "12 px" },
+ 			{ "13", "13 px" },
+ 			{ "14", "14 px" },
+ 			{ "15", "15 px" },
+ 			{ "16", "16 px" },
+ 			{ "17", "17 px" },
+ 			{ "18", "18 px" },
+ 			{ "19", "19 px" },
+ 			{ "20", "20 px" },
+ 			{ "21", "21 px" },
+ 			{ "22", "22 px" },
+ 			{ "23", "23 px" },
+ 			{ "24", "(NTSC Border) 24 px" },
+ 			{ "25", "25 px" },
+ 			{ "26", "26 px" },
+ 			{ "27", "27 px" },
+ 			{ "28", "28 px" },
+ 			{ "29", "29 px" },
+ 			{ "30", "30 px" },
+ 			{ "31", "31 px" },
+ 			{ "32", "32 px" },
+ 			{ "33", "33 px" },
+ 			{ "34", "34 px" },
+ 			{ "35", "35 px" },
+ 			{ "36", "36 px" },
+ 			{ "37", "(PAL Border) 37 px" },
+			{ "38", "38 px" },
+			{ "39", "39 px" },
+			{ "40", "40 px" },
+			{ "41", "41 px" },
+			{ "42", "42 px" },
+			{ "43", "43 px" },
+			{ "44", "44 px" },
+			{ "45", "45 px" },
+			{ "46", "46 px" },
+			{ "47", "47 px" },
+			{ "48", "48 px" },
+			{ "49", "49 px" },
+			{ "50", "50 px" },
+			{ "51", "51 px" },
+			{ "52", "52 px" },
+			{ "53", "53 px" },
+			{ "54", "54 px" },
+			{ "55", "55 px" },
+			{ "56", "56 px" },
+			{ "57", "57 px" },
+			{ "58", "58 px" },
+			{ "59", "59 px" },
+			{ "60", "60 px" },
+            { NULL, NULL },
+         },
+         "none"
+      },
+
+
+
+
 #endif
+
+// END VIDEO OPTONS
+
       {
          "vice_statusbar",
          "Statusbar Mode",
@@ -1968,6 +2149,9 @@ void retro_set_environment(retro_environment_t cb)
          {{ NULL, NULL }},
          "RETROK_END"
       },
+
+   /* ### Bruno MAPPER Hotkeys Menu */
+
 #if defined(__X64__) || defined(__X64SC__) || defined(__X128__) || defined(__VIC20__) || defined(__PLUS4__)
       {
          "vice_mapper_zoom_mode_toggle",
@@ -1976,6 +2160,27 @@ void retro_set_environment(retro_environment_t cb)
          {{ NULL, NULL }},
          "---"
       },
+
+
+      {
+         "vice_mapper_bcrop_horiz_mode_cycle",
+         "Hotkey: Cycle Horizontal Crop Modes",
+         "Press the mapped key to cycle modes.",
+         {{ NULL, NULL }},
+         "---"
+      },
+
+
+      {
+         "vice_mapper_bcrop_vert_mode_cycle",
+         "Hotkey: Cycle Vertical Crop Modes",
+         "Press the mapped key to cycle modes.",
+         {{ NULL, NULL }},
+         "---"
+      },
+
+
+
 #endif
       {
          "vice_mapper_warp_mode",
@@ -2239,12 +2444,17 @@ void retro_set_environment(retro_environment_t cb)
    {
       if (strstr(core_options[i].key, "vice_mapper_"))
       {
+
+   /* ### Bruno MAPPER Hotkeys */
+
          /* Show different key list for hotkeys (special negatives removed) */
          if (  strstr(core_options[i].key, "vice_mapper_vkbd")
             || strstr(core_options[i].key, "vice_mapper_statusbar")
             || strstr(core_options[i].key, "vice_mapper_joyport_switch")
             || strstr(core_options[i].key, "vice_mapper_reset")
             || strstr(core_options[i].key, "vice_mapper_zoom_mode_toggle")
+            || strstr(core_options[i].key, "vice_mapper_bcrop_horiz_mode_cycle")
+            || strstr(core_options[i].key, "vice_mapper_bcrop_vert_mode_cycle")
             || strstr(core_options[i].key, "vice_mapper_warp_mode")
             || strstr(core_options[i].key, "vice_mapper_datasette_toggle_hotkeys")
             || strstr(core_options[i].key, "vice_mapper_datasette_start")
@@ -2395,17 +2605,23 @@ static void update_variables(void)
    {
       if (retro_ui_finalized)
       {
-         if (strcmp(var.value, "enabled") == 0 && RETROTDE == 0)
+         if (strcmp(var.value, "enabled") == 0)
          {
-            RETROTDE=1;
-            log_resources_set_int("DriveTrueEmulation", 1);
-            log_resources_set_int("VirtualDevices", 0);
+            if (RETROTDE==0)
+            {
+               RETROTDE=1;
+               log_resources_set_int("DriveTrueEmulation", 1);
+               log_resources_set_int("VirtualDevices", 0);
+            }
          }
-         else if (strcmp(var.value, "disabled") == 0 && RETROTDE == 1)
+         else if (strcmp(var.value, "disabled") == 0)
          {
-            RETROTDE=0;
-            log_resources_set_int("DriveTrueEmulation", 0);
-            log_resources_set_int("VirtualDevices", 1);
+            if (RETROTDE==1)
+            {
+               RETROTDE=0;
+               log_resources_set_int("DriveTrueEmulation", 0);
+               log_resources_set_int("VirtualDevices", 1);
+            }
          }
       }
       else
@@ -2427,17 +2643,12 @@ static void update_variables(void)
          if (strcmp(var.value, "disabled") == 0)
          {
             log_resources_set_int("DriveSoundEmulation", 0);
-            log_resources_set_int("DriveSoundEmulationVolume", 0);
          }
          else
          {
             log_resources_set_int("DriveSoundEmulation", 1);
             log_resources_set_int("DriveSoundEmulationVolume", val);
          }
-
-         // Forcefully and silently mute sounds without TDE, because motor sound keeps playing if TDE is changed during
-         if (RETROTDE == 0)
-            resources_set_int("DriveSoundEmulationVolume", 0);
       }
       else
       {
@@ -2824,7 +3035,11 @@ static void update_variables(void)
    }
 #endif
 
+   /* ### Bruno Setting CROPPING values */
+
 #if defined(__X64__) || defined(__X64SC__) || defined(__X128__) || defined(__VIC20__) || defined(__PLUS4__)
+
+	// Vertical Cropping Mode (Zoom Mode) 
    var.key = "vice_zoom_mode";
    var.value = NULL;
    if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
@@ -2832,7 +3047,8 @@ static void update_variables(void)
       if (strcmp(var.value, "none") == 0) zoom_mode_id=0;
       else if (strcmp(var.value, "small") == 0) zoom_mode_id=1;
       else if (strcmp(var.value, "medium") == 0) zoom_mode_id=2;
-      else if (strcmp(var.value, "maximum") == 0) zoom_mode_id=3;
+      else if (strcmp(var.value, "full") == 0) zoom_mode_id=3;
+      else if (strcmp(var.value, "manual") == 0) zoom_mode_id=4;
 
       if (RETROBORDERS)
          zoom_mode_id = 0;
@@ -2844,6 +3060,54 @@ static void update_variables(void)
       opt_zoom_mode_id = zoom_mode_id;
    }
 
+	// Manual Top & Bottom Cropping values in Pixels for zoom_mode_id 4 (manual vertical cropping)
+   var.key = "vice_bordercrop_top";
+   var.value = NULL;
+   if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+   {
+      crop_top_px = atoi(var.value);
+      
+      if (crop_top_px != crop_top_px_prev)
+      {
+          zoom_mode_id_prev = -1;	// forces geometry to update
+      }
+   }
+
+   var.key = "vice_bordercrop_bottom";
+   var.value = NULL;
+   if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+   {
+      crop_bottom_px = atoi(var.value);
+
+      if (crop_bottom_px != crop_bottom_px_prev)
+      {
+          zoom_mode_id_prev = -1;	// forces geometry to update
+      }
+   }
+
+	// Horizontal Cropping Mode 
+   var.key = "vice_bordercrop_horiz";
+   var.value = NULL;
+   if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+   {
+      if (strcmp(var.value, "none") == 0) bcrop_horiz_mode=0;
+      else if (strcmp(var.value, "small") == 0) bcrop_horiz_mode=1;
+      else if (strcmp(var.value, "medium") == 0) bcrop_horiz_mode=2;
+      else if (strcmp(var.value, "full") == 0) bcrop_horiz_mode=3;
+
+      if (RETROBORDERS)
+         bcrop_horiz_mode = 0;
+#if defined(__X128__)
+      if (RETROC128COLUMNKEY==0)
+         bcrop_horiz_mode = 0;
+#endif
+
+   }
+
+
+// End new Cropping variable setting
+
+
    var.key = "vice_aspect_ratio";
    var.value = NULL;
    if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
@@ -2852,6 +3116,8 @@ static void update_variables(void)
       else if (strcmp(var.value, "pal") == 0) opt_aspect_ratio=1;
       else if (strcmp(var.value, "ntsc") == 0) opt_aspect_ratio=2;
       else if (strcmp(var.value, "raw") == 0) opt_aspect_ratio=3;
+
+   /* ### Bruno RESET */
 
       // Zoom reset
       if (opt_aspect_ratio != opt_aspect_ratio_prev)
@@ -3484,6 +3750,8 @@ static void update_variables(void)
       mapper_keys[27] = keyId(var.value);
    }
 
+   /* ### Bruno MAPPER hotkey toggle */
+
    var.key = "vice_mapper_zoom_mode_toggle";
    var.value = NULL;
    if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
@@ -3498,6 +3766,20 @@ static void update_variables(void)
       mapper_keys[29] = keyId(var.value);
    }
 
+   var.key = "vice_mapper_bcrop_horiz_mode_cycle";		// Bruno CYCLE
+   var.value = NULL;
+   if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+   {
+      mapper_keys[30] = keyId(var.value);
+   }
+
+   var.key = "vice_mapper_bcrop_vert_mode_cycle";		// Bruno CYCLE
+   var.value = NULL;
+   if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
+   {
+      mapper_keys[31] = keyId(var.value);
+   }
+
    var.key = "vice_datasette_hotkeys";
    var.value = NULL;
    if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
@@ -3510,46 +3792,48 @@ static void update_variables(void)
    var.value = NULL;
    if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
    {
-      mapper_keys[30] = keyId(var.value);
+      mapper_keys[32] = keyId(var.value);
    }
    
    var.key = "vice_mapper_datasette_stop";
    var.value = NULL;
    if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
    {
-      mapper_keys[31] = keyId(var.value);
+      mapper_keys[33] = keyId(var.value);
    }
 
    var.key = "vice_mapper_datasette_start";
    var.value = NULL;
    if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
    {
-      mapper_keys[32] = keyId(var.value);
+      mapper_keys[34] = keyId(var.value);
    }
 
    var.key = "vice_mapper_datasette_forward";
    var.value = NULL;
    if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
    {
-      mapper_keys[33] = keyId(var.value);
+      mapper_keys[35] = keyId(var.value);
    }
 
    var.key = "vice_mapper_datasette_rewind";
    var.value = NULL;
    if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
    {
-      mapper_keys[34] = keyId(var.value);
+      mapper_keys[36] = keyId(var.value);
    }
 
    var.key = "vice_mapper_datasette_reset";
    var.value = NULL;
    if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &var) && var.value)
    {
-      mapper_keys[35] = keyId(var.value);
+      mapper_keys[37] = keyId(var.value);
    }
 
 
    /*** Options display ***/
+
+   /* ### Bruno MAPPY  HIDE hotkeys - shouldn't need to change anything here*/
 
    /* Mapping options */
    option_display.visible = opt_mapping_options_display;
@@ -3602,9 +3886,18 @@ static void update_variables(void)
    option_display.key = "vice_mapper_joyport_switch";
    environ_cb(RETRO_ENVIRONMENT_SET_CORE_OPTIONS_DISPLAY, &option_display);
 #endif
+
+//   /* ### Bruno */  MAPPER SETTINGS - button/key shortcuts to toggle features
+
 #if defined(__X64__) || defined(__X64SC__) || defined(__X128__) || defined(__VIC20__) || defined(__PLUS4__)
    option_display.key = "vice_mapper_zoom_mode_toggle";
    environ_cb(RETRO_ENVIRONMENT_SET_CORE_OPTIONS_DISPLAY, &option_display);
+
+   option_display.key = "vice_mapper_bcrop_horiz_mode_cycle";					// Bruno CYCLE
+   environ_cb(RETRO_ENVIRONMENT_SET_CORE_OPTIONS_DISPLAY, &option_display);
+   option_display.key = "vice_mapper_bcrop_vert_mode_cycle";
+   environ_cb(RETRO_ENVIRONMENT_SET_CORE_OPTIONS_DISPLAY, &option_display);
+   
 #endif
    option_display.key = "vice_mapper_reset";
    environ_cb(RETRO_ENVIRONMENT_SET_CORE_OPTIONS_DISPLAY, &option_display);
@@ -3651,6 +3944,8 @@ static void update_variables(void)
    environ_cb(RETRO_ENVIRONMENT_SET_CORE_OPTIONS_DISPLAY, &option_display);
 #endif
 
+//   /* ### Bruno */  HIDE VIDEO SETTINGS
+
    /* Video options */
    option_display.visible = opt_video_options_display;
 
@@ -3659,6 +3954,12 @@ static void update_variables(void)
    environ_cb(RETRO_ENVIRONMENT_SET_CORE_OPTIONS_DISPLAY, &option_display);
 #endif
 #if defined(__X64__) || defined(__X64SC__) || defined(__X128__) || defined(__VIC20__) || defined(__PLUS4__)
+   option_display.key = "vice_bordercrop_horiz";							//bruno
+   environ_cb(RETRO_ENVIRONMENT_SET_CORE_OPTIONS_DISPLAY, &option_display);	//bruno
+   option_display.key = "vice_bordercrop_top";								//bruno
+   environ_cb(RETRO_ENVIRONMENT_SET_CORE_OPTIONS_DISPLAY, &option_display);	//bruno
+   option_display.key = "vice_bordercrop_bottom";							//bruno
+   environ_cb(RETRO_ENVIRONMENT_SET_CORE_OPTIONS_DISPLAY, &option_display);	//bruno
    option_display.key = "vice_zoom_mode";
    environ_cb(RETRO_ENVIRONMENT_SET_CORE_OPTIONS_DISPLAY, &option_display);
    option_display.key = "vice_aspect_ratio";
@@ -3706,7 +4007,7 @@ void emu_reset(void)
    // Always disable Warp
    resources_set_int("WarpMode", 0);
 
-   // Changing opt_read_vicerc requires reloading
+   /* Changing opt_read_vicerc requires reloading */
    if (request_reload_restart)
       reload_restart();
 
@@ -3714,9 +4015,6 @@ void emu_reset(void)
    {
       case 0:
          machine_trigger_reset(MACHINE_RESET_MODE_HARD);
-         // Allow autostarting with a different disk
-         if (dc->count > 1)
-            autostartString = x_strdup(dc->files[dc->index]);
          if (autostartString != NULL && autostartString[0] != '\0' && !noautostart)
             autostart_autodetect(autostartString, NULL, 0, AUTOSTART_MODE_RUN);
          break;
@@ -3745,9 +4043,6 @@ void retro_reset(void)
 
    // Retro reset should always hard reset & autostart
    machine_trigger_reset(MACHINE_RESET_MODE_HARD);
-   // Allow autostarting with a different disk
-   if (dc->count > 1)
-      autostartString = x_strdup(dc->files[dc->index]);
    if (autostartString != NULL && autostartString[0] != '\0' && !noautostart)
       autostart_autodetect(autostartString, NULL, 0, AUTOSTART_MODE_RUN);
 }
@@ -3802,26 +4097,15 @@ static bool retro_set_eject_state(bool ejected)
                     diskimg = vdrive->image;
                     if (diskimg == NULL)
                         log_cb(RETRO_LOG_ERROR, "Failed to get disk image for unit 8.\n");
-                    else if (diskimg->type != drive_type)
+                    else
                     {
                         log_cb(RETRO_LOG_INFO, "Autodetected image type %u.\n", diskimg->type);
                         if (log_resources_set_int("Drive8Type", diskimg->type) < 0)
                             log_cb(RETRO_LOG_ERROR, "Failed to set drive type.\n");
 
                         // Change from 1581 to 1541 will not detect disk properly without reattaching (?!)
-                        file_system_attach_disk(unit, dc->files[dc->index]);
-
-                        // Drive motor sound keeps on playing if the drive type is changed while the motor is running
-                        // Also happens when toggling TDE
-                        switch (diskimg->type)
-                        {
-                            case 1581:
-                                resources_set_int("DriveSoundEmulationVolume", 0);
-                                break;
-                            default:
-                                resources_set_int("DriveSoundEmulationVolume", RETRODSE);
-                                break;
-                        }
+                        if (diskimg->type != drive_type)
+                            file_system_attach_disk(unit, dc->files[dc->index]);
                     }
                 }
             }
@@ -4005,11 +4289,7 @@ static struct retro_disk_control_ext_callback diskControlExt = {
 
 static void fallback_log(enum retro_log_level level, const char *fmt, ...)
 {
-   (void)level;
-   va_list va;
-   va_start(va, fmt);
-   vfprintf(stderr, fmt, va);
-   va_end(va);
+   /* stub */
 }
 
 void retro_init(void)
@@ -4249,11 +4529,15 @@ void update_geometry(int mode)
    lastW = retroW;
    lastH = retroH;
 
+   /* ### Bruno Display format/geometry resetting */
+
    switch (mode)
    {
       case 0:
          /* Zoom mode init */
          zoom_mode_id_prev = 0;
+         bcrop_horiz_mode_prev = 0;
+         
          zoomed_width = retroW;
          zoomed_height = retroH;
          zoomed_XS_offset = 0;
@@ -4292,33 +4576,70 @@ void update_geometry(int mode)
 #endif
          break;
 
+   /* ### Bruno CROPPING BUSINESS */
+   /* ### Bruno This is the Zoom/vertical crop */
+
       case 1:
 #if defined(__X64__) || defined(__X64SC__) || defined(__X128__) || defined(__VIC20__) || defined(__PLUS4__)
-         if (zoom_mode_id != zoom_mode_id_prev)
+
+		 // Crop Vertical (aka Zoom Mode) - Don't touch any Width variables
+         if (zoom_mode_id != zoom_mode_id_prev) 
          {
             zoom_mode_id_prev = zoom_mode_id;
+            crop_top_px_prev = crop_top_px;
+            crop_bottom_px_prev = crop_bottom_px;
+            
             switch (zoom_mode_id)
             {
             #if defined(__X64__) || defined(__X64SC__) || defined(__X128__)
-               // PAL: 384x272, NTSC: 384x247
-               case 1:
-                  zoomed_width        = retroW;
-                  zoomed_XS_offset    = 0;
+
+               // NTSC: 384 x (247), PAL: 384 x (272)
+               case 1: // Small Vert Border Crop
                   zoomed_height       = (retro_region == RETRO_REGION_NTSC) ? 230 : 240;
-                  zoomed_YS_offset    = (retro_region == RETRO_REGION_NTSC) ? 8 : 16;
+                  zoomed_YS_offset    = (retro_region == RETRO_REGION_NTSC) ? 8 : 15;		// PAL offset was off by 1
                   break;
-               case 2:
-                  zoomed_width        = retroW;
-                  zoomed_XS_offset    = 0;
-                  zoomed_height       = (retro_region == RETRO_REGION_NTSC) ? 218 : 216;
-                  zoomed_YS_offset    = (retro_region == RETRO_REGION_NTSC) ? 14 : 27;
+
+               case 2: // Medium Vert Border Crop
+                  zoomed_height       = (retro_region == RETRO_REGION_NTSC) ? 216 : 218;	// NTSC/PAL values previously incorrectly swapped
+                  zoomed_YS_offset    = (retro_region == RETRO_REGION_NTSC) ? 15 : 26;		// PAL offset was off by 1
                   break;
-               case 3:
-                  zoomed_width        = 380;
-                  zoomed_XS_offset    = 2;
+
+               case 3: // Full Vert Border Crop
                   zoomed_height       = 200;
                   zoomed_YS_offset    = (retro_region == RETRO_REGION_NTSC) ? 23 : 35;
                   break;
+
+               case 4: // Manual Vert border Crop - NTSC Borders 23 & 24 px, PAL borders 35 & 37 px
+						
+				  clean_top_crop = crop_top_px;
+				  clean_bottom_crop = crop_bottom_px;
+
+					// Cap the maximum crop for NTSC so you can't crop more of the visible screen than PAL
+					// Max value for NTSC = NTSC border size + diff of highest menu value (60) - PAL border size(s)
+
+					// Max top
+					if (retro_region == RETRO_REGION_NTSC && clean_top_crop > 23 + 25)  // PAL diff = (60-35) = 25
+					{
+						clean_top_crop = 23 + 25;
+					}
+
+					// Max bottom
+					if (retro_region == RETRO_REGION_NTSC && clean_bottom_crop > 24 + 23)  // PAL diff = (60-37) = 23
+					{
+						clean_bottom_crop = 24 + 23;
+					}
+
+				  // grab base display height for current model
+				  zoomed_height = (retro_region == RETRO_REGION_NTSC) ? 247 : 272;
+				  
+				  // calculate new display height after cropping
+				  zoomed_height = zoomed_height - clean_top_crop - clean_bottom_crop;
+
+				  // set crop origin (offset) by top crop value
+                  zoomed_YS_offset    = clean_top_crop;
+
+                  break;
+                  
             #elif defined(__VIC20__)
                // PAL: 448x284, NTSC: 400x234
                case 1:
@@ -4360,12 +4681,10 @@ void update_geometry(int mode)
                   zoomed_YS_offset    = (retro_region == RETRO_REGION_NTSC) ? 18 : 40;
                   break;
             #endif
-               default:
-                  zoomed_width        = retroW;
+
+               default:								// Only adjust Vertical values
                   zoomed_height       = retroH;
-                  zoomed_XS_offset    = 0;
                   zoomed_YS_offset    = 0;
-                  retroXS_offset      = 0;
                   retroYS_offset      = 0;
                   break;
             }
@@ -4373,10 +4692,95 @@ void update_geometry(int mode)
             system_av_info.geometry.base_width = zoomed_width;
             system_av_info.geometry.base_height = zoomed_height;
             system_av_info.geometry.aspect_ratio = retro_get_aspect_ratio(zoomed_width, zoomed_height);
-         }
+
+         } // end Crop Borders Vertical (aka Zoom Mode)
+
+
+		 // Crop Horizontal - Don't touch any Height variables
+         if (bcrop_horiz_mode != bcrop_horiz_mode_prev)
+         {
+            bcrop_horiz_mode_prev = bcrop_horiz_mode;
+
+            switch (bcrop_horiz_mode)
+            {
+            #if defined(__X64__) || defined(__X64SC__) || defined(__X128__)
+
+               // NTSC: (384) x 247, PAL: (384) x 272
+               case 1: // Small Horiz Border Crop
+                  zoomed_width        = 362;		// 22 pixels narrower than normal
+                  zoomed_XS_offset    = 11;
+                  break;
+
+               case 2: // Medium Horiz Border Crop
+                  zoomed_width        = 340;		// 44 pixels narrower than normal
+                  zoomed_XS_offset    = 22;
+                  break;
+
+               case 3: // Full Horiz Border Crop
+                  zoomed_width        = 320;		// 64 pixels narrower than normal
+                  zoomed_XS_offset    = 32;
+                  break;
+
+            #elif defined(__VIC20__)
+               // PAL: 448x284, NTSC: 400x234
+               case 1:
+                  zoomed_width        = retroW;
+                  zoomed_XS_offset    = (retro_region == RETRO_REGION_NTSC) ? 8 : 0;
+                  zoomed_height       = (retro_region == RETRO_REGION_NTSC) ? 218 : 236;
+                  zoomed_YS_offset    = (retro_region == RETRO_REGION_NTSC) ? 6 : 20;
+                  break;
+               case 2:
+                  zoomed_width        = retroW;
+                  zoomed_XS_offset    = (retro_region == RETRO_REGION_NTSC) ? 8 : 0;
+                  zoomed_height       = (retro_region == RETRO_REGION_NTSC) ? 202 : 216;
+                  zoomed_YS_offset    = (retro_region == RETRO_REGION_NTSC) ? 13 : 32;
+                  break;
+               case 3:
+                  zoomed_width        = (retro_region == RETRO_REGION_NTSC) ? retroW : 392;
+                  zoomed_XS_offset    = (retro_region == RETRO_REGION_NTSC) ? 8 : 28;
+                  zoomed_height       = 184;
+                  zoomed_YS_offset    = (retro_region == RETRO_REGION_NTSC) ? 22 : 48;
+                  break;
+            #elif defined(__PLUS4__)
+               // PAL: 384x288, NTSC: 384x242
+               case 1:
+                  zoomed_width        = retroW;
+                  zoomed_XS_offset    = 0;
+                  zoomed_height       = (retro_region == RETRO_REGION_NTSC) ? 228 : 246;
+                  zoomed_YS_offset    = (retro_region == RETRO_REGION_NTSC) ? 4 : 18;
+                  break;
+               case 2:
+                  zoomed_width        = (retro_region == RETRO_REGION_NTSC) ? retroW : 377;
+                  zoomed_XS_offset    = (retro_region == RETRO_REGION_NTSC) ? 0 : 4;
+                  zoomed_height       = (retro_region == RETRO_REGION_NTSC) ? 212 : 220;
+                  zoomed_YS_offset    = (retro_region == RETRO_REGION_NTSC) ? 12 : 30;
+                  break;
+               case 3:
+                  zoomed_width        = (retro_region == RETRO_REGION_NTSC) ? retroW : 343;
+                  zoomed_XS_offset    = (retro_region == RETRO_REGION_NTSC) ? 0 : 21;
+                  zoomed_height       = 200;
+                  zoomed_YS_offset    = (retro_region == RETRO_REGION_NTSC) ? 18 : 40;
+                  break;
+            #endif
+            
+               default:								// Only adjust Horizontal values
+                  zoomed_width        = retroW;
+                  zoomed_XS_offset    = 0;
+                  retroXS_offset      = 0;
+                  break;
+            }
+
+            system_av_info.geometry.base_width = zoomed_width;
+            system_av_info.geometry.base_height = zoomed_height;
+            system_av_info.geometry.aspect_ratio = retro_get_aspect_ratio(zoomed_width, zoomed_height);
+
+         } // end Crop Borders Horizontal
+
+
 #endif
          break;
-   }
+   }  // End Switch (mode)
+   
    environ_cb(RETRO_ENVIRONMENT_SET_GEOMETRY, &system_av_info);
 }
 
@@ -4475,6 +4879,8 @@ void retro_run(void)
          /* Ensure audio rendering is reinitialized on next use. */
          sound_close();
 
+   /* ### Bruno RESET */
+
          /* Reset zoom for proper aspect ratio after av_info change */
          zoom_mode_id_prev = -1;
 
@@ -4483,8 +4889,10 @@ void retro_run(void)
          environ_cb(RETRO_ENVIRONMENT_SET_SYSTEM_AV_INFO, &system_av_info);
       }
 
+   /* ### Bruno UPDATE the geometry */
+
       /* Update geometry if model or zoom mode changes */
-      if ((lastW == retroW && lastH == retroH) && zoom_mode_id != zoom_mode_id_prev)
+      if ((lastW == retroW && lastH == retroH) && (zoom_mode_id != zoom_mode_id_prev || bcrop_horiz_mode != bcrop_horiz_mode_prev) ) // Zoom/Crop Changed
          update_geometry(1);
       else if (lastW != retroW || lastH != retroH || retro_region != retro_get_region())
          update_geometry(0);

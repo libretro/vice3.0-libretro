@@ -58,7 +58,7 @@ unsigned int datasette_hotkeys;
 unsigned int cur_port=2;
 static int cur_port_prev=-1;
 extern int cur_port_locked;
-extern int mapper_keys[36];
+extern int mapper_keys[38];					// Bruno total number of hot key binds - default 36
 extern unsigned int opt_retropad_options;
 extern unsigned int opt_joyport_type;
 static int opt_joyport_type_prev = -1;
@@ -71,6 +71,12 @@ unsigned int mouse_speed[2]={0};
 
 extern unsigned int zoom_mode_id;
 extern unsigned int opt_zoom_mode_id;
+
+extern unsigned int zoom_mode_count; // number of modes to cycle - starts at 0
+
+extern unsigned int bcrop_horiz_mode;
+extern unsigned int bcrop_horiz_mode_count; // number of modes to cycle - starts at 0
+
 extern int RETROKEYRAHKEYPAD;
 extern int RETROKEYBOARDPASSTHROUGH;
 extern bool retro_load_ok;
@@ -88,6 +94,8 @@ enum EMU_FUNCTIONS
     EMU_JOYPORT,
     EMU_RESET,
     EMU_ZOOM_MODE,
+    EMU_HORIZ_CROP_CYCLE,
+    EMU_VERT_CROP_CYCLE,
     EMU_WARP,
     EMU_DATASETTE_HOTKEYS,
     EMU_DATASETTE_STOP,
@@ -142,14 +150,35 @@ void emu_function(int function)
             else if (zoom_mode_id == 0)
                 zoom_mode_id = opt_zoom_mode_id;
             break;
+
+        case EMU_HORIZ_CROP_CYCLE:							// Bruno New Cycle Horizontal Crop Modes
+
+			bcrop_horiz_mode = bcrop_horiz_mode + 1;
+
+			if (bcrop_horiz_mode > bcrop_horiz_mode_count)
+			{
+				bcrop_horiz_mode = 0;
+			}
+            break;
+
+        case EMU_VERT_CROP_CYCLE:							// Bruno New Cycle Vertical Crop Modes
+
+			zoom_mode_id = zoom_mode_id + 1;
+
+			if (zoom_mode_id > zoom_mode_count)
+			{
+				zoom_mode_id = 0;
+			}
+            break;
+
         case EMU_WARP:
             warpmode = (warpmode) ? 0 : 1;
             resources_set_int("WarpMode", warpmode);
             break;
+
         case EMU_DATASETTE_HOTKEYS:
             datasette_hotkeys = (datasette_hotkeys) ? 0 : 1;
             break;
-
         case EMU_DATASETTE_STOP:
             datasette_control(DATASETTE_CONTROL_STOP);
             break;
@@ -311,7 +340,7 @@ void update_input(int disable_physical_cursor_keys)
     input_poll_cb();
 
     /* Iterate hotkeys, skip Datasette hotkeys if Datasette hotkeys are disabled or if VKBD is on */
-    int i_last = (datasette_hotkeys && SHOWKEY==-1) ? EMU_DATASETTE_RESET : EMU_DATASETTE_HOTKEYS;
+    int i_last = (datasette_hotkeys && SHOWKEY==-1) ? EMU_DATASETTE_RESET : EMU_DATASETTE_HOTKEYS;  // bruno
 
     for (i = 0; i <= i_last; i++)
     {
@@ -341,25 +370,32 @@ void update_input(int disable_physical_cursor_keys)
                 case 29:
                     emu_function(EMU_WARP);
                     break;
-                case 30:
-                    emu_function(EMU_DATASETTE_HOTKEYS);
+                case 30:									// horiz crop mode cycle
+                    emu_function(EMU_HORIZ_CROP_CYCLE);
                     break;
-
                 case 31:
-                    emu_function(EMU_DATASETTE_STOP);
+                    emu_function(EMU_VERT_CROP_CYCLE);		// vert crop mode cycle
                     break;
                 case 32:
-                    emu_function(EMU_DATASETTE_START);
+                    emu_function(EMU_DATASETTE_HOTKEYS);
                     break;
                 case 33:
-                    emu_function(EMU_DATASETTE_FORWARD);
+                    emu_function(EMU_DATASETTE_STOP);
                     break;
                 case 34:
-                    emu_function(EMU_DATASETTE_REWIND);
+                    emu_function(EMU_DATASETTE_START);
                     break;
                 case 35:
+                    emu_function(EMU_DATASETTE_FORWARD);
+                    break;
+                case 36:
+                    emu_function(EMU_DATASETTE_REWIND);
+                    break;
+                case 37:
                     emu_function(EMU_DATASETTE_RESET);
                     break;
+
+
             }
         }
         /* Key up */
@@ -478,17 +514,21 @@ void update_input(int disable_physical_cursor_keys)
                         emu_function(EMU_ZOOM_MODE);
                     else if (mapper_keys[i] == mapper_keys[29]) /* Hold warp mode */
                         emu_function(EMU_WARP);
-                    else if (mapper_keys[i] == mapper_keys[30]) /* Datasette hotkeys toggle */
+                    else if (mapper_keys[i] == mapper_keys[30]) /* Cycle Horiz Crop modes */
+                        emu_function(EMU_HORIZ_CROP_CYCLE);
+                    else if (mapper_keys[i] == mapper_keys[31]) /* Cycle Vert Crop modes */
+                        emu_function(EMU_VERT_CROP_CYCLE);
+                    else if (mapper_keys[i] == mapper_keys[32]) /* Datasette hotkeys toggle */
                         emu_function(EMU_DATASETTE_HOTKEYS);
-                    else if (datasette_hotkeys && mapper_keys[i] == mapper_keys[31]) /* Datasette stop */
+                    else if (datasette_hotkeys && mapper_keys[i] == mapper_keys[33]) /* Datasette stop */
                         emu_function(EMU_DATASETTE_STOP);
-                    else if (datasette_hotkeys && mapper_keys[i] == mapper_keys[32]) /* Datasette start */
+                    else if (datasette_hotkeys && mapper_keys[i] == mapper_keys[34]) /* Datasette start */
                         emu_function(EMU_DATASETTE_START);
-                    else if (datasette_hotkeys && mapper_keys[i] == mapper_keys[33]) /* Datasette forward */
+                    else if (datasette_hotkeys && mapper_keys[i] == mapper_keys[35]) /* Datasette forward */
                         emu_function(EMU_DATASETTE_FORWARD);
-                    else if (datasette_hotkeys && mapper_keys[i] == mapper_keys[34]) /* Datasette rewind */
+                    else if (datasette_hotkeys && mapper_keys[i] == mapper_keys[36]) /* Datasette rewind */
                         emu_function(EMU_DATASETTE_REWIND);
-                    else if (datasette_hotkeys && mapper_keys[i] == mapper_keys[35]) /* Datasette reset */
+                    else if (datasette_hotkeys && mapper_keys[i] == mapper_keys[37]) /* Datasette reset */
                         emu_function(EMU_DATASETTE_RESET);
                     else if (mapper_keys[i] == -5) /* Mouse speed slower */
                         mouse_speed[j] |= MOUSE_SPEED_SLOWER;
@@ -519,17 +559,21 @@ void update_input(int disable_physical_cursor_keys)
                         ; /* nop */
                     else if (mapper_keys[i] == mapper_keys[29])
                         emu_function(EMU_WARP);
-                    else if (mapper_keys[i] == mapper_keys[30])
+                    else if (mapper_keys[i] == mapper_keys[30])		// horiz crop mode cycle
                         ; /* nop */
-                    else if (datasette_hotkeys && mapper_keys[i] == mapper_keys[31])
+                    else if (mapper_keys[i] == mapper_keys[31])		// vert crop mode cycle
                         ; /* nop */
-                    else if (datasette_hotkeys && mapper_keys[i] == mapper_keys[32])
+                    else if (mapper_keys[i] == mapper_keys[32])
                         ; /* nop */
                     else if (datasette_hotkeys && mapper_keys[i] == mapper_keys[33])
                         ; /* nop */
                     else if (datasette_hotkeys && mapper_keys[i] == mapper_keys[34])
                         ; /* nop */
                     else if (datasette_hotkeys && mapper_keys[i] == mapper_keys[35])
+                        ; /* nop */
+                    else if (datasette_hotkeys && mapper_keys[i] == mapper_keys[36])
+                        ; /* nop */
+                    else if (datasette_hotkeys && mapper_keys[i] == mapper_keys[37])
                         ; /* nop */
                     else if (mapper_keys[i] == -5) /* Mouse speed slower */
                         mouse_speed[j] &= ~MOUSE_SPEED_SLOWER;
