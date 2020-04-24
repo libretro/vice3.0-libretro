@@ -72,10 +72,11 @@ unsigned int mouse_speed[2]={0};
 extern unsigned int zoom_mode_id;
 extern unsigned int opt_zoom_mode_id;
 
-extern unsigned int zoom_mode_count; // number of modes to cycle - starts at 0
+extern unsigned int zoom_mode_count;		// number of modes to cycle - starts at 0
 
 extern unsigned int bcrop_horiz_mode;
 extern unsigned int bcrop_horiz_mode_count; // number of modes to cycle - starts at 0
+extern unsigned int opt_bcrop_horiz_mode;	// saved horizontal crop mode for toggling
 
 extern int RETROKEYRAHKEYPAD;
 extern int RETROKEYBOARDPASSTHROUGH;
@@ -142,18 +143,33 @@ void emu_function(int function)
         case EMU_RESET:
             emu_reset();
             break;
-        case EMU_ZOOM_MODE:
-            if (zoom_mode_id == 0 && opt_zoom_mode_id == 0)
-                break;
-            if (zoom_mode_id > 0)
+            
+//         case EMU_ZOOM_MODE:									// Bruno Old Zoom Mode toggle
+//             if (zoom_mode_id == 0 && opt_zoom_mode_id == 0)
+//                 break;
+//             if (zoom_mode_id > 0)
+//                 zoom_mode_id = 0;
+//             else if (zoom_mode_id == 0)
+//                 zoom_mode_id = opt_zoom_mode_id;
+//             break;
+
+        case EMU_ZOOM_MODE:									// Bruno New Zoom Mode toggle supports vert & horizontal
+            if (zoom_mode_id > 0 || bcrop_horiz_mode > 0)
+            {
                 zoom_mode_id = 0;
-            else if (zoom_mode_id == 0)
+				bcrop_horiz_mode = 0;
+            }
+            else
+            {
                 zoom_mode_id = opt_zoom_mode_id;
+				bcrop_horiz_mode = opt_bcrop_horiz_mode;
+            }
             break;
+
 
         case EMU_HORIZ_CROP_CYCLE:							// Bruno New Cycle Horizontal Crop Modes
 
-			bcrop_horiz_mode = bcrop_horiz_mode + 1;
+			bcrop_horiz_mode++;
 
 			if (bcrop_horiz_mode > bcrop_horiz_mode_count)
 			{
@@ -163,7 +179,7 @@ void emu_function(int function)
 
         case EMU_VERT_CROP_CYCLE:							// Bruno New Cycle Vertical Crop Modes
 
-			zoom_mode_id = zoom_mode_id + 1;
+			zoom_mode_id++;
 
 			if (zoom_mode_id > zoom_mode_count)
 			{

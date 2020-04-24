@@ -125,13 +125,16 @@ unsigned int zoom_mode_id = 0;
 int zoom_mode_id_prev = -1;
 unsigned int opt_zoom_mode_id = 0;
 
-unsigned int zoom_mode_count = 4;	// How many Vertical Crop Modes are available? Default 4 - used for hot-key cycling
+#if defined(__X64__) || defined(__X64SC__) || defined(__X128__)	// only include manual cropping for c64/128
+	unsigned int zoom_mode_count = 4;	// How many Vertical Crop Modes are available? Default 4 - used for hot-key cycling
+#else
+	unsigned int zoom_mode_count = 3;	// only 3 modes for other systems
+#endif
 
 unsigned int bcrop_horiz_mode = 0;
+unsigned int opt_bcrop_horiz_mode = 0;		// holds the current horiz mode# to support toggling hot-key
 int bcrop_horiz_mode_prev = -1;
 unsigned int bcrop_horiz_mode_count = 3;	// How many Horizontal Crop Modes are available? Default 3 - used for hot-key cycling
-
-// unsigned int opt_bcrop_horiz_mode = 0;  // Bruno - not used
 
 
 unsigned int crop_top_px = 0;
@@ -1403,7 +1406,7 @@ void retro_set_environment(retro_environment_t cb)
       {
          "vice_video_options_display",
          "Show Video Options",
-         "Core options page refresh required.",
+         "Should be used with RetroArch Video/Scaling Settings: Aspect Ratio: Core provided\nCore options page refresh required.",
          {
             { "disabled", NULL },
             { "enabled", NULL },
@@ -1462,6 +1465,7 @@ void retro_set_environment(retro_environment_t cb)
          },
          "none"
       },
+
       {
          "vice_zoom_mode",				// option name "vice_zoom_mode" for legacy compatibility with existing options files
          "Crop Vertical Borders",
@@ -1471,12 +1475,15 @@ void retro_set_environment(retro_environment_t cb)
             { "small", "Small Crop" },
             { "medium", "Medium Crop" },
             { "full", "Full Crop" },
-            { "manual", "Manual Crop" },
+  #if defined(__X64__) || defined(__X64SC__) || defined(__X128__)	// only include manual cropping for c64/128
+           { "manual", "Manual Crop" },
+  #endif
             { NULL, NULL },
          },
          "none"
       },
 
+  #if defined(__X64__) || defined(__X64SC__) || defined(__X128__)
       {
          "vice_bordercrop_top",
          "Manual Top Cropping",
@@ -1618,6 +1625,7 @@ void retro_set_environment(retro_environment_t cb)
          },
          "none"
       },
+  #endif
 
 
 
@@ -2155,31 +2163,27 @@ void retro_set_environment(retro_environment_t cb)
 #if defined(__X64__) || defined(__X64SC__) || defined(__X128__) || defined(__VIC20__) || defined(__PLUS4__)
       {
          "vice_mapper_zoom_mode_toggle",
-         "Hotkey: Toggle Zoom Mode",
-         "Press the mapped key to toggle zoom mode.",
+         "Hotkey: Toggle Zoom Mode (Horizontal + Vertical Cropping)",
+         "Press the mapped key to toggle Zoom ON/OFF.",
          {{ NULL, NULL }},
          "---"
       },
-
 
       {
          "vice_mapper_bcrop_horiz_mode_cycle",
          "Hotkey: Cycle Horizontal Crop Modes",
-         "Press the mapped key to cycle modes.",
+         "Press the mapped key to cycle Horizontal modes.",
          {{ NULL, NULL }},
          "---"
       },
-
 
       {
          "vice_mapper_bcrop_vert_mode_cycle",
          "Hotkey: Cycle Vertical Crop Modes",
-         "Press the mapped key to cycle modes.",
+         "Press the mapped key to cycle Vertical modes.",
          {{ NULL, NULL }},
          "---"
       },
-
-
 
 #endif
       {
@@ -3101,6 +3105,8 @@ static void update_variables(void)
       if (RETROC128COLUMNKEY==0)
          bcrop_horiz_mode = 0;
 #endif
+
+      opt_bcrop_horiz_mode = bcrop_horiz_mode;		// bruno hold value for hot-key toggling
 
    }
 
@@ -4577,7 +4583,7 @@ void update_geometry(int mode)
          break;
 
    /* ### Bruno CROPPING BUSINESS */
-   /* ### Bruno This is the Zoom/vertical crop */
+   /* ### Bruno This is the Zoom/vertical crop  */
 
       case 1:
 #if defined(__X64__) || defined(__X64SC__) || defined(__X128__) || defined(__VIC20__) || defined(__PLUS4__)
@@ -4592,16 +4598,16 @@ void update_geometry(int mode)
             switch (zoom_mode_id)
             {
             #if defined(__X64__) || defined(__X64SC__) || defined(__X128__)
-
-               // NTSC: 384 x (247), PAL: 384 x (272)
+				// NTSC: 384x247, PAL: 384x272	- 320x200 content area
+				//				                - Borders NTSC Top 23 & Bottom 24 px, PAL Top 35 & Bottom 37 px
                case 1: // Small Vert Border Crop
                   zoomed_height       = (retro_region == RETRO_REGION_NTSC) ? 230 : 240;
-                  zoomed_YS_offset    = (retro_region == RETRO_REGION_NTSC) ? 8 : 15;		// PAL offset was off by 1
+                  zoomed_YS_offset    = (retro_region == RETRO_REGION_NTSC) ? 8 : 15;
                   break;
 
                case 2: // Medium Vert Border Crop
-                  zoomed_height       = (retro_region == RETRO_REGION_NTSC) ? 216 : 218;	// NTSC/PAL values previously incorrectly swapped
-                  zoomed_YS_offset    = (retro_region == RETRO_REGION_NTSC) ? 15 : 26;		// PAL offset was off by 1
+                  zoomed_height       = (retro_region == RETRO_REGION_NTSC) ? 216 : 218;
+                  zoomed_YS_offset    = (retro_region == RETRO_REGION_NTSC) ? 15 : 26;
                   break;
 
                case 3: // Full Vert Border Crop
@@ -4609,8 +4615,7 @@ void update_geometry(int mode)
                   zoomed_YS_offset    = (retro_region == RETRO_REGION_NTSC) ? 23 : 35;
                   break;
 
-               case 4: // Manual Vert border Crop - NTSC Borders 23 & 24 px, PAL borders 35 & 37 px
-						
+               case 4: // Manual Vert border Crop
 				  clean_top_crop = crop_top_px;
 				  clean_bottom_crop = crop_bottom_px;
 
@@ -4641,42 +4646,37 @@ void update_geometry(int mode)
                   break;
                   
             #elif defined(__VIC20__)
-               // PAL: 448x284, NTSC: 400x234
-               case 1:
-                  zoomed_width        = retroW;
-                  zoomed_XS_offset    = (retro_region == RETRO_REGION_NTSC) ? 8 : 0;
-                  zoomed_height       = (retro_region == RETRO_REGION_NTSC) ? 218 : 236;
-                  zoomed_YS_offset    = (retro_region == RETRO_REGION_NTSC) ? 6 : 20;
+               // NTSC: 400x234, PAL: 448x284	- 352x184 content area (double-wide 176x184 actual VIC-20 res)
+               // 								- Borders NTSC Top 22 & Bottom 28 px, PAL Top 48 & Bottom 52 px
+               case 1: // Small Vert Border Crop
+                  zoomed_height       = (retro_region == RETRO_REGION_NTSC) ? 218 : 254;
+                  zoomed_YS_offset    = (retro_region == RETRO_REGION_NTSC) ? 6 : 13;
                   break;
-               case 2:
-                  zoomed_width        = retroW;
-                  zoomed_XS_offset    = (retro_region == RETRO_REGION_NTSC) ? 8 : 0;
-                  zoomed_height       = (retro_region == RETRO_REGION_NTSC) ? 202 : 216;
-                  zoomed_YS_offset    = (retro_region == RETRO_REGION_NTSC) ? 13 : 32;
+
+               case 2: // Medium Vert Border Crop
+                  zoomed_height       = (retro_region == RETRO_REGION_NTSC) ? 202 : 220;
+                  zoomed_YS_offset    = (retro_region == RETRO_REGION_NTSC) ? 13 : 30;
                   break;
-               case 3:
-                  zoomed_width        = (retro_region == RETRO_REGION_NTSC) ? retroW : 392;
-                  zoomed_XS_offset    = (retro_region == RETRO_REGION_NTSC) ? 8 : 28;
+
+               case 3: // Full Vert Border Crop
                   zoomed_height       = 184;
                   zoomed_YS_offset    = (retro_region == RETRO_REGION_NTSC) ? 22 : 48;
                   break;
+
             #elif defined(__PLUS4__)
-               // PAL: 384x288, NTSC: 384x242
-               case 1:
-                  zoomed_width        = retroW;
-                  zoomed_XS_offset    = 0;
-                  zoomed_height       = (retro_region == RETRO_REGION_NTSC) ? 228 : 246;
-                  zoomed_YS_offset    = (retro_region == RETRO_REGION_NTSC) ? 4 : 18;
+               // NTSC: 384x242, PAL: 384x288 	- 320x200 content area
+               // 								- Borders NTSC Top 18 & Bottom 24 px, PAL Top 40 & Bottom 48 px
+               case 1: // Small Vert Border Crop
+                  zoomed_height       = (retro_region == RETRO_REGION_NTSC) ? 230 : 240;
+                  zoomed_YS_offset    = (retro_region == RETRO_REGION_NTSC) ? 3 : 20;
                   break;
-               case 2:
-                  zoomed_width        = (retro_region == RETRO_REGION_NTSC) ? retroW : 377;
-                  zoomed_XS_offset    = (retro_region == RETRO_REGION_NTSC) ? 0 : 4;
-                  zoomed_height       = (retro_region == RETRO_REGION_NTSC) ? 212 : 220;
-                  zoomed_YS_offset    = (retro_region == RETRO_REGION_NTSC) ? 12 : 30;
+
+               case 2: // Medium Vert Border Crop
+                  zoomed_height       = (retro_region == RETRO_REGION_NTSC) ? 216 : 218;
+                  zoomed_YS_offset    = (retro_region == RETRO_REGION_NTSC) ? 10 : 31;
                   break;
-               case 3:
-                  zoomed_width        = (retro_region == RETRO_REGION_NTSC) ? retroW : 343;
-                  zoomed_XS_offset    = (retro_region == RETRO_REGION_NTSC) ? 0 : 21;
+
+               case 3: // Full Vert Border Crop
                   zoomed_height       = 200;
                   zoomed_YS_offset    = (retro_region == RETRO_REGION_NTSC) ? 18 : 40;
                   break;
@@ -4693,7 +4693,7 @@ void update_geometry(int mode)
             system_av_info.geometry.base_height = zoomed_height;
             system_av_info.geometry.aspect_ratio = retro_get_aspect_ratio(zoomed_width, zoomed_height);
 
-         } // end Crop Borders Vertical (aka Zoom Mode)
+         } // end Crop Borders Vertical (previous known as "Zoom Mode")
 
 
 		 // Crop Horizontal - Don't touch any Height variables
@@ -4704,8 +4704,8 @@ void update_geometry(int mode)
             switch (bcrop_horiz_mode)
             {
             #if defined(__X64__) || defined(__X64SC__) || defined(__X128__)
-
-               // NTSC: (384) x 247, PAL: (384) x 272
+               // NTSC: 384x247, PAL: 384x272	- 320x200 content area
+               // 								- Borders NTSC/PAL Left 32 & Right 32 px
                case 1: // Small Horiz Border Crop
                   zoomed_width        = 362;		// 22 pixels narrower than normal
                   zoomed_XS_offset    = 11;
@@ -4722,44 +4722,39 @@ void update_geometry(int mode)
                   break;
 
             #elif defined(__VIC20__)
-               // PAL: 448x284, NTSC: 400x234
-               case 1:
-                  zoomed_width        = retroW;
-                  zoomed_XS_offset    = (retro_region == RETRO_REGION_NTSC) ? 8 : 0;
-                  zoomed_height       = (retro_region == RETRO_REGION_NTSC) ? 218 : 236;
-                  zoomed_YS_offset    = (retro_region == RETRO_REGION_NTSC) ? 6 : 20;
+               // NTSC: 400x234, PAL: 448x284	- 352x184 content area (double-wide 176x184 actual VIC-20 res)
+               // 								- Borders NTSC Left 32 & Right 16 px, PAL Left 48 & Right 48 px
+               case 1: // Small Horiz Border Crop
+                  zoomed_width        = (retro_region == RETRO_REGION_NTSC) ? 388 : 422;
+                  zoomed_XS_offset    = (retro_region == RETRO_REGION_NTSC) ? 14 : 13;
                   break;
-               case 2:
-                  zoomed_width        = retroW;
-                  zoomed_XS_offset    = (retro_region == RETRO_REGION_NTSC) ? 8 : 0;
-                  zoomed_height       = (retro_region == RETRO_REGION_NTSC) ? 202 : 216;
-                  zoomed_YS_offset    = (retro_region == RETRO_REGION_NTSC) ? 13 : 32;
+
+               case 2: // Medium Horiz Border Crop
+                  zoomed_width        = (retro_region == RETRO_REGION_NTSC) ? 376 : 384;
+                  zoomed_XS_offset    = (retro_region == RETRO_REGION_NTSC) ? 20 : 32;
                   break;
-               case 3:
-                  zoomed_width        = (retro_region == RETRO_REGION_NTSC) ? retroW : 392;
-                  zoomed_XS_offset    = (retro_region == RETRO_REGION_NTSC) ? 8 : 28;
-                  zoomed_height       = 184;
-                  zoomed_YS_offset    = (retro_region == RETRO_REGION_NTSC) ? 22 : 48;
+
+               case 3: // Full Horiz Border Crop
+                  zoomed_width        = 352;
+                  zoomed_XS_offset    = (retro_region == RETRO_REGION_NTSC) ? 32 : 48;
                   break;
+
             #elif defined(__PLUS4__)
-               // PAL: 384x288, NTSC: 384x242
-               case 1:
-                  zoomed_width        = retroW;
-                  zoomed_XS_offset    = 0;
-                  zoomed_height       = (retro_region == RETRO_REGION_NTSC) ? 228 : 246;
-                  zoomed_YS_offset    = (retro_region == RETRO_REGION_NTSC) ? 4 : 18;
+               // NTSC: 384x242, PAL: 384x288 	- 320x200 content area
+               // 								- Borders NTSC/PAL Left 32 & Right 32 px
+               case 1: // Small Horiz Border Crop
+                  zoomed_width        = 362;		// 22 pixels narrower than normal
+                  zoomed_XS_offset    = 11;
                   break;
-               case 2:
-                  zoomed_width        = (retro_region == RETRO_REGION_NTSC) ? retroW : 377;
-                  zoomed_XS_offset    = (retro_region == RETRO_REGION_NTSC) ? 0 : 4;
-                  zoomed_height       = (retro_region == RETRO_REGION_NTSC) ? 212 : 220;
-                  zoomed_YS_offset    = (retro_region == RETRO_REGION_NTSC) ? 12 : 30;
+
+               case 2: // Medium Horiz Border Crop
+                  zoomed_width        = 340;		// 44 pixels narrower than normal
+                  zoomed_XS_offset    = 22;
                   break;
-               case 3:
-                  zoomed_width        = (retro_region == RETRO_REGION_NTSC) ? retroW : 343;
-                  zoomed_XS_offset    = (retro_region == RETRO_REGION_NTSC) ? 0 : 21;
-                  zoomed_height       = 200;
-                  zoomed_YS_offset    = (retro_region == RETRO_REGION_NTSC) ? 18 : 40;
+
+               case 3: // Full Horiz Border Crop
+                  zoomed_width        = 320;		// 64 pixels narrower than normal
+                  zoomed_XS_offset    = 32;
                   break;
             #endif
             
