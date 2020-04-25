@@ -31,7 +31,7 @@ Output and features must work with all displays/monitors: 16:9, 16:10, 5:4, 4:3,
 * UI: The option labels have been renamed to make them clearer: OFF, Small Crop, Medium Crop, Full Crop
 * UI: Added “Manual Crop” option value (# 4) to "Crop Vertical Borders" which will take values from two following core options
 * UI: added "Manual Top Cropping" option - values in pixels 0-60 - NTSC and PAL “Full” border sizes specially marked
-* UI: added "Manual Bottom Cropping”  option - values in pixels - NTSC and PAL “Full” border sizes specially marked
+* UI: added "Manual Bottom Cropping”  option - values in pixels 0-60 - NTSC and PAL “Full” border sizes specially marked
 * UI: added 2 new hot keys, one for Horizontal crop mode Cycling and one for Vertical crop mode (zoom mode) cycling
 * UI: Relabeled Zoom Mode toggle hot key to include “(Horizontal + Vertical)” note
 * Shifted the mapper numerical array indexes for the datasette hot keys and increase the mapper array size by 2
