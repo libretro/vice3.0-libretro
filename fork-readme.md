@@ -49,7 +49,7 @@ The new options have already been adopted by the emulation community and a large
 
 **What others have said**
 
-*"now 100% of the cropping is handled in the core itself, video settings are untouched. This is a godsend because now it should "just work" for everyone. Equally important is that now that I can adjust these crops by single pixels, they're more exact than the previous pre-defined zoom levels."*
+*"now 100% of the cropping is handled in the core itself, [RetroArch] video settings are untouched. This is a godsend because now it should "just work" for everyone. Equally important is that now that I can adjust these crops by single pixels, they're more exact than the previous pre-defined zoom levels."*
 
 *"I'll be honest, I wish every core had this option. I would use it. At the very least Beetle PSX and Beetle Saturn could really use it.Thank you for doing this! It resolves probably the single biggest issue with this project, so that's a major boon."*
 
