@@ -17,8 +17,6 @@ Output and features must work with all displays/monitors: 16:9, 16:10, 5:4, 4:3,
 
 * Hot Keys to cycle through all Horizontal and Vertical modes inpendently (All above cores) - includes the Manual cropping option.
 
-* Support for both NTSC and PAL for every platform with appropriately-selected cropping presets for both Horizontal and Vertical
-
 
 ![Screenshot](https://github.com/HVR88/Project_Screenshots/blob/master/vice-libretro-cropping_small.png?raw=true)
 
