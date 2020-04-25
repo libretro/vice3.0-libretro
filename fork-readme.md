@@ -1,6 +1,6 @@
 ## The goal of this vice-libretro fork:
 
-To provide a way to fit/fill any monitor of any aspect ratio, size or resolution, with perfectly scaled, non-distorted emulator screens at each platform's correctly viewed aspect ratio - the resulting output should closely match the proportions/dimensions originally seen on a CRT/TV.
+To provide a way to fit/fill any monitor of any aspect ratio, size or resolution, with perfectly scaled, non-distorted emulator screens at each platform's correct aspect ratio - the resulting output should closely match the proportions/dimensions originally seen on a CRT/TV.
 
 Output and features must work with all displays/monitors: 16:9, 16:10, 5:4, 4:3, LCDs, CRTs, etc. Including portrait-rotated displays.
 
