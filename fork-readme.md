@@ -5,13 +5,17 @@ Provide a way to fit/fill any monitor of any aspect ratio, size or resolution, w
 Output and features must work with all displays/monitors: 16:9, 16:10, 5:4, 4:3, LCDs, CRTs, etc. Including portrait-rotated displays.
 
 ## Features ##
-* Support Vertical and Horizontal cropping in the cores for C64, C128, Vic-20 and Plus4 - 3 crop settings for each dimension, including eliminating the borders completely (without the buggy side-effects of the Display Border Off option)
+* Preset-based Horizontal & Vertical cropping for C64, C128, Vic-20 and Plus4 cores
+  * 3 crop settings for each dimension, including complete border removal
+  * Supports PAL & NTSC for every platform with appropriately-selected cropping presets for both Horizontal and Vertical
+  * No buggy side-effects of the Display Border Off option
 
-* C64 and 128 support a 4th vertical crop option for manual cropping - so you can get the screen to perfectly fit any game
+* Manual Vertical Cropping Option for C64 and C128 cores - make the output perfectly fit any game
+  * Supports overcropping beyond the border to work with widest-possible range of games/titles
 
-* All platforms have available hot keys that toggle (ON/OFF) the currently set cropping for both horizontal and vertical at the same time
+* Hot Key to toggle (ON/OFF) the currently set cropping for both Horizontal and Vertical at the same time - all above cores
 
-* All platforms also have independent vertical and horizontal hot-keys for cycling each of their modes (for vertical it will include the manual setting in the cycle too).
+* Hot Keys to cycle through all Horizontal and Vertical modes inpendently - includes the Manual cropping option.
 
 * Support for both NTSC and PAL for every platform with appropriately-selected cropping presets for both Horizontal and Vertical
 
