@@ -4,7 +4,7 @@ Provide a way to fit/fill any monitor of any aspect ratio, size or resolution, w
 
 Output and features must work with all displays/monitors: 16:9, 16:10, 5:4, 4:3, LCDs, CRTs, etc. Including portrait-rotated displays.
 
-## Here's what's included: ##
+## Features ##
 * Support Vertical and Horizontal cropping in the cores for C64, C128, Vic-20 and Plus4 - 3 crop settings for each dimension, including eliminating the borders completely (without the buggy side-effects of the Display Border Off option)
 
 * C64 and 128 support a 4th vertical crop option for manual cropping - so you can get the screen to perfectly fit any game
