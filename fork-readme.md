@@ -19,7 +19,8 @@ Output and features must work with all displays/monitors: 16:9, 16:10, 5:4, 4:3,
 
 * Support for both NTSC and PAL for every platform with appropriately-selected cropping presets for both Horizontal and Vertical
 
-**Retroarch settings: Video settings -> Scaling -> Aspect Ratio: Core Provided + Integer Scaling: OFF**
+
+![Screenshot](https://github.com/HVR88/Project_Screenshots/blob/master/vice-libretro-cropping_small.png?raw=true)
 
 ## Additions & Changes to Codebase ##
 
@@ -42,6 +43,8 @@ Output and features must work with all displays/monitors: 16:9, 16:10, 5:4, 4:3,
   * Pre-set crop dimensions for c64/128 selected & tested against large library of game content & for acceptable fit into standard monitor dimensions/orientations
   * Pre-set crop dimensions for xplus4 selected to match results of c64
   * Pre-set crop dimensions for Vic-20 selected based on previous values from Zoom Mode
+
+Requirements: **Retroarch settings: Video settings -> Scaling -> Aspect Ratio: Core Provided + Integer Scaling: OFF**
 
 ***
 The new options have already been adopted by the emulation community and a large collection of games have already been profiled to provide the optimal crop values to work on any display. https://forums.launchbox-app.com/topic/49324-c64-dreams-massive-curated-c64-collection
