@@ -13,9 +13,9 @@ Output and features must work with all displays/monitors: 16:9, 16:10, 5:4, 4:3,
 * Manual Vertical Cropping Option for C64 and C128 cores - make the output perfectly fit any game
   * Supports overcropping beyond the border to work with widest-possible range of games/titles
 
-* Hot Key to toggle (ON/OFF) the currently set cropping for both Horizontal and Vertical at the same time - all above cores
+* Hot Key to toggle (ON/OFF) the currently set cropping for both Horizontal and Vertical at the same time (all above cores)
 
-* Hot Keys to cycle through all Horizontal and Vertical modes inpendently - includes the Manual cropping option.
+* Hot Keys to cycle through all Horizontal and Vertical modes inpendently (All above cores) - includes the Manual cropping option.
 
 * Support for both NTSC and PAL for every platform with appropriately-selected cropping presets for both Horizontal and Vertical
 
