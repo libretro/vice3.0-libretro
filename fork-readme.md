@@ -45,7 +45,7 @@ Output and features must work with all displays/monitors: 16:9, 16:10, 5:4, 4:3,
 Requirements: **Retroarch settings: Video settings -> Scaling -> Aspect Ratio: Core Provided + Integer Scaling: OFF**
 
 ***
-The new options have already been adopted by the emulation community and a large collection of games have already been profiled to provide the optimal crop values to work on any display. https://forums.launchbox-app.com/topic/49324-c64-dreams-massive-curated-c64-collection
+The new options have already been adopted by the emulation community and a large collection of games have already been profiled to provide the optimal crop values to work on any display in the *C64 Dreams Curated Collection:* https://forums.launchbox-app.com/topic/49324-c64-dreams-massive-curated-c64-collection
 
 **What others have said**
 
