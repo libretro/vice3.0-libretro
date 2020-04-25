@@ -1,8 +1,10 @@
-## The goal of this fork's changes and additions:
+## The goal of this vice-libretro fork:
 
-Provide a way to fit/fill any monitor of any aspect ratio, size or resolution, with perfectly scaled, non-distorted emulator screens at each platform's correctly viewed aspect ratio - the resulting output should be close to the proportion/dimensions you'd see on a CRT/TV.
+To provide a way to fit/fill any monitor of any aspect ratio, size or resolution, with perfectly scaled, non-distorted emulator screens at each platform's correctly viewed aspect ratio - the resulting output should closely match the proportions/dimensions originally seen on a CRT/TV.
 
 Output and features must work with all displays/monitors: 16:9, 16:10, 5:4, 4:3, LCDs, CRTs, etc. Including portrait-rotated displays.
+
+Code kept clean and to format/style of existing project to make merging to original master branch as straight-forward as possible.
 
 ## Features ##
 * Preset-based Horizontal & Vertical cropping for C64, C128, Vic-20 and Plus4 cores
@@ -51,7 +53,7 @@ Output and features must work with all displays/monitors: 16:9, 16:10, 5:4, 4:3,
 Requirements: **Retroarch settings: Video settings -> Scaling -> Aspect Ratio: Core Provided + Integer Scaling: OFF**
 
 ***
-The new options have already been adopted by the emulation community and a large collection of games have already been profiled to provide the optimal crop values to work on any display in the *C64 Dreams Curated Collection:* https://forums.launchbox-app.com/topic/49324-c64-dreams-massive-curated-c64-collection
+The new options have been adopted by the emulation community and a large collection of games have been profiled to provide the optimal crop values to work on any display in the *C64 Dreams Curated Collection:* https://forums.launchbox-app.com/topic/49324-c64-dreams-massive-curated-c64-collection
 
 **What others have said**
 
