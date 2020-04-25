@@ -39,7 +39,7 @@ Output and features must work with all displays/monitors: 16:9, 16:10, 5:4, 4:3,
 * Added new Horizontal conditional options
 * Vertical cropping conditions affect only vertical dimensions & offsets - tailored/tested presets for each platform
 * Horizontal cropping conditions affect only horizontal dimensions & offsets - tailored/tested presets for each platform
-* Manual Top and Bottom Cropping calculated & available for C64/128 playforms only (can easily be extended to other platforms if needed)
+* Manual Top and Bottom Cropping calculated & available for C64/128 platforms only (can easily be extended to other platforms if needed)
 * Shifted the mapper numerical array indexes for the datasette hot keys and increase the mapper array size by 2
 * Changed Zoom Mode toggle in retrostubs to remove redundant conditions & include horizontal mode so it toggles H+V at the same time - now it’s possible to do a 2-dimensional zoom on any display
 * Retrostubs includes the new cycling code and additions for the cycle hot keys as necessary
