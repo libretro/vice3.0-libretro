@@ -34,6 +34,8 @@ Output and features must work with all displays/monitors: 16:9, 16:10, 5:4, 4:3,
 * UI: added "Manual Bottom Cropping”  option - values in pixels 0-60 - NTSC and PAL “Full” border sizes specially marked
 * UI: added 2 new hot keys, one for Horizontal crop mode Cycling and one for Vertical crop mode (zoom mode) cycling
 * UI: Relabeled Zoom Mode toggle hot key to include “(Horizontal + Vertical)” note
+* UI & Cropping code added in libretro-core.c
+* Hot Key toggle & cycling code in /vice/src/arch/libretro/retrostubs.c
 * Shifted the mapper numerical array indexes for the datasette hot keys and increase the mapper array size by 2
 * Changed Zoom Mode toggle in retrostubs to remove redundant conditions & include horizontal mode so it toggles H+V at the same time - now it’s possible to do a 2-dimensional zoom on any display
 * Retrostubs includes the new cycling code and additions for the cycle hot keys as necessary
