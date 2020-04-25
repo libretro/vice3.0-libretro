@@ -1,10 +1,12 @@
 ## The goal of this vice-libretro fork:
 
-To provide a way to fit/fill any monitor of any aspect ratio, size or resolution, with perfectly scaled, non-distorted emulator screens at each platform's correct aspect ratio - the resulting output should closely match the proportions/dimensions originally seen on a CRT/TV.
+To provide options to fit/fill any monitor of any aspect ratio, size or resolution, with perfectly scaled, non-distorted emulator screens at each platform's correct aspect ratio - the resulting output should closely match the proportions/dimensions originally seen on a CRT/TV.
 
 Output and features must work with all displays/monitors: 16:9, 16:10, 5:4, 4:3, LCDs, CRTs, etc. Including portrait-rotated displays.
 
-Code kept clean and to format/style of existing project to make merging to original master branch as straight-forward as possible.
+All new features/options must integrate with original Core Options UI look/feel/methods and function correctly with other existing features/options.
+
+Code kept clean and to format/style of existing project, making merging to original master branch as straight-forward as possible.
 
 ## Features ##
 * Preset-based Horizontal & Vertical cropping for C64, C128, Vic-20 and Plus4 cores
