@@ -58,7 +58,7 @@ unsigned int datasette_hotkeys;
 unsigned int cur_port=2;
 static int cur_port_prev=-1;
 extern int cur_port_locked;
-extern int mapper_keys[38];					// Total number of hot key binds (defined in libretro-core.c)
+extern int mapper_keys[38];                 // Total number of hot key binds (defined in libretro-core.c)
 extern unsigned int opt_retropad_options;
 extern unsigned int opt_joyport_type;
 static int opt_joyport_type_prev = -1;
@@ -72,11 +72,11 @@ unsigned int mouse_speed[2]={0};
 extern unsigned int zoom_mode_id;
 extern unsigned int opt_zoom_mode_id;
 
-extern unsigned int zoom_mode_count;		// number of Vertical modes to cycle (defined in libretro-core.c) - starts at 0
+extern unsigned int zoom_mode_count;        // number of Vertical modes to cycle (defined in libretro-core.c) - starts at 0
 
 extern unsigned int bcrop_horiz_mode;
 extern unsigned int bcrop_horiz_mode_count; // number of Horizontal modes to cycle (defined in libretro-core.c) - starts at 0
-extern unsigned int opt_bcrop_horiz_mode;	// saved horizontal crop mode for toggling
+extern unsigned int opt_bcrop_horiz_mode;   // saved horizontal crop mode for toggling
 
 extern int RETROKEYRAHKEYPAD;
 extern int RETROKEYBOARDPASSTHROUGH;
@@ -144,38 +144,38 @@ void emu_function(int function)
             emu_reset();
             break;
             
-        case EMU_ZOOM_MODE:									// New Zoom Mode toggle supports vertical & horizontal
+        case EMU_ZOOM_MODE:                                 // New Zoom Mode toggle supports vertical & horizontal
             if (zoom_mode_id > 0 || bcrop_horiz_mode > 0)
             {
                 zoom_mode_id = 0;
-				bcrop_horiz_mode = 0;
+                bcrop_horiz_mode = 0;
             }
             else
             {
                 zoom_mode_id = opt_zoom_mode_id;
-				bcrop_horiz_mode = opt_bcrop_horiz_mode;
+                bcrop_horiz_mode = opt_bcrop_horiz_mode;
             }
             break;
 
 
-        case EMU_HORIZ_CROP_CYCLE:							// New Cycle Horizontal Crop Modes
+        case EMU_HORIZ_CROP_CYCLE:                          // New Cycle Horizontal Crop Modes
 
-			bcrop_horiz_mode++;
+            bcrop_horiz_mode++;
 
-			if (bcrop_horiz_mode > bcrop_horiz_mode_count)
-			{
-				bcrop_horiz_mode = 0;
-			}
+            if (bcrop_horiz_mode > bcrop_horiz_mode_count)
+            {
+                bcrop_horiz_mode = 0;
+            }
             break;
 
-        case EMU_VERT_CROP_CYCLE:							// New Cycle Vertical Crop Modes
+        case EMU_VERT_CROP_CYCLE:                           // New Cycle Vertical Crop Modes
 
-			zoom_mode_id++;
+            zoom_mode_id++;
 
-			if (zoom_mode_id > zoom_mode_count)
-			{
-				zoom_mode_id = 0;
-			}
+            if (zoom_mode_id > zoom_mode_count)
+            {
+                zoom_mode_id = 0;
+            }
             break;
 
         case EMU_WARP:
@@ -257,7 +257,7 @@ void process_key(int disable_physical_cursor_keys)
       for (i=0; i<320; i++)
       {
          if (core_key_state[i] && core_key_state[i]!=core_old_key_state[i])
-         {	
+         {  
             if (i==RETROK_LALT)
                continue;
             else if (i==RETROK_TAB) /* CTRL (Tab) acts as a keyboard enabler */
@@ -377,11 +377,11 @@ void update_input(int disable_physical_cursor_keys)
                 case 29:
                     emu_function(EMU_WARP);
                     break;
-                case 30:									// Horizontal crop mode cycle
+                case 30:                                    // Horizontal crop mode cycle
                     emu_function(EMU_HORIZ_CROP_CYCLE);
                     break;
                 case 31:
-                    emu_function(EMU_VERT_CROP_CYCLE);		// Vertical crop mode cycle
+                    emu_function(EMU_VERT_CROP_CYCLE);      // Vertical crop mode cycle
                     break;
                 case 32:
                     emu_function(EMU_DATASETTE_HOTKEYS);
@@ -566,9 +566,9 @@ void update_input(int disable_physical_cursor_keys)
                         ; /* nop */
                     else if (mapper_keys[i] == mapper_keys[29])
                         emu_function(EMU_WARP);
-                    else if (mapper_keys[i] == mapper_keys[30])		// Horizontal crop mode cycle
+                    else if (mapper_keys[i] == mapper_keys[30])     // Horizontal crop mode cycle
                         ; /* nop */
-                    else if (mapper_keys[i] == mapper_keys[31])		// Vertical crop mode cycle
+                    else if (mapper_keys[i] == mapper_keys[31])     // Vertical crop mode cycle
                         ; /* nop */
                     else if (mapper_keys[i] == mapper_keys[32])
                         ; /* nop */

@@ -52,7 +52,7 @@ static snapshot_stream_t* snapshot_stream = NULL;
 static int load_trap_happened = 0;
 static int save_trap_happened = 0;
 
-int mapper_keys[38] = { 0 };        // Total number of hot key binds
+int mapper_keys[38] = { 0 };        // Total number of hot key binds 38 (0-37)
 unsigned int vice_devices[5];
 unsigned int opt_mapping_options_display;
 unsigned int opt_video_options_display;
@@ -4605,18 +4605,16 @@ void update_geometry(int mode)
                   clean_top_crop = crop_top_px;
                   clean_bottom_crop = crop_bottom_px;
 
-                  // Cap the maximum crop for NTSC so you can't crop more of the visible screen than PAL
-                  // Max value for NTSC = NTSC border size + diff of highest menu value - PAL border size(s)
+                  // Cap the maximum crop for NTSC so you can't crop more of the visible screen than possible with PAL
+                  // Capped value = NTSC border size + diff of highest menu value - PAL border size(s)
 
                   // NTSC top crop restriction
-//                  if (retro_region == RETRO_REGION_NTSC && clean_top_crop > 23 + 25)  // PAL diff = (60-35) = 25
                   if (retro_region == RETRO_REGION_NTSC && clean_top_crop > (c64top_border_NTSC + max_crop_pixels - c64top_border_PAL) )  // PAL diff = (60-35) = 25
                   {
                       clean_top_crop = c64top_border_NTSC + max_crop_pixels - c64top_border_PAL;
                   }
 
                   // NTSC bottom crop restriction
-//                  if (retro_region == RETRO_REGION_NTSC && clean_bottom_crop > 24 + 23)  // PAL diff = (60-37) = 23
                   if (retro_region == RETRO_REGION_NTSC && clean_bottom_crop > (c64bottom_border_NTSC + max_crop_pixels - c64bottom_border_PAL) )  // PAL diff = (60-37) = 23
                   {
                       clean_bottom_crop = c64bottom_border_NTSC + max_crop_pixels - c64bottom_border_PAL;
