@@ -9,8 +9,8 @@ All new features/options must integrate with original Core Options UI look/feel/
 Code kept clean and to format/style of existing project, making merging to original master branch as straight-forward as possible.
 
 ## Features ##
-* Preset-based Horizontal & Vertical cropping for C64, C128, Vic-20 and Plus4 cores
-  * 3 crop settings for each dimension, including complete border removal
+* Separate Horizontal & Vertical cropping options for C64, C128, Vic-20 and Plus4 cores
+  * Preset-based with 3 crop settings for Horizontal & 4 for Vertical, including complete border removal
   * Supports PAL & NTSC for every platform with appropriately-selected cropping presets for both Horizontal and Vertical
   * No buggy side-effects of the Display Border Off option
 
