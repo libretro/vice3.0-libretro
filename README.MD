@@ -1,8 +1,3 @@
-# Changes to this fork:
-
-**https://github.com/HVR88/vice-libretro/blob/master/fork-readme.md**
-
-
 # Vice 3.3 LIBRETRO
 
 Port of VICE 3.3 for libretro with virtual keyboard
