@@ -15,7 +15,8 @@ Code kept clean and to format/style of existing project, making merging to origi
   * No buggy side-effects of the Display Border Off option
 
 * Manual Vertical Cropping Option for C64 and C128 cores - make the output perfectly fit any game
-  * With support for Top and Bottom over-cropping beyond the border to work with widest-possible range of games/titles
+  * Independent Top and Vertical Cropping settings from 0 to 60 pixels (NTSC cropping restricted to match PAL range)
+  * With support for over-cropping beyond the border to work with widest-possible range of games/titles
 
 * Hot Key to toggle (ON/OFF) the currently set cropping for both Horizontal and Vertical at the same time (all above cores)
 
