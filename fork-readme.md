@@ -22,7 +22,7 @@ Code kept clean and to format/style of existing project, making merging to origi
 
 * Hot Key to cycle through all the presets for Horizontal Cropping (all above cores)
 
-* Hot Key to cycle through all the presets for Vertical Cropping (all above cores) - includes Manual cropping
+* Hot Key to cycle through all the presets for Vertical Cropping (all above cores) - includes Manual Crop settings
 
 
 ![Screenshot](https://github.com/HVR88/Project_Screenshots/blob/master/vice-libretro-cropping_small.png?raw=true)
