@@ -20,7 +20,9 @@ Code kept clean and to format/style of existing project, making merging to origi
 
 * Hot Key to toggle (ON/OFF) the currently set cropping for both Horizontal and Vertical at the same time (all above cores)
 
-* Hot Keys to cycle through all Horizontal and Vertical modes inpendently (All above cores) - includes the Manual cropping option.
+* Hot Key to cycle through all the presets for Horizontal Cropping (all above cores)
+
+* Hot Key to cycle through all the presets for Vertical Cropping (all above cores) - includes Manual cropping
 
 
 ![Screenshot](https://github.com/HVR88/Project_Screenshots/blob/master/vice-libretro-cropping_small.png?raw=true)
