@@ -38,7 +38,7 @@ unsigned retro_renderloop = 1;
 
 /* VKBD */
 extern bool retro_vkbd;
-extern void print_vkbd(unsigned short int *pixels);
+extern void print_vkbd(void);
 unsigned int opt_vkbd_theme = 0;
 libretro_graph_alpha_t opt_vkbd_alpha = GRAPH_ALPHA_75;
 
@@ -5642,7 +5642,7 @@ void retro_deinit(void)
       remove_recurse(retro_temp_directory);
 
    /* Free buffers uses by libretro-graph */
-   LibretroGraphFree();
+   libretro_graph_free();
 
    /* 'Reset' troublesome static variables */
    libretro_supports_bitmasks = false;
@@ -6151,7 +6151,7 @@ void retro_run(void)
 
    /* Virtual keyboard */
    if (retro_vkbd)
-      print_vkbd(retro_bmp);
+      print_vkbd();
 
    /* Set volume back to maximum after starting with mute, due to ReSID 6581 init pop */
    if (sound_volume_counter > 0)

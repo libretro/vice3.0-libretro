@@ -677,10 +677,7 @@ void uistatusbar_draw(void)
         bkg_x = retroXS_offset + x + max_width - bkg_width - 1;
     }
 
-    if (pix_bytes == 2)
-        DrawFBoxBmp(retro_bmp, bkg_x, bkg_y, bkg_width, bkg_height, color_black, GRAPH_ALPHA_100);
-    else
-        DrawFBoxBmp32((uint32_t *)retro_bmp, bkg_x, bkg_y, bkg_width, bkg_height, color_black, GRAPH_ALPHA_100);
+    draw_fbox(bkg_x, bkg_y, bkg_width, bkg_height, 0, GRAPH_ALPHA_100);
 
     if (imagename_timer == 0)
         display_joyport();
@@ -753,9 +750,6 @@ void uistatusbar_draw(void)
 
         /* Output */
         snprintf(s, sizeof(s), "%c", c);
-        if (pix_bytes == 2)
-            Draw_text(retro_bmp, x_char, y, color_f, color_b, GRAPH_ALPHA_100, true, 1, 1, 10, s);
-        else
-            Draw_text32((uint32_t *)retro_bmp, x_char, y, color_f, color_b, GRAPH_ALPHA_100, true, 1, 1, 10, s);
+        draw_text(x_char, y, color_f, color_b, GRAPH_ALPHA_100, GRAPH_BG_ALL, 1, 1, 10, s);
     }
 }
