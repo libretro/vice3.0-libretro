@@ -2316,6 +2316,17 @@ void retro_set_environment(retro_environment_t cb)
          },
          "25%"
       },
+      {
+         "vice_gfx_colors",
+         "Video > Color Depth",
+         "24-bit is slower and not available on all platforms. Full restart required.",
+         {
+            { "16bit", "Thousands (16-bit)" },
+            { "24bit", "Millions (24-bit)" },
+            { NULL, NULL },
+         },
+         "16bit"
+      },
 #if defined(__XVIC__)
       {
          "vice_vic20_external_palette",
@@ -2481,17 +2492,6 @@ void retro_set_environment(retro_environment_t cb)
          "1000"
       },
 #endif
-      {
-         "vice_gfx_colors",
-         "Video > Color Depth",
-         "24-bit is slower and not available on all platforms. Full restart required.",
-         {
-            { "16bit", "Thousands (16-bit)" },
-            { "24bit", "Millions (24-bit)" },
-            { NULL, NULL },
-         },
-         "16bit"
-      },
       {
          "vice_audio_options_display",
          "Show Audio Options",
