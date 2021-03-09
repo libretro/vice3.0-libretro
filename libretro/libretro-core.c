@@ -3407,7 +3407,7 @@ void retro_set_environment(retro_environment_t cb)
    if (!cb(RETRO_ENVIRONMENT_GET_CORE_OPTIONS_VERSION, &version))
    {
       if (log_cb)
-         log_cb(RETRO_LOG_INFO, "retro_set_environment: GET_CORE_OPTIONS_VERSION failed, not setting CORE_OPTIONS now.\n");
+         log_cb(RETRO_LOG_DEBUG, "retro_set_environment: GET_CORE_OPTIONS_VERSION failed, not setting CORE_OPTIONS now.\n");
    }
    else if (version == 1)
    {
@@ -3474,13 +3474,13 @@ void retro_set_environment(retro_environment_t cb)
 
 int log_resources_set_int(const char *name, int value)
 {
-    log_cb(RETRO_LOG_INFO, "Resource %s = %d\n", name, value);
+    log_cb(RETRO_LOG_INFO, "Resource: %s => %d\n", name, value);
     return resources_set_int(name, value);
 }
 
 int log_resources_set_string(const char *name, const char* value)
 {
-    log_cb(RETRO_LOG_INFO, "Resource %s = \"%s\"\n", name, value);
+    log_cb(RETRO_LOG_INFO, "Resource: %s => \"%s\"\n", name, value);
     return resources_set_string(name, value);
 }
 
@@ -5250,6 +5250,9 @@ void emu_reset(int type)
 {
    /* Reset Datasette or autostart from tape will fail */
    datasette_control(DATASETTE_CONTROL_RESET);
+
+   /* Release keyboard keys */
+   keyboard_clear_keymatrix();
 
    /* Disable Warp */
    resources_set_int("WarpMode", 0);

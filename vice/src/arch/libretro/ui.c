@@ -399,6 +399,8 @@ int ui_init_finalize(void)
    }
    else
       log_resources_set_int("SidStereo", 0);
+#else
+   log_resources_set_int("SidEngine", 0);
 #endif
 
    /* Misc model specific */
