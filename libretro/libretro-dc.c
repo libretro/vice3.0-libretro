@@ -785,19 +785,18 @@ void dc_parse_list(dc_storage* dc, const char* list_file, bool is_vfl, const cha
    char* basedir = dirname_int(list_file);
    unsigned int save_disk_index = 0;
 
-   /* Label for the following file */
-   char* label = NULL;
-
-   /* Disk control interface 'name' for the following file */
-   char* image_name = NULL;
-
-   /* M3U path for the following file */
-   char* filename = NULL;
-
    while ((dc->count <= DC_MAX_SIZE) && (fgets(buffer, sizeof(buffer), fp) != NULL))
    {
-      char* string = trimwhitespace(buffer);
+      /* Label for the following file */
+      char* label = NULL;
 
+      /* Disk control interface 'name' for the following file */
+      char* image_name = NULL;
+
+      /* M3U path for the following file */
+      char* filename = NULL;
+
+      char* string = trimwhitespace(buffer);
       if (string[0] == '\0')
          continue;
 
@@ -888,8 +887,8 @@ void dc_parse_list(dc_storage* dc, const char* list_file, bool is_vfl, const cha
           * Delimiter + FILE_LABEL is optional */
          char file_name[RETRO_PATH_MAX]  = {0};
          char file_label[RETRO_PATH_MAX] = {0};
-         char* delim_ptr             = strchr(string, M3U_PATH_DELIM);
-         bool label_set              = false;
+         char* delim_ptr                 = strchr(string, M3U_PATH_DELIM);
+         bool label_set                  = false;
 
          if (delim_ptr)
          {
@@ -1045,6 +1044,13 @@ void dc_parse_list(dc_storage* dc, const char* list_file, bool is_vfl, const cha
          else
             log_cb(RETRO_LOG_WARN, "File '%s' from list '%s' not found in dir '%s'\n", file_name, list_file, basedir);
       }
+
+      /* Throw away the label and image name */
+      free(label);
+      label = NULL;
+
+      free(image_name);
+      image_name = NULL;
    }
 
    /* If it's vfl, we have to reverse it */
@@ -1067,27 +1073,8 @@ void dc_parse_list(dc_storage* dc, const char* list_file, bool is_vfl, const cha
       }
    }
 
-   /* Throw away the label and image name */
-   if (label)
-   {
-      free(label);
-      label = NULL;
-   }
-   if (image_name)
-   {
-      free(image_name);
-      image_name = NULL;
-   }
-   if (filename)
-   {
-      free(filename);
-      filename = NULL;
-   }
-   if (basedir)
-   {
-      free(basedir);
-      basedir = NULL;
-   }
+   free(basedir);
+   basedir = NULL;
 
    /* Close the file */
    fclose(fp);
