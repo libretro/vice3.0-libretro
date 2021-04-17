@@ -119,7 +119,7 @@ else ifeq ($(platform), ctr)
    CXX = $(DEVKITARM)/bin/arm-none-eabi-g++$(EXE_EXT)
    AR = $(DEVKITARM)/bin/arm-none-eabi-ar$(EXE_EXT)
    DEFINES += -D_3DS -DARM11 -march=armv6k -mtune=mpcore -mfloat-abi=hard
-   CFLAGS += $(DEFINES)
+   CFLAGS += $(DEFINES) -I$(CTRULIB)/include
    CXXFLAGS += $(CFLAGS)
    STATIC_LINKING = 1
 
