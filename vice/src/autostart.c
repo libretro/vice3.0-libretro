@@ -1547,6 +1547,9 @@ int autostart_disk(int unit, int drive, const char *file_name, const char *progr
                             log_error(LOG_ERR, "Failed to set drive type.");
                         }
                     }
+#ifdef __LIBRETRO__
+                    file_system_detach_disk(unit, drive);
+#endif
                     if (file_system_attach_disk(unit, drive, file_name) < 0) {
                         goto exiterror;
                     }
