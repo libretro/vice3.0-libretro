@@ -1112,7 +1112,16 @@ int resources_read_item_from_file(FILE *f)
     }
 
 #ifdef __LIBRETRO__
-    char* token = strtok((char*)buf, " ### ");
+    /* Ignore commented lines */
+    if (buf[0] == '#')
+        return 1;
+    /* Remove trailing comments */
+    else if (strstr(buf, " ### "))
+    {
+        char* token = strtok((char*)buf, "#");
+        size_t len = strlen(buf);
+        buf[len - 1] = '\0';
+    }
 #endif
 
     resname_len = (int)(arg_ptr - buf);
