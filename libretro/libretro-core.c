@@ -705,6 +705,7 @@ static int process_cmdline(const char* argv)
                   fprintf(zip_m3u, "%s\n", zip_m3u_list[l]);
                fclose(zip_m3u);
                snprintf(full_path, sizeof(full_path), "%s", zip_m3u_path);
+               log_cb(RETRO_LOG_INFO, "->M3U: %s\n", zip_m3u_path);
                break;
          }
 
