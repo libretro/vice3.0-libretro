@@ -6049,8 +6049,10 @@ void update_geometry(int mode)
          retroXS_offset     = 0;
          retroYS_offset     = 0;
 
-         system_av_info.geometry.base_width = retrow;
-         system_av_info.geometry.base_height = retroh;
+         system_av_info.geometry.base_width   = retrow;
+         system_av_info.geometry.base_height  = retroh;
+         system_av_info.geometry.max_width    = defaultw;
+         system_av_info.geometry.max_height   = defaulth;
          system_av_info.geometry.aspect_ratio = retro_get_aspect_ratio(retrow, retroh, false);
 
          /* Update av_info only when PAL/NTSC change occurs */
@@ -6190,8 +6192,10 @@ void update_geometry(int mode)
                   break;
             }
 
-            system_av_info.geometry.base_width = zoomed_width;
-            system_av_info.geometry.base_height = zoomed_height;
+            system_av_info.geometry.base_width   = zoomed_width;
+            system_av_info.geometry.base_height  = zoomed_height;
+            system_av_info.geometry.max_width    = defaultw;
+            system_av_info.geometry.max_height   = defaulth;
             system_av_info.geometry.aspect_ratio = retro_get_aspect_ratio(zoomed_width, zoomed_height, false);
          }
 #endif
